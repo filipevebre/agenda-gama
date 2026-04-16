@@ -112,10 +112,10 @@
     await client.auth.signOut();
   }
 
-  async function updatePassword(password) {
+  async function updatePassword(password, data) {
     const client = await getClient();
     if (!client) throw new Error("Supabase nao configurado.");
-    return await client.auth.updateUser({ password });
+    return await client.auth.updateUser(data ? { password, data } : { password });
   }
 
   async function getProfile(userId) {

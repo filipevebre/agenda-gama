@@ -92,8 +92,8 @@
       email: normalizeEmail(profile?.email || user.email),
       role: profile?.role || user.user_metadata?.role || "responsaveis",
       roleLabel: profile?.role_label || user.user_metadata?.role_label || "Responsavel",
-      canApprove: Boolean(profile?.can_approve || user.user_metadata?.can_approve),
-      firstAccessPending: Boolean(profile?.first_access_pending || user.user_metadata?.first_access_pending)
+      canApprove: Boolean(profile?.can_approve ?? user.user_metadata?.can_approve ?? false),
+      firstAccessPending: Boolean(profile?.first_access_pending ?? user.user_metadata?.first_access_pending ?? false)
     };
   }
 
@@ -197,6 +197,20 @@
     }
   }
 
+  function showLoginFeedbackFromQuery(feedback) {
+    if (!feedback) return;
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("password-created") !== "1") {
+      return;
+    }
+
+    feedback.textContent = "Senha criada com sucesso. Entre com seu e-mail e a nova senha para acessar o Agenda Gama.";
+    feedback.className = "feedback success";
+    url.searchParams.delete("password-created");
+    window.history.replaceState({}, "", url.toString());
+  }
+
   function mountLocalLogin(form, feedback) {
     localSeedUsers();
 
@@ -288,6 +302,7 @@
 
     const supabaseEnabled = await isSupabaseEnabled();
     syncLoginModeUi(supabaseEnabled);
+    showLoginFeedbackFromQuery(feedback);
 
     if (supabaseEnabled) {
       await mountSupabaseLogin(form, feedback, activeSession);
@@ -382,53 +397,59 @@
         return;
       }
 
-      if (await isSupabaseEnabled()) {
-        const passwordResult = await window.AgendaGamaSupabase.updatePassword(password);
-        if (passwordResult.error) {
-          feedback.textContent = passwordResult.error.message || "Nao foi possivel salvar a nova senha.";
-          feedback.className = "feedback error";
-          return;
+      try {
+        if (await isSupabaseEnabled()) {
+          const passwordResult = await window.AgendaGamaSupabase.updatePassword(password, { first_access_pending: false });
+          if (passwordResult.error) {
+            feedback.textContent = passwordResult.error.message || "Nao foi possivel salvar a nova senha.";
+            feedback.className = "feedback error";
+            return;
+          }
+
+          await window.AgendaGamaSupabase.updateProfile(cachedSession.userId, { first_access_pending: false });
+
+          try {
+            const responsaveis = await window.AgendaGamaSupabase.fetchTable("responsaveis");
+            const currentRows = responsaveis.filter((item) => item.auth_user_id === cachedSession.userId);
+            await Promise.all(currentRows.map((item) => window.AgendaGamaSupabase.saveRow("responsaveis", {
+              ...item,
+              access_status: "Acesso ativo"
+            })));
+          } catch (error) {
+            // Silencioso para nao bloquear a troca de senha caso a tabela ainda nao esteja populada.
+          }
+
+          cachedSession.firstAccessPending = false;
+          await clearSession();
+        } else {
+          const users = getLocalUsers();
+          const userIndex = users.findIndex((item) => normalizeEmail(item.email) === normalizeEmail(cachedSession.email));
+          if (userIndex === -1) {
+            feedback.textContent = "Nao foi possivel localizar essa conta local.";
+            feedback.className = "feedback error";
+            return;
+          }
+
+          users[userIndex] = {
+            ...users[userIndex],
+            password,
+            firstAccessPending: false
+          };
+          writeJson(LOCAL_USERS_KEY, users);
+          cachedSession = users[userIndex];
+          clearLocalSession();
         }
 
-        await window.AgendaGamaSupabase.updateProfile(cachedSession.userId, { first_access_pending: false });
+        feedback.textContent = "Senha criada com sucesso. Redirecionando para a tela de login...";
+        feedback.className = "feedback success";
 
-        try {
-          const responsaveis = await window.AgendaGamaSupabase.fetchTable("responsaveis");
-          const currentRows = responsaveis.filter((item) => item.auth_user_id === cachedSession.userId);
-          await Promise.all(currentRows.map((item) => window.AgendaGamaSupabase.saveRow("responsaveis", {
-            ...item,
-            access_status: "Acesso ativo"
-          })));
-        } catch (error) {
-          // Silencioso para nao bloquear a troca de senha caso a tabela ainda nao esteja populada.
-        }
-
-        cachedSession.firstAccessPending = false;
-      } else {
-        const users = getLocalUsers();
-        const userIndex = users.findIndex((item) => normalizeEmail(item.email) === normalizeEmail(cachedSession.email));
-        if (userIndex === -1) {
-          feedback.textContent = "Nao foi possivel localizar essa conta local.";
-          feedback.className = "feedback error";
-          return;
-        }
-
-        users[userIndex] = {
-          ...users[userIndex],
-          password,
-          firstAccessPending: false
-        };
-        writeJson(LOCAL_USERS_KEY, users);
-        cachedSession = users[userIndex];
-        saveLocalSession(cachedSession);
+        setTimeout(function () {
+          window.location.href = "../index.html?password-created=1";
+        }, 700);
+      } catch (error) {
+        feedback.textContent = error?.message || "Nao foi possivel concluir a criacao da senha agora.";
+        feedback.className = "feedback error";
       }
-
-      feedback.textContent = "Senha criada com sucesso. Redirecionando para o painel...";
-      feedback.className = "feedback success";
-
-      setTimeout(function () {
-        window.location.href = "dashboard.html";
-      }, 500);
     });
 
     logoutButton?.addEventListener("click", async function () {
