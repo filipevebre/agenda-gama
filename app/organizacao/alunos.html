@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Alunos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="alunos" data-roles="administrador,funcionarios">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">OrganizaÃ§Ã£o</span>
+        <h1>Alunos cadastrados</h1>
+        <p>Visualize, pesquise e gerencie os estudantes jÃ¡ registrados.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Total de alunos</span>
+          <strong id="total-alunos">00</strong>
+        </article>
+        <a class="btn btn-primary" href="cadastro-alunos.html">Novo aluno</a>
+      </div>
+    </section>
+    <section>
+      <article class="table-card">
+        <h3>Alunos cadastrados</h3>
+        <p>Acompanhe rapidamente matrÃ­culas e enturmaÃ§Ã£o.</p>
+        <label class="field search-box">
+          <span>Pesquisar aluno</span>
+          <input id="alunos-search" placeholder="Busque por nome, matrÃ­cula, turma ou turno">
+        </label>
+        <div class="table-wrapper">
+          <table><thead><tr><th>Aluno</th><th>MatrÃ­cula</th><th>Turma</th><th>Turno</th></tr></thead><tbody id="alunos-table-body"></tbody></table>
+        </div>
+        <p id="alunos-empty" class="empty-state" hidden>Nenhum aluno cadastrado ainda.</p>
+      </article>
+    </section>
+  </template>
+  <script src="../../assets/js/config.js?v=20260415-4"></script>
+  <script src="../../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../../assets/js/app.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaForms.mountCrud({
+      storageKey: "alunos",
+      tableBodyId: "alunos-table-body",
+      emptyStateId: "alunos-empty",
+      totalId: "total-alunos",
+      searchInputId: "alunos-search",
+      searchKeys: ["nome", "matricula", "turma", "turno"],
+      editPageUrl: "cadastro-alunos.html",
+      emptyMessage: "Nenhum aluno cadastrado ainda.",
+      columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
+      seedData: [
+        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5Âº Ano B", turno: "Tarde" },
+        { nome: "Pedro Henrique", matricula: "20260051", turma: "1Âº Ano A", turno: "ManhÃ£" }
+      ]
+    });
+  </script>
+</body>
+</html>
+

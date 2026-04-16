@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Responsaveis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="responsaveis" data-roles="administrador,funcionarios">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">Organizacao</span>
+        <h1>Responsaveis cadastrados</h1>
+        <p>Visualize e gerencie os vinculos familiares, os contatos e o status de acesso ao app.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Total de responsaveis</span>
+          <strong id="total-responsaveis">00</strong>
+        </article>
+        <a class="btn btn-primary" href="cadastro-responsaveis.html">Novo responsavel</a>
+      </div>
+    </section>
+
+    <section id="responsaveis-access-banner" hidden></section>
+
+    <section>
+      <article class="table-card">
+        <h3>Responsaveis cadastrados</h3>
+        <p>Consulta rapida dos contatos familiares vinculados aos alunos e do acesso de cada responsavel.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Parentesco</th>
+                <th>Aluno</th>
+                <th>Contato</th>
+                <th>E-mail</th>
+                <th>Acesso</th>
+              </tr>
+            </thead>
+            <tbody id="responsaveis-table-body"></tbody>
+          </table>
+        </div>
+        <p id="responsaveis-empty" class="empty-state" hidden>Nenhum responsavel cadastrado ainda.</p>
+      </article>
+    </section>
+  </template>
+  <script src="../../assets/js/config.js?v=20260415-4"></script>
+  <script src="../../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../../assets/js/app.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/responsaveis.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaResponsaveis.mountListPage();
+  </script>
+</body>
+</html>

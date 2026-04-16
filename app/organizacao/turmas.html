@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Turmas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="turmas" data-roles="administrador,funcionarios">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">OrganizaÃ§Ã£o</span>
+        <h1>Turmas cadastradas</h1>
+        <p>Visualize e gerencie as turmas jÃ¡ registradas na organizaÃ§Ã£o acadÃªmica.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Total de turmas</span>
+          <strong id="total-turmas">00</strong>
+        </article>
+        <a class="btn btn-primary" href="cadastro-turmas.html">Nova turma</a>
+      </div>
+    </section>
+    <section>
+      <article class="table-card">
+        <h3>Turmas cadastradas</h3>
+        <p>Lista rÃ¡pida das turmas registradas no sistema.</p>
+        <div class="table-wrapper">
+          <table><thead><tr><th>Turma</th><th>Turno</th><th>Sala</th><th>Ano</th></tr></thead><tbody id="turmas-table-body"></tbody></table>
+        </div>
+        <p id="turmas-empty" class="empty-state" hidden>Nenhuma turma cadastrada ainda.</p>
+      </article>
+    </section>
+  </template>
+  <script src="../../assets/js/config.js?v=20260415-4"></script>
+  <script src="../../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../../assets/js/app.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaForms.mountCrud({
+      storageKey: "turmas",
+      tableBodyId: "turmas-table-body",
+      emptyStateId: "turmas-empty",
+      totalId: "total-turmas",
+      editPageUrl: "cadastro-turmas.html",
+      emptyMessage: "Nenhuma turma cadastrada ainda.",
+      columns: [{ key: "nome" }, { key: "turno", type: "tag" }, { key: "sala" }, { key: "ano" }],
+      seedData: [
+        { nome: "1Âº Ano A", turno: "ManhÃ£", sala: "Sala 01", ano: "2026" },
+        { nome: "5Âº Ano B", turno: "Tarde", sala: "Sala 08", ano: "2026" }
+      ]
+    });
+  </script>
+</body>
+</html>
+

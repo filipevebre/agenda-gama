@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Comunicacao</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="comunicacao" data-roles="all">
+  <div id="app-shell"></div>
+
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">Comunicacao</span>
+        <h1>Canais, mensagens e aprovacao</h1>
+        <p>Organize a comunicacao escolar com canais dedicados, fluxo de aprovacao e regras por perfil para manter o envio seguro e controlado.</p>
+      </div>
+      <article class="info-card">
+        <span>Canais ativos</span>
+        <strong id="channels-total">00</strong>
+      </article>
+    </section>
+
+    <section class="status-grid">
+      <article class="status-card">
+        <span>Rascunho</span>
+        <strong id="status-rascunho">00</strong>
+      </article>
+      <article class="status-card">
+        <span>Pendente</span>
+        <strong id="status-pendente">00</strong>
+      </article>
+      <article class="status-card">
+        <span>Aprovada</span>
+        <strong id="status-aprovada">00</strong>
+      </article>
+      <article class="status-card">
+        <span>Enviada</span>
+        <strong id="status-enviada">00</strong>
+      </article>
+    </section>
+
+    <section class="grid grid-2" style="margin-top: 20px;">
+      <article class="panel stack-sm">
+        <div class="section-heading">
+          <div>
+            <h2>Regras da comunicacao</h2>
+            <p>O sistema limita o destino das mensagens de acordo com o perfil autenticado.</p>
+          </div>
+        </div>
+        <div class="hint-box">
+          <p>Professores e funcionarios podem enviar para uma turma inteira ou para um ou mais responsaveis, mas o envio passa primeiro por aprovacao.</p>
+        </div>
+        <div class="hint-box">
+          <p>Responsaveis podem falar apenas com funcionarios e professores. Nao existe envio entre responsaveis.</p>
+        </div>
+        <div class="hint-box">
+          <p>Os status disponiveis no fluxo sao: rascunho, pendente de aprovacao, aprovada e enviada.</p>
+        </div>
+      </article>
+
+      <article id="channel-form-panel" class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Novo canal</h2>
+            <p>Crie canais para agrupar comunicados institucionais e rotinas escolares.</p>
+          </div>
+        </div>
+        <form id="channel-form" class="form-grid">
+          <label class="field">
+            <span>Nome do canal</span>
+            <input name="nome" placeholder="Ex.: Avisos da Secretaria" required>
+          </label>
+          <label class="field">
+            <span>Publico</span>
+            <select name="publico" required>
+              <option value="">Selecione</option>
+              <option>Escola</option>
+              <option>Equipe docente</option>
+              <option>Responsaveis</option>
+              <option>Secretaria</option>
+            </select>
+          </label>
+          <label class="field full">
+            <span>Descricao</span>
+            <textarea name="descricao" placeholder="Explique o objetivo do canal." required></textarea>
+          </label>
+          <button type="submit" class="btn btn-primary full">Criar canal</button>
+        </form>
+        <div id="channel-feedback" class="feedback" aria-live="polite"></div>
+      </article>
+    </section>
+
+    <section class="grid grid-2" style="margin-top: 20px;">
+      <article id="compose-panel" class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Nova mensagem</h2>
+            <p id="compose-hint">Monte a comunicacao escolhendo o canal, o destino e o status inicial.</p>
+          </div>
+        </div>
+        <form id="message-form" class="form-grid">
+          <label class="field">
+            <span>Canal</span>
+            <select id="channel-id" name="channelId" required></select>
+          </label>
+          <label class="field">
+            <span>Destino</span>
+            <select id="recipient-type" name="recipientType" required></select>
+          </label>
+          <label class="field full">
+            <span>Destinatarios</span>
+            <select id="recipients" name="recipients" multiple required></select>
+          </label>
+          <p id="recipients-hint" class="muted full"></p>
+          <label class="field full">
+            <span>Assunto</span>
+            <input name="subject" placeholder="Resumo da mensagem" required>
+          </label>
+          <label class="field full">
+            <span>Mensagem</span>
+            <textarea name="content" placeholder="Escreva a comunicacao completa." required></textarea>
+          </label>
+          <div class="toolbar full">
+            <button type="submit" name="action" value="draft" class="btn btn-secondary">Salvar rascunho</button>
+            <button type="submit" name="action" value="submit" class="btn btn-primary">Continuar fluxo</button>
+          </div>
+        </form>
+        <div id="message-feedback" class="feedback" aria-live="polite"></div>
+      </article>
+
+      <article class="table-card">
+        <div class="section-heading">
+          <div>
+            <h2>Canais criados</h2>
+            <p>Consulta rapida dos canais disponiveis para o time escolar.</p>
+          </div>
+        </div>
+        <div id="channel-list" class="cards-list"></div>
+      </article>
+    </section>
+
+    <section class="grid grid-2" style="margin-top: 20px;">
+      <article class="table-card">
+        <div class="section-heading">
+          <div>
+            <h2>Mensagens do perfil</h2>
+            <p>Veja o que voce enviou ou recebeu conforme as permissoes da conta atual.</p>
+          </div>
+        </div>
+        <div id="message-list" class="cards-list"></div>
+      </article>
+
+      <article id="approval-panel" class="table-card" hidden>
+        <div class="section-heading">
+          <div>
+            <h2>Fila de aprovacao</h2>
+            <p>Aprove comunicados pendentes e finalize o envio quando estiver tudo certo.</p>
+          </div>
+        </div>
+        <div id="approval-list" class="cards-list"></div>
+      </article>
+    </section>
+  </template>
+
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../assets/js/app.js?v=20260415-4"></script>
+  <script src="../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../assets/js/communication.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaCommunication.mountCommunication();
+  </script>
+</body>
+</html>
+

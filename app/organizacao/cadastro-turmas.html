@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Nova Turma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="turmas" data-roles="administrador,funcionarios">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">OrganizaÃ§Ã£o</span>
+        <h1>Cadastro de turmas</h1>
+        <p>Preencha os dados da turma em uma pÃ¡gina exclusiva de cadastro.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Total de turmas</span>
+          <strong id="total-turmas">00</strong>
+        </article>
+        <a class="btn btn-secondary" href="turmas.html">Ver turmas cadastradas</a>
+      </div>
+    </section>
+    <section>
+      <article class="panel">
+        <div class="section-heading"><div><h2>Nova turma</h2><p>Cadastre turmas com turno, sala e ano letivo.</p></div></div>
+        <form id="turmas-form" class="form-grid">
+          <label class="field"><span>Nome da turma</span><input name="nome" placeholder="Ex.: 7Âº Ano A" required></label>
+          <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>ManhÃ£</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
+          <label class="field"><span>Sala</span><input name="sala" placeholder="Ex.: Sala 05" required></label>
+          <label class="field"><span>Ano letivo</span><input name="ano" placeholder="2026" required></label>
+          <button type="submit" class="btn btn-primary full">Salvar turma</button>
+        </form>
+      </article>
+    </section>
+  </template>
+  <script src="../../assets/js/config.js?v=20260415-4"></script>
+  <script src="../../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../../assets/js/app.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaForms.mountCrud({
+      storageKey: "turmas",
+      formId: "turmas-form",
+      totalId: "total-turmas",
+      redirectAfterSubmit: "turmas.html",
+      cancelRedirect: "turmas.html",
+      columns: [{ key: "nome" }, { key: "turno", type: "tag" }, { key: "sala" }, { key: "ano" }],
+      seedData: [
+        { nome: "1Âº Ano A", turno: "ManhÃ£", sala: "Sala 01", ano: "2026" },
+        { nome: "5Âº Ano B", turno: "Tarde", sala: "Sala 08", ano: "2026" }
+      ]
+    });
+  </script>
+</body>
+</html>
+

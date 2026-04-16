@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Novo Aluno</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="alunos" data-roles="administrador,funcionarios">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">OrganizaÃ§Ã£o</span>
+        <h1>Cadastro de alunos</h1>
+        <p>Cadastre ou edite alunos em uma pÃ¡gina separada da listagem.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Total de alunos</span>
+          <strong id="total-alunos">00</strong>
+        </article>
+        <a class="btn btn-secondary" href="alunos.html">Ver alunos cadastrados</a>
+      </div>
+    </section>
+    <section>
+      <article class="panel">
+        <div class="section-heading"><div><h2>Novo aluno</h2><p>Cadastre matrÃ­cula, turma e turno do estudante.</p></div></div>
+        <form id="alunos-form" class="form-grid">
+          <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: Ana Clara Silva" required></label>
+          <label class="field"><span>MatrÃ­cula</span><input name="matricula" placeholder="Ex.: 20260045" required></label>
+          <label class="field"><span>Turma</span><input name="turma" placeholder="Ex.: 5Âº Ano B" required></label>
+          <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>ManhÃ£</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
+          <button type="submit" class="btn btn-primary full">Salvar aluno</button>
+        </form>
+      </article>
+    </section>
+  </template>
+  <script src="../../assets/js/config.js?v=20260415-4"></script>
+  <script src="../../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../../assets/js/app.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaForms.mountCrud({
+      storageKey: "alunos",
+      formId: "alunos-form",
+      totalId: "total-alunos",
+      redirectAfterSubmit: "alunos.html",
+      cancelRedirect: "alunos.html",
+      columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
+      seedData: [
+        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5Âº Ano B", turno: "Tarde" },
+        { nome: "Pedro Henrique", matricula: "20260051", turma: "1Âº Ano A", turno: "ManhÃ£" }
+      ]
+    });
+  </script>
+</body>
+</html>
+

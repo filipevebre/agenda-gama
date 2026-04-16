@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Novo Responsavel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="responsaveis" data-roles="administrador,funcionarios">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">Organizacao</span>
+        <h1>Cadastro de responsaveis</h1>
+        <p>Cadastre ou edite responsaveis em uma pagina exclusiva de formulario.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Total de responsaveis</span>
+          <strong id="total-responsaveis">00</strong>
+        </article>
+        <a class="btn btn-secondary" href="responsaveis.html">Ver responsaveis cadastrados</a>
+      </div>
+    </section>
+    <section>
+      <article class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Novo responsavel</h2>
+            <p>Cadastre contatos principais para comunicacao escolar e gere o acesso do responsavel ao app.</p>
+          </div>
+        </div>
+
+        <form id="responsaveis-form" class="form-grid">
+          <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: Mariana Alves" required></label>
+          <label class="field"><span>Parentesco</span><select name="parentesco" required><option value="">Selecione</option><option>Mae</option><option>Pai</option><option>Avo</option><option>Tio(a)</option><option>Outro</option></select></label>
+          <label class="field"><span>Aluno vinculado</span><input name="aluno" placeholder="Ex.: Ana Clara Silva" required></label>
+          <label class="field"><span>Contato</span><input name="contato" placeholder="(00) 00000-0000" required></label>
+          <label class="field"><span>E-mail de acesso</span><input type="email" name="email" placeholder="responsavel@email.com" required></label>
+
+          <div class="hint-box full">
+            <p>Ao salvar, o sistema cria o perfil do responsavel e envia um convite por e-mail para definir a senha no primeiro acesso.</p>
+          </div>
+
+          <button type="submit" class="btn btn-primary full">Salvar responsavel</button>
+          <div id="responsavel-access-feedback" class="feedback full" aria-live="polite"></div>
+        </form>
+      </article>
+    </section>
+  </template>
+  <script src="../../assets/js/config.js?v=20260415-4"></script>
+  <script src="../../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../../assets/js/app.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/responsaveis.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaResponsaveis.mountCadastroPage();
+  </script>
+</body>
+</html>

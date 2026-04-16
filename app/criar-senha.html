@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Criar senha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260415-4">
+</head>
+<body class="login-body">
+  <main class="login-layout">
+    <section class="login-hero">
+      <span class="eyebrow">Primeiro acesso</span>
+      <h1>Crie sua nova senha</h1>
+      <p>No primeiro login do responsavel, o Agenda Gama abre esta tela para definir uma senha pessoal e segura antes de entrar no sistema.</p>
+
+      <div class="hero-grid">
+        <article class="hero-card">
+          <h2>Convite por e-mail</h2>
+          <p>O cadastro do responsavel dispara um convite para a caixa de entrada com link de acesso.</p>
+        </article>
+        <article class="hero-card">
+          <h2>Troca obrigatoria</h2>
+          <p>Antes de entrar no painel, o usuario precisa criar a propria senha.</p>
+        </article>
+        <article class="hero-card">
+          <h2>Acesso protegido</h2>
+          <p>Depois de salvar a nova senha, o acesso segue normalmente com o novo perfil.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-card">
+        <span class="brand-badge brand-badge-logo">
+          <img src="../assets/images/logo-gama.png" alt="Logo do Colegio Gamaliel">
+        </span>
+        <h2>Definir nova senha</h2>
+        <p class="muted">Preencha a senha que sera usada a partir do proximo acesso.</p>
+
+        <div id="first-access-user" class="hint-box"></div>
+
+        <form id="first-access-form" class="stack-md">
+          <label class="field">
+            <span>Nova senha</span>
+            <input type="password" name="password" placeholder="Digite a nova senha" required>
+          </label>
+
+          <label class="field">
+            <span>Confirmar nova senha</span>
+            <input type="password" name="confirmPassword" placeholder="Repita a nova senha" required>
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-block">Salvar nova senha</button>
+        </form>
+
+        <div id="first-access-feedback" class="feedback" aria-live="polite"></div>
+
+        <div class="hint-box">
+          <p>Use pelo menos 6 caracteres. Depois de salvar, o acesso segue para o painel.</p>
+        </div>
+
+        <div class="action-row">
+          <button type="button" id="first-access-logout" class="btn btn-secondary">Sair</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../assets/js/auth.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaAuth.mountFirstAccess();
+  </script>
+</body>
+</html>

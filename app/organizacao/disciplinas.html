@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Disciplinas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+</head>
+<body data-page="disciplinas" data-roles="administrador,funcionarios">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">OrganizaÃ§Ã£o</span>
+        <h1>Disciplinas cadastradas</h1>
+        <p>Visualize e gerencie os componentes curriculares registrados.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Total de disciplinas</span>
+          <strong id="total-disciplinas">00</strong>
+        </article>
+        <a class="btn btn-primary" href="cadastro-disciplinas.html">Nova disciplina</a>
+      </div>
+    </section>
+    <section>
+      <article class="table-card">
+        <h3>Disciplinas cadastradas</h3>
+        <p>Consulta rÃ¡pida da grade curricular cadastrada.</p>
+        <div class="table-wrapper">
+          <table><thead><tr><th>Disciplina</th><th>Carga horÃ¡ria</th><th>Etapa</th></tr></thead><tbody id="disciplinas-table-body"></tbody></table>
+        </div>
+        <p id="disciplinas-empty" class="empty-state" hidden>Nenhuma disciplina cadastrada ainda.</p>
+      </article>
+    </section>
+  </template>
+  <script src="../../assets/js/config.js?v=20260415-4"></script>
+  <script src="../../assets/js/supabase.js?v=20260415-4"></script>
+  <script src="../../assets/js/auth.js?v=20260415-4"></script>
+  <script src="../../assets/js/app.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaForms.mountCrud({
+      storageKey: "disciplinas",
+      tableBodyId: "disciplinas-table-body",
+      emptyStateId: "disciplinas-empty",
+      totalId: "total-disciplinas",
+      editPageUrl: "cadastro-disciplinas.html",
+      emptyMessage: "Nenhuma disciplina cadastrada ainda.",
+      columns: [{ key: "nome" }, { key: "carga" }, { key: "etapa", type: "tag" }],
+      seedData: [
+        { nome: "MatemÃ¡tica", carga: "4 aulas/semana", etapa: "Ensino Fundamental" },
+        { nome: "HistÃ³ria", carga: "2 aulas/semana", etapa: "Ensino Fundamental" }
+      ]
+    });
+  </script>
+</body>
+</html>
+
