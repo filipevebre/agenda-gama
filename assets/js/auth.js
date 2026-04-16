@@ -195,11 +195,21 @@
     }
   }
 
-  function showLoginFeedbackFromQuery(feedback) {
+  async function showLoginFeedbackFromQuery(feedback) {
     if (!feedback) return;
 
     const url = new URL(window.location.href);
+    const shouldForceLogout = url.searchParams.get("force-logout") === "1";
+
+    if (shouldForceLogout) {
+      await clearSession();
+      url.searchParams.delete("force-logout");
+    }
+
     if (url.searchParams.get("password-created") !== "1") {
+      if (shouldForceLogout) {
+        window.history.replaceState({}, "", url.toString());
+      }
       return;
     }
 
@@ -300,7 +310,7 @@
 
     const supabaseEnabled = await isSupabaseEnabled();
     syncLoginModeUi(supabaseEnabled);
-    showLoginFeedbackFromQuery(feedback);
+    await showLoginFeedbackFromQuery(feedback);
 
     if (supabaseEnabled) {
       await mountSupabaseLogin(form, feedback, activeSession);
@@ -354,7 +364,8 @@
       await refreshSupabaseUsers();
 
       if (!cachedSession.firstAccessPending) {
-        window.location.href = "dashboard.html";
+        await clearSession();
+        window.location.href = "../index.html?password-created=1";
         return;
       }
     } else {
@@ -366,7 +377,8 @@
 
       cachedSession = session;
       if (!session.firstAccessPending) {
-        window.location.href = "dashboard.html";
+        clearLocalSession();
+        window.location.href = "../index.html?password-created=1";
         return;
       }
     }
@@ -456,7 +468,7 @@
         feedback.className = "feedback success";
 
         setTimeout(function () {
-          window.location.href = "../index.html?password-created=1";
+          window.location.href = "../index.html?password-created=1&force-logout=1";
         }, 700);
       } catch (error) {
         feedback.textContent = error?.message || "Nao foi possivel concluir a criacao da senha agora.";
