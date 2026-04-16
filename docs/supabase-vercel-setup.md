@@ -4,7 +4,7 @@
 
 - Frontend estatico: Vercel Hobby
 - Banco, Auth e Edge Functions: Supabase Free
-- Convite por e-mail de responsaveis e professores: Supabase Auth
+- Convite por e-mail de responsaveis, professores e funcionarios: Supabase Auth
 
 ## 1. Configurar o frontend
 
@@ -34,6 +34,7 @@ Se o banco ja estava criado antes do fluxo de convite para professores, rode tam
 
 - [supabase/migrations/20260416_002_professores_access.sql](../supabase/migrations/20260416_002_professores_access.sql)
 - [supabase/migrations/20260416_003_responsaveis_aluno_id.sql](../supabase/migrations/20260416_003_responsaveis_aluno_id.sql)
+- [supabase/migrations/20260416_004_funcionarios_access.sql](../supabase/migrations/20260416_004_funcionarios_access.sql)
 
 Ela cria:
 
@@ -55,6 +56,8 @@ Publique:
 - `delete-responsavel-access`
 - `provision-professor`
 - `delete-professor-access`
+- `provision-funcionario`
+- `delete-funcionario-access`
 
 Arquivos:
 
@@ -62,6 +65,8 @@ Arquivos:
 - [supabase/functions/delete-responsavel-access/index.ts](../supabase/functions/delete-responsavel-access/index.ts)
 - [supabase/functions/provision-professor/index.ts](../supabase/functions/provision-professor/index.ts)
 - [supabase/functions/delete-professor-access/index.ts](../supabase/functions/delete-professor-access/index.ts)
+- [supabase/functions/provision-funcionario/index.ts](../supabase/functions/provision-funcionario/index.ts)
+- [supabase/functions/delete-funcionario-access/index.ts](../supabase/functions/delete-funcionario-access/index.ts)
 
 ## 4. Variaveis das Edge Functions
 
@@ -104,16 +109,16 @@ values (
 );
 ```
 
-## 6. E-mail real para responsaveis e professores
+## 6. E-mail real para responsaveis, professores e funcionarios
 
-O convite de responsavel e professor usa o fluxo nativo do Supabase:
+O convite de responsavel, professor e funcionario usa o fluxo nativo do Supabase:
 
-- a secretaria cadastra o responsavel
+- a secretaria cadastra o perfil
 - a Edge Function chama `inviteUserByEmail`
 - o Supabase envia o convite por e-mail
-- o responsavel abre o link
+- o usuario abre o link
 - o app leva para `app/criar-senha.html`
-- o responsavel define a senha no primeiro acesso
+- o usuario define a senha no primeiro acesso
 
 ## 7. SMTP
 

@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda Gama | Novo Funcionário</title>
+  <title>Agenda Gama | Novo Funcionario</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-2">
 </head>
 <body data-page="equipe" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">Organização</span>
+        <span class="pill">Organizacao</span>
         <h1>Cadastro da equipe</h1>
-        <p>Cadastre funcionários em uma página exclusiva para inclusão e edição.</p>
+        <p>Cadastre ou edite funcionarios em uma pagina exclusiva de formulario.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -28,38 +28,39 @@
     </section>
     <section>
       <article class="panel">
-        <div class="section-heading"><div><h2>Novo funcionário</h2><p>Defina cargo, setor e contato para manter a equipe administrativa organizada.</p></div></div>
+        <div class="section-heading">
+          <div>
+            <h2>Novo funcionario</h2>
+            <p>Defina cargo, setor, contato e e-mail para liberar o acesso do colaborador ao app.</p>
+          </div>
+        </div>
         <form id="equipe-form" class="form-grid">
-          <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: João Pereira" required></label>
-          <label class="field"><span>Cargo</span><select name="cargo" required><option value="">Selecione</option><option>Secretário</option><option>Diretor</option><option>Financeiro</option><option>Coordenação</option><option>Recepção</option><option>Outro</option></select></label>
+          <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: Joao Pereira" required></label>
+          <label class="field"><span>Cargo</span><select name="cargo" required><option value="">Selecione</option><option>Secretario</option><option>Diretor</option><option>Financeiro</option><option>Coordenacao</option><option>Recepcao</option><option>Outro</option></select></label>
           <label class="field"><span>Setor</span><input name="setor" placeholder="Ex.: Secretaria" required></label>
           <label class="field"><span>Contato</span><input name="contato" placeholder="(00) 00000-0000" required></label>
-          <button type="submit" class="btn btn-primary full">Salvar funcionário</button>
+          <label class="field full"><span>E-mail</span><input name="email" type="email" placeholder="funcionario@escola.com" required></label>
+
+          <div class="hint-box full">
+            <p>Ao salvar, o sistema cria o perfil do funcionario e envia um convite por e-mail para definir a senha no primeiro acesso.</p>
+          </div>
+
+          <button type="submit" class="btn btn-primary full">Salvar funcionario</button>
+          <div id="equipe-access-feedback" class="feedback full" aria-live="polite"></div>
         </form>
       </article>
     </section>
   </template>
-  <script src="../../assets/js/config.js?v=20260415-4"></script>
-  <script src="../../assets/js/supabase.js?v=20260416-4"></script>
-  <script src="../../assets/js/auth.js?v=20260416-4"></script>
-  <script src="../../assets/js/app.js?v=20260415-4"></script>
-  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
-  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/config.js?v=20260416-2"></script>
+  <script src="../../assets/js/supabase.js?v=20260416-2"></script>
+  <script src="../../assets/js/auth.js?v=20260416-2"></script>
+  <script src="../../assets/js/app.js?v=20260416-2"></script>
+  <script src="../../assets/js/data-store.js?v=20260416-2"></script>
+  <script src="../../assets/js/forms.js?v=20260416-2"></script>
+  <script src="../../assets/js/equipe.js?v=20260416-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
-    window.AgendaGamaForms.mountCrud({
-      storageKey: "equipe",
-      formId: "equipe-form",
-      totalId: "total-equipe",
-      redirectAfterSubmit: "equipe.html",
-      cancelRedirect: "equipe.html",
-      columns: [{ key: "nome" }, { key: "cargo", type: "tag" }, { key: "setor" }, { key: "contato" }],
-      seedData: [
-        { nome: "Lúcia Mendes", cargo: "Diretor", setor: "Direção", contato: "(11) 99999-1001" },
-        { nome: "Rafael Costa", cargo: "Secretário", setor: "Secretaria", contato: "(11) 99999-1002" }
-      ]
-    });
+    window.AgendaGamaEquipe.mountCadastroPage();
   </script>
 </body>
 </html>
-

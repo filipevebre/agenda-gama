@@ -56,10 +56,13 @@ create table if not exists public.disciplinas (
 
 create table if not exists public.equipe (
   id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid references auth.users (id) on delete set null,
   nome text not null,
   cargo text not null,
   setor text not null,
   contato text not null,
+  email text not null,
+  access_status text not null default 'Convite enviado',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );

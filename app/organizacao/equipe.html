@@ -7,58 +7,47 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-2">
 </head>
 <body data-page="equipe" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">Organização</span>
+        <span class="pill">Organizacao</span>
         <h1>Equipe cadastrada</h1>
-        <p>Visualize e gerencie os funcionários da escola e seus cargos.</p>
+        <p>Visualize e gerencie os funcionarios da escola, seus cargos e o acesso ao app.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
           <span>Total da equipe</span>
           <strong id="total-equipe">00</strong>
         </article>
-        <a class="btn btn-primary" href="cadastro-equipe.html">Novo funcionário</a>
+        <a class="btn btn-primary" href="cadastro-equipe.html">Novo funcionario</a>
       </div>
     </section>
+    <section id="equipe-access-banner" hidden></section>
     <section>
       <article class="table-card">
         <h3>Equipe cadastrada</h3>
-        <p>Visualize rapidamente cargos e setores da equipe escolar.</p>
+        <p>Veja rapidamente cargos, setores e como esta o acesso de cada funcionario.</p>
         <div class="table-wrapper">
-          <table><thead><tr><th>Nome</th><th>Cargo</th><th>Setor</th><th>Contato</th></tr></thead><tbody id="equipe-table-body"></tbody></table>
+          <table><thead><tr><th>Nome</th><th>Cargo</th><th>Setor</th><th>Contato</th><th>E-mail</th><th>Acesso</th></tr></thead><tbody id="equipe-table-body"></tbody></table>
         </div>
-        <p id="equipe-empty" class="empty-state" hidden>Nenhum funcionário cadastrado ainda.</p>
+        <p id="equipe-empty" class="empty-state" hidden>Nenhum funcionario cadastrado ainda.</p>
       </article>
     </section>
   </template>
-  <script src="../../assets/js/config.js?v=20260415-4"></script>
-  <script src="../../assets/js/supabase.js?v=20260416-4"></script>
-  <script src="../../assets/js/auth.js?v=20260416-4"></script>
-  <script src="../../assets/js/app.js?v=20260415-4"></script>
-  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
-  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/config.js?v=20260416-2"></script>
+  <script src="../../assets/js/supabase.js?v=20260416-2"></script>
+  <script src="../../assets/js/auth.js?v=20260416-2"></script>
+  <script src="../../assets/js/app.js?v=20260416-2"></script>
+  <script src="../../assets/js/data-store.js?v=20260416-2"></script>
+  <script src="../../assets/js/forms.js?v=20260416-2"></script>
+  <script src="../../assets/js/equipe.js?v=20260416-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
-    window.AgendaGamaForms.mountCrud({
-      storageKey: "equipe",
-      tableBodyId: "equipe-table-body",
-      emptyStateId: "equipe-empty",
-      totalId: "total-equipe",
-      editPageUrl: "cadastro-equipe.html",
-      emptyMessage: "Nenhum funcionário cadastrado ainda.",
-      columns: [{ key: "nome" }, { key: "cargo", type: "tag" }, { key: "setor" }, { key: "contato" }],
-      seedData: [
-        { nome: "Lúcia Mendes", cargo: "Diretor", setor: "Direção", contato: "(11) 99999-1001" },
-        { nome: "Rafael Costa", cargo: "Secretário", setor: "Secretaria", contato: "(11) 99999-1002" }
-      ]
-    });
+    window.AgendaGamaEquipe.mountListPage();
   </script>
 </body>
 </html>
-

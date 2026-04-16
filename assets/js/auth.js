@@ -83,6 +83,23 @@
     cachedSession = null;
   }
 
+  function updateLocalAccessStatus(tableKey, email, nextStatus) {
+    const storageKey = `agenda-gama-${tableKey}`;
+    const records = readJson(storageKey, null);
+    if (!Array.isArray(records) || !records.length) {
+      return;
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const nextRecords = records.map((item) => (
+      normalizeEmail(item?.email) === normalizedEmail
+        ? { ...item, access_status: nextStatus }
+        : item
+    ));
+
+    writeJson(storageKey, nextRecords);
+  }
+
   function mapProfileToSession(user, profile) {
     return {
       userId: user.id,
@@ -186,8 +203,8 @@
 
     if (helperText) {
       helperText.textContent = useSupabase
-        ? "Entre com a conta criada no Supabase. Responsaveis e professores cadastrados recebem convite por e-mail e definem a senha no primeiro acesso."
-        : "Use um dos perfis demonstrativos ou entre com o e-mail do responsavel ou professor cadastrado pela secretaria.";
+        ? "Entre com a conta criada no Supabase. Responsaveis, professores e funcionarios cadastrados recebem convite por e-mail e definem a senha no primeiro acesso."
+        : "Use um dos perfis demonstrativos ou entre com o e-mail do responsavel, professor ou funcionario cadastrado pela secretaria.";
     }
 
     if (demoUsers) {
@@ -419,9 +436,10 @@
           await window.AgendaGamaSupabase.updateProfile(cachedSession.userId, { first_access_pending: false });
 
           try {
-            const [responsaveis, professores] = await Promise.all([
+            const [responsaveis, professores, equipe] = await Promise.all([
               window.AgendaGamaSupabase.fetchTable("responsaveis"),
-              window.AgendaGamaSupabase.fetchTable("professores")
+              window.AgendaGamaSupabase.fetchTable("professores"),
+              window.AgendaGamaSupabase.fetchTable("equipe")
             ]);
 
             const nextResponsaveis = responsaveis
@@ -438,7 +456,14 @@
                 access_status: "Acesso ativo"
               }));
 
-            await Promise.all([...nextResponsaveis, ...nextProfessores]);
+            const nextEquipe = equipe
+              .filter((item) => item.auth_user_id === cachedSession.userId)
+              .map((item) => window.AgendaGamaSupabase.saveRow("equipe", {
+                ...item,
+                access_status: "Acesso ativo"
+              }));
+
+            await Promise.all([...nextResponsaveis, ...nextProfessores, ...nextEquipe]);
           } catch (error) {
             // Silencioso para nao bloquear a troca de senha caso a tabela ainda nao esteja populada.
           }
@@ -461,6 +486,9 @@
           };
           writeJson(LOCAL_USERS_KEY, users);
           cachedSession = users[userIndex];
+          updateLocalAccessStatus("responsaveis", cachedSession.email, "Acesso ativo");
+          updateLocalAccessStatus("professores", cachedSession.email, "Acesso ativo");
+          updateLocalAccessStatus("equipe", cachedSession.email, "Acesso ativo");
           clearLocalSession();
         }
 
@@ -570,6 +598,15 @@
     });
   }
 
+  function provisionFuncionarioAccess(record, options) {
+    return provisionLocalRoleAccess(record, {
+      ...options,
+      role: "funcionarios",
+      roleLabel: "Funcionario",
+      accessTitle: "Acesso de funcionario preparado em modo local"
+    });
+  }
+
   function removeLocalRoleAccess(email, remainingRecords, role) {
     const normalizedEmail = normalizeEmail(email);
     const stillInUse = (remainingRecords || []).some((item) => normalizeEmail(item.email) === normalizedEmail);
@@ -591,6 +628,10 @@
     removeLocalRoleAccess(email, remainingRecords, "professores");
   }
 
+  function removeFuncionarioAccess(email, remainingRecords) {
+    removeLocalRoleAccess(email, remainingRecords, "funcionarios");
+  }
+
   window.AgendaGamaAuth = {
     mountLogin,
     mountFirstAccess,
@@ -602,6 +643,8 @@
     removeResponsibleAccess,
     provisionProfessorAccess,
     removeProfessorAccess,
+    provisionFuncionarioAccess,
+    removeFuncionarioAccess,
     isSupabaseEnabled
   };
 })();
