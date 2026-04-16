@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-8">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -28,25 +28,131 @@
     </section>
     <section>
       <article class="panel">
-        <div class="section-heading"><div><h2>Novo aluno</h2><p>Cadastre matrÃ­cula, turma e turno do estudante.</p></div></div>
+        <div class="section-heading"><div><h2>Novo aluno</h2><p>Cadastre matricula e vincule o estudante a uma turma ja cadastrada.</p></div></div>
         <form id="alunos-form" class="form-grid">
           <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: Ana Clara Silva" required></label>
           <label class="field"><span>MatrÃ­cula</span><input name="matricula" placeholder="Ex.: 20260045" required></label>
-          <label class="field"><span>Turma</span><input name="turma" placeholder="Ex.: 5Âº Ano B" required></label>
-          <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>ManhÃ£</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
+          <label class="field full">
+            <span>Turma</span>
+            <input id="aluno-turma-search" name="turma_busca" list="aluno-turmas-list" placeholder="Digite o nome da turma cadastrada" autocomplete="off" required>
+            <datalist id="aluno-turmas-list"></datalist>
+            <input type="hidden" name="turma">
+            <p class="muted">Digite o inicio do nome da turma e selecione uma opcao ja cadastrada.</p>
+            <div id="aluno-turma-selected" class="hint-box" hidden></div>
+          </label>
+          <label class="field">
+            <span>Turno da turma</span>
+            <input id="aluno-turno-display" placeholder="Selecione uma turma" readonly>
+            <input type="hidden" name="turno">
+          </label>
           <button type="submit" class="btn btn-primary full">Salvar aluno</button>
         </form>
       </article>
     </section>
   </template>
-  <script src="../../assets/js/config.js?v=20260415-4"></script>
-  <script src="../../assets/js/supabase.js?v=20260416-4"></script>
-  <script src="../../assets/js/auth.js?v=20260416-4"></script>
-  <script src="../../assets/js/app.js?v=20260415-4"></script>
-  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
-  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/config.js?v=20260416-8"></script>
+  <script src="../../assets/js/supabase.js?v=20260416-8"></script>
+  <script src="../../assets/js/auth.js?v=20260416-8"></script>
+  <script src="../../assets/js/app.js?v=20260416-8"></script>
+  <script src="../../assets/js/data-store.js?v=20260416-8"></script>
+  <script src="../../assets/js/forms.js?v=20260416-8"></script>
   <script>
     window.AgendaGamaApp.mountShell();
+
+    const TURMAS_SEED = [
+      { id: "turma-demo-1", nome: "1o Ano A", turno: "Manha", sala: "Sala 01", ano: "2026" },
+      { id: "turma-demo-2", nome: "5o Ano B", turno: "Tarde", sala: "Sala 08", ano: "2026" }
+    ];
+
+    let turmasCache = [];
+
+    function normalizeText(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function findTurmaByName(nome) {
+      const normalizedName = normalizeText(nome);
+      return turmasCache.find((turma) => normalizeText(turma.nome) === normalizedName) || null;
+    }
+
+    function renderSelectedTurma(turma) {
+      const turmaField = document.getElementById("aluno-turma-search");
+      const turnoDisplay = document.getElementById("aluno-turno-display");
+      const selectedBox = document.getElementById("aluno-turma-selected");
+      const hiddenTurma = document.querySelector('#alunos-form input[name="turma"]');
+      const hiddenTurno = document.querySelector('#alunos-form input[name="turno"]');
+
+      if (!turma) {
+        if (hiddenTurma) hiddenTurma.value = "";
+        if (hiddenTurno) hiddenTurno.value = "";
+        if (turnoDisplay) turnoDisplay.value = "";
+        if (selectedBox) {
+          selectedBox.hidden = true;
+          selectedBox.innerHTML = "";
+        }
+        if (turmaField) {
+          turmaField.setCustomValidity("Selecione uma turma ja cadastrada na lista.");
+        }
+        return;
+      }
+
+      if (hiddenTurma) hiddenTurma.value = turma.nome;
+      if (hiddenTurno) hiddenTurno.value = turma.turno || "";
+      if (turnoDisplay) turnoDisplay.value = turma.turno || "";
+      if (turmaField) {
+        turmaField.value = turma.nome;
+        turmaField.setCustomValidity("");
+      }
+      if (selectedBox) {
+        selectedBox.hidden = false;
+        selectedBox.innerHTML = `
+          <p><strong>Turma selecionada:</strong> ${turma.nome}</p>
+          <p><strong>Turno:</strong> ${turma.turno || "-"} | <strong>Sala:</strong> ${turma.sala || "-"} | <strong>Ano:</strong> ${turma.ano || "-"}</p>
+        `;
+      }
+    }
+
+    async function carregarTurmas() {
+      const turmaField = document.getElementById("aluno-turma-search");
+      const datalist = document.getElementById("aluno-turmas-list");
+
+      if (!turmaField || !datalist) {
+        window.addEventListener("agenda-shell-ready", function handleReady() {
+          window.removeEventListener("agenda-shell-ready", handleReady);
+          carregarTurmas();
+        });
+        return;
+      }
+
+      turmasCache = await window.AgendaGamaDataStore.list("turmas", TURMAS_SEED);
+      datalist.innerHTML = turmasCache.map((turma) => (
+        `<option value="${turma.nome}">${turma.turno || ""} | ${turma.ano || ""}</option>`
+      )).join("");
+
+      turmaField.addEventListener("input", function () {
+        const turma = findTurmaByName(turmaField.value);
+        if (turma) {
+          renderSelectedTurma(turma);
+          return;
+        }
+
+        const normalizedSearch = normalizeText(turmaField.value);
+        if (!normalizedSearch) {
+          renderSelectedTurma(null);
+          return;
+        }
+
+        const exactTyped = turmasCache.find((item) => normalizeText(item.nome) === normalizedSearch);
+        renderSelectedTurma(exactTyped);
+      });
+
+      turmaField.addEventListener("change", function () {
+        renderSelectedTurma(findTurmaByName(turmaField.value));
+      });
+    }
+
+    carregarTurmas();
+
     window.AgendaGamaForms.mountCrud({
       storageKey: "alunos",
       formId: "alunos-form",
@@ -54,9 +160,44 @@
       redirectAfterSubmit: "alunos.html",
       cancelRedirect: "alunos.html",
       columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
+      beforeSave: async function ({ data }) {
+        const turma = findTurmaByName(data.turma_busca || data.turma);
+        if (!turma) {
+          return { error: "Selecione uma turma ja cadastrada para vincular o aluno." };
+        }
+
+        renderSelectedTurma(turma);
+
+        return {
+          data: {
+            ...data,
+            turma: turma.nome,
+            turno: turma.turno || ""
+          }
+        };
+      },
+      populateForm: function (form, item) {
+        form.elements.namedItem("nome").value = item.nome || "";
+        form.elements.namedItem("matricula").value = item.matricula || "";
+
+        const turma = findTurmaByName(item.turma);
+        if (turma) {
+          renderSelectedTurma(turma);
+          return;
+        }
+
+        document.getElementById("aluno-turma-search").value = item.turma || "";
+        document.getElementById("aluno-turno-display").value = item.turno || "";
+        form.elements.namedItem("turma").value = item.turma || "";
+        form.elements.namedItem("turno").value = item.turno || "";
+        document.getElementById("aluno-turma-search").setCustomValidity("");
+      },
+      afterSubmit: function () {
+        renderSelectedTurma(null);
+      },
       seedData: [
-        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5Âº Ano B", turno: "Tarde" },
-        { nome: "Pedro Henrique", matricula: "20260051", turma: "1Âº Ano A", turno: "ManhÃ£" }
+        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5o Ano B", turno: "Tarde" },
+        { nome: "Pedro Henrique", matricula: "20260051", turma: "1o Ano A", turno: "Manha" }
       ]
     });
   </script>
