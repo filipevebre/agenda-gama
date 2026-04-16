@@ -23,6 +23,7 @@
           <span>Total de turmas</span>
           <strong id="total-turmas">00</strong>
         </article>
+        <a class="btn btn-secondary" href="#progressao-alunos">Progredir alunos</a>
         <a class="btn btn-primary" href="cadastro-turmas.html">Nova turma</a>
       </div>
     </section>
@@ -36,6 +37,33 @@
         <p id="turmas-empty" class="empty-state" hidden>Nenhuma turma cadastrada ainda.</p>
       </article>
     </section>
+    <section id="progressao-alunos">
+      <article class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Progressao de alunos</h2>
+            <p>Mova todos os alunos de uma turma para outra no inicio do novo ano letivo.</p>
+          </div>
+        </div>
+        <form id="progressao-form" class="form-grid">
+          <label class="field">
+            <span>Turma de origem</span>
+            <select id="progressao-origem" name="origem" required>
+              <option value="">Selecione a turma atual</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Turma de destino</span>
+            <select id="progressao-destino" name="destino" required>
+              <option value="">Selecione a proxima turma</option>
+            </select>
+          </label>
+          <div id="progressao-summary" class="hint-box full" hidden></div>
+          <button type="submit" id="progressao-submit" class="btn btn-primary full">Progredir alunos da turma</button>
+          <div id="progressao-feedback" class="feedback full" aria-live="polite"></div>
+        </form>
+      </article>
+    </section>
   </template>
   <script src="../../assets/js/config.js?v=20260415-4"></script>
   <script src="../../assets/js/supabase.js?v=20260416-4"></script>
@@ -43,21 +71,10 @@
   <script src="../../assets/js/app.js?v=20260415-4"></script>
   <script src="../../assets/js/data-store.js?v=20260415-4"></script>
   <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/turmas.js?v=20260416-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
-    window.AgendaGamaForms.mountCrud({
-      storageKey: "turmas",
-      tableBodyId: "turmas-table-body",
-      emptyStateId: "turmas-empty",
-      totalId: "total-turmas",
-      editPageUrl: "cadastro-turmas.html",
-      emptyMessage: "Nenhuma turma cadastrada ainda.",
-      columns: [{ key: "nome" }, { key: "turno", type: "tag" }, { key: "sala" }, { key: "ano" }],
-      seedData: [
-        { nome: "1Âº Ano A", turno: "ManhÃ£", sala: "Sala 01", ano: "2026" },
-        { nome: "5Âº Ano B", turno: "Tarde", sala: "Sala 08", ano: "2026" }
-      ]
-    });
+    window.AgendaGamaTurmas.mountListPage();
   </script>
 </body>
 </html>
