@@ -8,8 +8,6 @@
 
   const LOCAL_USERS_KEY = "agenda-gama-users";
   const LOCAL_SESSION_KEY = "agenda-gama-session";
-  const RESPONSAVEIS_KEY = "agenda-gama-responsaveis";
-
   let cachedSession = null;
   let cachedUsers = [];
 
@@ -188,8 +186,8 @@
 
     if (helperText) {
       helperText.textContent = useSupabase
-        ? "Entre com a conta criada no Supabase. Responsaveis cadastrados recebem convite por e-mail e definem a senha no primeiro acesso."
-        : "Use um dos perfis demonstrativos ou entre com o e-mail do responsavel cadastrado pela secretaria.";
+        ? "Entre com a conta criada no Supabase. Responsaveis e professores cadastrados recebem convite por e-mail e definem a senha no primeiro acesso."
+        : "Use um dos perfis demonstrativos ou entre com o e-mail do responsavel ou professor cadastrado pela secretaria.";
     }
 
     if (demoUsers) {
@@ -409,12 +407,26 @@
           await window.AgendaGamaSupabase.updateProfile(cachedSession.userId, { first_access_pending: false });
 
           try {
-            const responsaveis = await window.AgendaGamaSupabase.fetchTable("responsaveis");
-            const currentRows = responsaveis.filter((item) => item.auth_user_id === cachedSession.userId);
-            await Promise.all(currentRows.map((item) => window.AgendaGamaSupabase.saveRow("responsaveis", {
-              ...item,
-              access_status: "Acesso ativo"
-            })));
+            const [responsaveis, professores] = await Promise.all([
+              window.AgendaGamaSupabase.fetchTable("responsaveis"),
+              window.AgendaGamaSupabase.fetchTable("professores")
+            ]);
+
+            const nextResponsaveis = responsaveis
+              .filter((item) => item.auth_user_id === cachedSession.userId)
+              .map((item) => window.AgendaGamaSupabase.saveRow("responsaveis", {
+                ...item,
+                access_status: "Acesso ativo"
+              }));
+
+            const nextProfessores = professores
+              .filter((item) => item.auth_user_id === cachedSession.userId)
+              .map((item) => window.AgendaGamaSupabase.saveRow("professores", {
+                ...item,
+                access_status: "Acesso ativo"
+              }));
+
+            await Promise.all([...nextResponsaveis, ...nextProfessores]);
           } catch (error) {
             // Silencioso para nao bloquear a troca de senha caso a tabela ainda nao esteja populada.
           }
@@ -479,26 +491,29 @@
     return session;
   }
 
-  function provisionResponsibleAccess(record, options) {
+  function provisionLocalRoleAccess(record, options) {
     const normalizedEmail = normalizeEmail(record.email);
     if (!normalizedEmail) {
-      return { ok: false, error: "Informe um e-mail valido para o responsavel." };
+      return { ok: false, error: "Informe um e-mail valido para esse cadastro." };
     }
 
     const previousRecord = options?.previousRecord || null;
+    const role = options?.role || "responsaveis";
+    const roleLabel = options?.roleLabel || "Responsavel";
+    const accessTitle = options?.accessTitle || "Acesso preparado em modo local";
     const users = getLocalUsers();
-    const duplicateUser = users.find((user) => normalizeEmail(user.email) === normalizedEmail && user.role !== "responsaveis");
+    const duplicateUser = users.find((user) => normalizeEmail(user.email) === normalizedEmail && user.role !== role);
     if (duplicateUser) {
       return { ok: false, error: "Este e-mail ja esta em uso em outro perfil do sistema." };
     }
 
-    const existingResponsibleUser = users.find((user) => normalizeEmail(user.email) === normalizedEmail && user.role === "responsaveis");
+    const existingRoleUser = users.find((user) => normalizeEmail(user.email) === normalizedEmail && user.role === role);
     const temporaryPassword = `gama${Math.floor(100000 + Math.random() * 900000)}!`;
-    const nextUser = existingResponsibleUser || {
+    const nextUser = existingRoleUser || {
       name: record.nome,
       email: normalizedEmail,
-      role: "responsaveis",
-      roleLabel: "Responsavel",
+      role,
+      roleLabel,
       canApprove: false,
       password: temporaryPassword,
       firstAccessPending: true
@@ -519,23 +534,49 @@
       notice: {
         to: normalizedEmail,
         deliveryStatus: "registrada-no-sistema",
-        title: "Acesso preparado em modo local",
+        title: accessTitle,
         body: `Conta local criada para ${record.nome}. Senha temporaria: ${temporaryPassword}`
       }
     };
   }
 
-  function removeResponsibleAccess(email, remainingRecords) {
+  function provisionResponsibleAccess(record, options) {
+    return provisionLocalRoleAccess(record, {
+      ...options,
+      role: "responsaveis",
+      roleLabel: "Responsavel",
+      accessTitle: "Acesso de responsavel preparado em modo local"
+    });
+  }
+
+  function provisionProfessorAccess(record, options) {
+    return provisionLocalRoleAccess(record, {
+      ...options,
+      role: "professores",
+      roleLabel: "Professor",
+      accessTitle: "Acesso de professor preparado em modo local"
+    });
+  }
+
+  function removeLocalRoleAccess(email, remainingRecords, role) {
     const normalizedEmail = normalizeEmail(email);
     const stillInUse = (remainingRecords || []).some((item) => normalizeEmail(item.email) === normalizedEmail);
     if (stillInUse) return;
 
-    const nextUsers = getLocalUsers().filter((user) => !(user.role === "responsaveis" && normalizeEmail(user.email) === normalizedEmail));
+    const nextUsers = getLocalUsers().filter((user) => !(user.role === role && normalizeEmail(user.email) === normalizedEmail));
     writeJson(LOCAL_USERS_KEY, nextUsers);
 
     if (cachedSession && normalizeEmail(cachedSession.email) === normalizedEmail) {
       clearLocalSession();
     }
+  }
+
+  function removeResponsibleAccess(email, remainingRecords) {
+    removeLocalRoleAccess(email, remainingRecords, "responsaveis");
+  }
+
+  function removeProfessorAccess(email, remainingRecords) {
+    removeLocalRoleAccess(email, remainingRecords, "professores");
   }
 
   window.AgendaGamaAuth = {
@@ -547,6 +588,8 @@
     getUsers,
     provisionResponsibleAccess,
     removeResponsibleAccess,
+    provisionProfessorAccess,
+    removeProfessorAccess,
     isSupabaseEnabled
   };
 })();

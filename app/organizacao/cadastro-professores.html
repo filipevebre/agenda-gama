@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-5">
 </head>
 <body data-page="professores" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -35,75 +35,25 @@
           <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>ManhÃ£</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
           <label class="field"><span>E-mail</span><input name="email" type="email" placeholder="professor@escola.com" required></label>
           <p class="muted full">Segure `Ctrl` ou `Cmd` para selecionar mais de uma disciplina.</p>
+          <div class="hint-box full">
+            <p>Ao salvar, o sistema cria o perfil do professor e envia um convite por e-mail para definir a senha no primeiro acesso.</p>
+          </div>
           <button type="submit" class="btn btn-primary full">Salvar professor</button>
+          <div id="professor-access-feedback" class="feedback full" aria-live="polite"></div>
         </form>
       </article>
     </section>
   </template>
-  <script src="../../assets/js/config.js?v=20260415-4"></script>
-  <script src="../../assets/js/supabase.js?v=20260416-4"></script>
-  <script src="../../assets/js/auth.js?v=20260416-4"></script>
-  <script src="../../assets/js/app.js?v=20260415-4"></script>
-  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
-  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/config.js?v=20260416-5"></script>
+  <script src="../../assets/js/supabase.js?v=20260416-5"></script>
+  <script src="../../assets/js/auth.js?v=20260416-5"></script>
+  <script src="../../assets/js/app.js?v=20260416-5"></script>
+  <script src="../../assets/js/data-store.js?v=20260416-5"></script>
+  <script src="../../assets/js/forms.js?v=20260416-5"></script>
+  <script src="../../assets/js/professores.js?v=20260416-5"></script>
   <script>
     window.AgendaGamaApp.mountShell();
-
-    async function carregarDisciplinas() {
-      const select = document.getElementById("professores-disciplinas");
-      if (!select) {
-        window.addEventListener("agenda-shell-ready", function handleReady() {
-          window.removeEventListener("agenda-shell-ready", handleReady);
-          carregarDisciplinas();
-        });
-        return;
-      }
-
-      const disciplinas = await window.AgendaGamaDataStore.list("disciplinas");
-
-      select.innerHTML = disciplinas.length
-        ? disciplinas.map((disciplina) => `<option value="${disciplina.nome}">${disciplina.nome}</option>`).join("")
-        : '<option value="" disabled>Nenhuma disciplina cadastrada</option>';
-
-      select.size = Math.min(Math.max(disciplinas.length, 3), 6);
-    }
-
-    carregarDisciplinas();
-
-    window.AgendaGamaForms.mountCrud({
-      storageKey: "professores",
-      formId: "professores-form",
-      totalId: "total-professores",
-      redirectAfterSubmit: "professores.html",
-      cancelRedirect: "professores.html",
-      columns: [{ key: "nome" }, { key: "disciplinas" }, { key: "turno", type: "tag" }, { key: "email" }],
-      getFormData: function (form) {
-        const formData = new FormData(form);
-        const disciplinas = Array.from(document.getElementById("professores-disciplinas").selectedOptions).map((option) => option.value);
-        return {
-          nome: String(formData.get("nome") || ""),
-          disciplinas: disciplinas.join(", "),
-          turno: String(formData.get("turno") || ""),
-          email: String(formData.get("email") || "")
-        };
-      },
-      populateForm: function (form, item) {
-        form.elements.namedItem("nome").value = item.nome || "";
-        form.elements.namedItem("turno").value = item.turno || "";
-        form.elements.namedItem("email").value = item.email || "";
-        const selecionadas = String(item.disciplinas || "").split(",").map((disciplina) => disciplina.trim()).filter(Boolean);
-        Array.from(document.getElementById("professores-disciplinas").options).forEach((option) => {
-          option.selected = selecionadas.includes(option.value);
-        });
-      },
-      afterSubmit: function () {
-        document.getElementById("professores-disciplinas").selectedIndex = -1;
-      },
-      seedData: [
-        { nome: "Helena Souza", disciplinas: "MatemÃ¡tica, HistÃ³ria", turno: "ManhÃ£", email: "helena@agendagama.com" },
-        { nome: "Ricardo Lima", disciplinas: "PortuguÃªs", turno: "Tarde", email: "ricardo@agendagama.com" }
-      ]
-    });
+    window.AgendaGamaProfessores.mountCadastroPage();
   </script>
 </body>
 </html>

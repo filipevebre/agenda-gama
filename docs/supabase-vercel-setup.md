@@ -4,7 +4,7 @@
 
 - Frontend estatico: Vercel Hobby
 - Banco, Auth e Edge Functions: Supabase Free
-- Convite por e-mail de responsaveis: Supabase Auth
+- Convite por e-mail de responsaveis e professores: Supabase Auth
 
 ## 1. Configurar o frontend
 
@@ -30,6 +30,10 @@ Execute a migration:
 
 - [supabase/migrations/20260415_001_agenda_gama_init.sql](../supabase/migrations/20260415_001_agenda_gama_init.sql)
 
+Se o banco ja estava criado antes do fluxo de convite para professores, rode tambem:
+
+- [supabase/migrations/20260416_002_professores_access.sql](../supabase/migrations/20260416_002_professores_access.sql)
+
 Ela cria:
 
 - `profiles`
@@ -48,11 +52,15 @@ Publique:
 
 - `provision-responsavel`
 - `delete-responsavel-access`
+- `provision-professor`
+- `delete-professor-access`
 
 Arquivos:
 
 - [supabase/functions/provision-responsavel/index.ts](../supabase/functions/provision-responsavel/index.ts)
 - [supabase/functions/delete-responsavel-access/index.ts](../supabase/functions/delete-responsavel-access/index.ts)
+- [supabase/functions/provision-professor/index.ts](../supabase/functions/provision-professor/index.ts)
+- [supabase/functions/delete-professor-access/index.ts](../supabase/functions/delete-professor-access/index.ts)
 
 ## 4. Variaveis das Edge Functions
 
@@ -95,9 +103,9 @@ values (
 );
 ```
 
-## 6. E-mail real para responsaveis
+## 6. E-mail real para responsaveis e professores
 
-O convite de responsavel usa o fluxo nativo do Supabase:
+O convite de responsavel e professor usa o fluxo nativo do Supabase:
 
 - a secretaria cadastra o responsavel
 - a Edge Function chama `inviteUserByEmail`

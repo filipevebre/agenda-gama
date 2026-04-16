@@ -10,6 +10,18 @@ begin
 end;
 $$;
 
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  email text not null unique,
+  full_name text not null,
+  role text not null check (role in ('administrador', 'funcionarios', 'professores', 'responsaveis')),
+  role_label text not null,
+  can_approve boolean not null default false,
+  first_access_pending boolean not null default false,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
 create or replace function public.current_user_role()
 returns text
 language sql
@@ -22,18 +34,6 @@ as $$
   where id = auth.uid()
   limit 1
 $$;
-
-create table if not exists public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
-  email text not null unique,
-  full_name text not null,
-  role text not null check (role in ('administrador', 'funcionarios', 'professores', 'responsaveis')),
-  role_label text not null,
-  can_approve boolean not null default false,
-  first_access_pending boolean not null default false,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
-);
 
 create table if not exists public.turmas (
   id uuid primary key default gen_random_uuid(),
@@ -66,10 +66,12 @@ create table if not exists public.equipe (
 
 create table if not exists public.professores (
   id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid references auth.users (id) on delete set null,
   nome text not null,
   disciplinas text not null,
   turno text not null,
   email text not null,
+  access_status text not null default 'Convite enviado',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
