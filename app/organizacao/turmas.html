@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260415-4">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-1">
 </head>
 <body data-page="turmas" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -59,6 +59,19 @@
             </select>
           </label>
           <div id="progressao-summary" class="hint-box full" hidden></div>
+          <div id="progressao-students-panel" class="hint-box full" hidden>
+            <div class="student-selection-toolbar">
+              <div>
+                <strong>Alunos para migrar</strong>
+                <p id="progressao-selection-status">Todos os alunos da turma serao migrados por padrao.</p>
+              </div>
+              <div class="action-row">
+                <button type="button" id="progressao-select-all" class="btn btn-secondary btn-sm">Selecionar todos</button>
+                <button type="button" id="progressao-clear-all" class="btn btn-secondary btn-sm">Limpar selecao</button>
+              </div>
+            </div>
+            <div id="progressao-students-list" class="student-selection-list"></div>
+          </div>
           <button type="submit" id="progressao-submit" class="btn btn-primary full">Progredir alunos da turma</button>
           <div id="progressao-feedback" class="feedback full" aria-live="polite"></div>
         </form>
@@ -71,7 +84,7 @@
   <script src="../../assets/js/app.js?v=20260415-4"></script>
   <script src="../../assets/js/data-store.js?v=20260415-4"></script>
   <script src="../../assets/js/forms.js?v=20260415-4"></script>
-  <script src="../../assets/js/turmas.js?v=20260416-1"></script>
+  <script src="../../assets/js/turmas.js?v=20260416-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaTurmas.mountListPage();

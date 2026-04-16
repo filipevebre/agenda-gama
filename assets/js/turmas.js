@@ -11,6 +11,8 @@
 
   let turmasCache = [];
   let alunosCache = [];
+  let selectedStudentIds = new Set();
+  let currentOriginKey = null;
 
   function normalizeText(value) {
     return String(value || "")
@@ -72,6 +74,11 @@
     return alunosCache.filter((aluno) => normalizeText(aluno.turma) === normalizeText(turma.nome));
   }
 
+  function getOriginKey(turma) {
+    if (!turma) return null;
+    return turma.id || normalizeText(turma.nome);
+  }
+
   function setFeedback(message, type) {
     const feedback = document.getElementById("progressao-feedback");
     if (!feedback) return;
@@ -112,6 +119,67 @@
     }
   }
 
+  function ensureSelectedStudents(origem, alunosDaTurma) {
+    const originKey = getOriginKey(origem);
+    const alunoIds = new Set(alunosDaTurma.map((aluno) => aluno.id));
+
+    if (originKey !== currentOriginKey) {
+      currentOriginKey = originKey;
+      selectedStudentIds = new Set(alunosDaTurma.map((aluno) => aluno.id));
+      return;
+    }
+
+    selectedStudentIds = new Set(
+      [...selectedStudentIds].filter((id) => alunoIds.has(id))
+    );
+  }
+
+  function renderStudentSelection() {
+    const origem = findTurma(document.getElementById("progressao-origem")?.value);
+    const panel = document.getElementById("progressao-students-panel");
+    const list = document.getElementById("progressao-students-list");
+    const status = document.getElementById("progressao-selection-status");
+    const selectAllButton = document.getElementById("progressao-select-all");
+    const clearAllButton = document.getElementById("progressao-clear-all");
+
+    if (!panel || !list || !status || !selectAllButton || !clearAllButton) return;
+
+    if (!origem) {
+      panel.hidden = true;
+      list.innerHTML = "";
+      status.textContent = "Todos os alunos da turma serao migrados por padrao.";
+      currentOriginKey = null;
+      selectedStudentIds = new Set();
+      return;
+    }
+
+    const alunosDaTurma = getAlunosDaTurma(origem);
+    ensureSelectedStudents(origem, alunosDaTurma);
+
+    panel.hidden = false;
+    selectAllButton.disabled = !alunosDaTurma.length;
+    clearAllButton.disabled = !alunosDaTurma.length;
+
+    if (!alunosDaTurma.length) {
+      list.innerHTML = '<p class="muted">Nenhum aluno esta vinculado a esta turma no momento.</p>';
+      status.textContent = "Nao ha alunos disponiveis para selecionar nessa turma.";
+      return;
+    }
+
+    const selectedCount = alunosDaTurma.filter((aluno) => selectedStudentIds.has(aluno.id)).length;
+    status.textContent = `${selectedCount} de ${alunosDaTurma.length} aluno(s) selecionado(s) para migrar.`;
+
+    list.innerHTML = alunosDaTurma.map((aluno) => `
+      <label class="student-selection-item">
+        <input type="checkbox" class="progressao-student-checkbox" value="${escapeHtml(aluno.id || "")}" ${selectedStudentIds.has(aluno.id) ? "checked" : ""}>
+        <div>
+          <strong>${escapeHtml(aluno.nome)}</strong>
+          <p>Matricula: ${escapeHtml(aluno.matricula || "-")} | Turno atual: ${escapeHtml(aluno.turno || "-")}</p>
+        </div>
+      </label>
+    `).join("");
+  }
+
   function renderSummary() {
     const origemSelect = document.getElementById("progressao-origem");
     const destinoSelect = document.getElementById("progressao-destino");
@@ -128,13 +196,17 @@
     }
 
     const alunosDaTurma = getAlunosDaTurma(origem);
-    const previewNames = alunosDaTurma.slice(0, 5).map((aluno) => escapeHtml(aluno.nome)).join(", ");
+    ensureSelectedStudents(origem, alunosDaTurma);
+
+    const alunosSelecionados = alunosDaTurma.filter((aluno) => selectedStudentIds.has(aluno.id));
+    const previewNames = alunosSelecionados.slice(0, 5).map((aluno) => escapeHtml(aluno.nome)).join(", ");
 
     summary.hidden = false;
     summary.innerHTML = `
       <p><strong>Turma atual:</strong> ${escapeHtml(origem.nome)} (${escapeHtml(origem.turno || "-")})</p>
       <p><strong>Alunos encontrados:</strong> ${alunosDaTurma.length}</p>
-      ${previewNames ? `<p><strong>Exemplos:</strong> ${previewNames}${alunosDaTurma.length > 5 ? "..." : ""}</p>` : "<p>Nenhum aluno esta vinculado a esta turma no momento.</p>"}
+      <p><strong>Selecionados para migrar:</strong> ${alunosSelecionados.length}</p>
+      ${previewNames ? `<p><strong>Selecionados:</strong> ${previewNames}${alunosSelecionados.length > 5 ? "..." : ""}</p>` : (alunosDaTurma.length ? "<p>Nenhum aluno foi selecionado para migracao.</p>" : "<p>Nenhum aluno esta vinculado a esta turma no momento.</p>")}
       ${destino ? `<p><strong>Destino selecionado:</strong> ${escapeHtml(destino.nome)} (${escapeHtml(destino.turno || "-")})</p>` : "<p>Escolha a turma de destino para concluir a progressao.</p>"}
     `;
   }
@@ -172,7 +244,13 @@
         return;
       }
 
-      for (const aluno of alunosDaTurma) {
+      const alunosSelecionados = alunosDaTurma.filter((aluno) => selectedStudentIds.has(aluno.id));
+      if (!alunosSelecionados.length) {
+        setFeedback("Selecione pelo menos um aluno para migrar de turma.", "error");
+        return;
+      }
+
+      for (const aluno of alunosSelecionados) {
         await window.AgendaGamaDataStore.save("alunos", {
           ...aluno,
           turma: destino.nome,
@@ -181,8 +259,10 @@
       }
 
       await loadData();
+      selectedStudentIds = new Set();
       renderSummary();
-      setFeedback(`${alunosDaTurma.length} aluno(s) foram movidos de ${origem.nome} para ${destino.nome}.`, "success");
+      renderStudentSelection();
+      setFeedback(`${alunosSelecionados.length} aluno(s) foram movidos de ${origem.nome} para ${destino.nome}.`, "success");
     } catch (error) {
       setFeedback(error?.message || "Nao foi possivel concluir a progressao dos alunos agora.", "error");
     } finally {
@@ -202,10 +282,39 @@
     await loadData();
     populateSelectOptions();
     renderSummary();
+    renderStudentSelection();
 
-    origemSelect.addEventListener("change", renderSummary);
+    origemSelect.addEventListener("change", function () {
+      renderSummary();
+      renderStudentSelection();
+    });
     destinoSelect.addEventListener("change", renderSummary);
     form.addEventListener("submit", runProgression);
+    document.getElementById("progressao-select-all")?.addEventListener("click", function () {
+      const origem = findTurma(origemSelect.value);
+      const alunosDaTurma = getAlunosDaTurma(origem);
+      selectedStudentIds = new Set(alunosDaTurma.map((aluno) => aluno.id));
+      renderSummary();
+      renderStudentSelection();
+    });
+    document.getElementById("progressao-clear-all")?.addEventListener("click", function () {
+      selectedStudentIds = new Set();
+      renderSummary();
+      renderStudentSelection();
+    });
+    document.getElementById("progressao-students-list")?.addEventListener("change", function (event) {
+      const checkbox = event.target.closest(".progressao-student-checkbox");
+      if (!checkbox) return;
+
+      if (checkbox.checked) {
+        selectedStudentIds.add(checkbox.value);
+      } else {
+        selectedStudentIds.delete(checkbox.value);
+      }
+
+      renderSummary();
+      renderStudentSelection();
+    });
   }
 
   function mountListPage() {
