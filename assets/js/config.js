@@ -1,10 +1,10 @@
 (function () {
   window.AgendaGamaConfig = Object.assign(
     {
-      supabaseUrl: "",
-      supabaseAnonKey: "",
+      supabaseUrl: "https://dsntscfzhnqusadrwuzv.supabase.co",
+      supabaseAnonKey: "sb_publishable_zEgJOOAJkTBmZx1U8F6WyA_KER8gL5c",
       functionsBaseUrl: "",
-      siteUrl: typeof window !== "undefined" ? window.location.origin : ""
+      siteUrl: "https://agenda-gama.vercel.app"
     },
     window.AgendaGamaConfig || {}
   );

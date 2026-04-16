@@ -58,9 +58,6 @@ Arquivos:
 
 Defina no projeto Supabase:
 
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
 - `SITE_URL`
 
 `SITE_URL` deve apontar para a URL publica da Vercel, por exemplo:
@@ -68,6 +65,8 @@ Defina no projeto Supabase:
 - `https://agenda-gama.vercel.app`
 
 A Edge Function do convite usa a `siteUrl` enviada pelo frontend e, se ela nao vier preenchida, usa `SITE_URL` como fallback.
+
+Nas Edge Functions hospedadas do Supabase, `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` ja ficam disponiveis por padrao.
 
 ## 5. Criar o primeiro administrador
 
