@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -14,9 +14,9 @@
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">OrganizaÃ§Ã£o</span>
+        <span class="pill">Organização</span>
         <h1>Cadastro de disciplinas</h1>
-        <p>Cadastre componentes curriculares em uma pÃ¡gina separada da visualizaÃ§Ã£o.</p>
+        <p>Cadastre componentes curriculares em uma página separada da visualização.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -28,11 +28,11 @@
     </section>
     <section>
       <article class="panel">
-        <div class="section-heading"><div><h2>Nova disciplina</h2><p>Cadastre componentes curriculares com carga horÃ¡ria e etapa.</p></div></div>
+        <div class="section-heading"><div><h2>Nova disciplina</h2><p>Cadastre componentes curriculares com carga horária e etapa.</p></div></div>
         <form id="disciplinas-form" class="form-grid">
-          <label class="field"><span>Disciplina</span><input name="nome" placeholder="Ex.: MatemÃ¡tica" required></label>
-          <label class="field"><span>Carga horÃ¡ria</span><input name="carga" placeholder="Ex.: 4 aulas/semana" required></label>
-          <label class="field"><span>Etapa</span><select name="etapa" required><option value="">Selecione</option><option>EducaÃ§Ã£o Infantil</option><option>Ensino Fundamental</option><option>Ensino MÃ©dio</option></select></label>
+          <label class="field"><span>Disciplina</span><input name="nome" placeholder="Ex.: Matemática" required></label>
+          <label class="field"><span>Carga horária</span><input name="carga" placeholder="Ex.: 4 aulas/semana" required></label>
+          <label class="field"><span>Etapa</span><select name="etapa" required><option value="">Selecione</option><option>Educação Infantil</option><option>Ensino Fundamental</option><option>Ensino Médio</option></select></label>
           <button type="submit" class="btn btn-primary full">Salvar disciplina</button>
         </form>
       </article>
@@ -54,8 +54,8 @@
       cancelRedirect: "disciplinas.html",
       columns: [{ key: "nome" }, { key: "carga" }, { key: "etapa", type: "tag" }],
       seedData: [
-        { nome: "MatemÃ¡tica", carga: "4 aulas/semana", etapa: "Ensino Fundamental" },
-        { nome: "HistÃ³ria", carga: "2 aulas/semana", etapa: "Ensino Fundamental" }
+        { nome: "Matemática", carga: "4 aulas/semana", etapa: "Ensino Fundamental" },
+        { nome: "História", carga: "2 aulas/semana", etapa: "Ensino Fundamental" }
       ]
     });
   </script>

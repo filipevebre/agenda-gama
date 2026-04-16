@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -14,9 +14,9 @@
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">OrganizaÃ§Ã£o</span>
+        <span class="pill">Organização</span>
         <h1>Alunos cadastrados</h1>
-        <p>Visualize, pesquise e gerencie os estudantes jÃ¡ registrados.</p>
+        <p>Visualize, pesquise e gerencie os estudantes já registrados.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -29,13 +29,13 @@
     <section>
       <article class="table-card">
         <h3>Alunos cadastrados</h3>
-        <p>Acompanhe rapidamente matrÃ­culas e enturmaÃ§Ã£o.</p>
+        <p>Acompanhe rapidamente matrículas e enturmação.</p>
         <label class="field search-box">
           <span>Pesquisar aluno</span>
-          <input id="alunos-search" placeholder="Busque por nome, matrÃ­cula, turma ou turno">
+          <input id="alunos-search" placeholder="Busque por nome, matrícula, turma ou turno">
         </label>
         <div class="table-wrapper">
-          <table><thead><tr><th>Aluno</th><th>MatrÃ­cula</th><th>Turma</th><th>Turno</th></tr></thead><tbody id="alunos-table-body"></tbody></table>
+          <table><thead><tr><th>Aluno</th><th>Matrícula</th><th>Turma</th><th>Turno</th></tr></thead><tbody id="alunos-table-body"></tbody></table>
         </div>
         <p id="alunos-empty" class="empty-state" hidden>Nenhum aluno cadastrado ainda.</p>
       </article>
@@ -60,8 +60,8 @@
       emptyMessage: "Nenhum aluno cadastrado ainda.",
       columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
       seedData: [
-        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5Âº Ano B", turno: "Tarde" },
-        { nome: "Pedro Henrique", matricula: "20260051", turma: "1Âº Ano A", turno: "ManhÃ£" }
+        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5º Ano B", turno: "Tarde" },
+        { nome: "Pedro Henrique", matricula: "20260051", turma: "1º Ano A", turno: "Manhã" }
       ]
     });
   </script>

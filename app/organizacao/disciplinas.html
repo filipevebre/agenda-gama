@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">OrganizaÃ§Ã£o</span>
+        <span class="pill">Organização</span>
         <h1>Disciplinas cadastradas</h1>
         <p>Visualize e gerencie os componentes curriculares registrados.</p>
       </div>
@@ -29,9 +29,9 @@
     <section>
       <article class="table-card">
         <h3>Disciplinas cadastradas</h3>
-        <p>Consulta rÃ¡pida da grade curricular cadastrada.</p>
+        <p>Consulta rápida da grade curricular cadastrada.</p>
         <div class="table-wrapper">
-          <table><thead><tr><th>Disciplina</th><th>Carga horÃ¡ria</th><th>Etapa</th></tr></thead><tbody id="disciplinas-table-body"></tbody></table>
+          <table><thead><tr><th>Disciplina</th><th>Carga horária</th><th>Etapa</th></tr></thead><tbody id="disciplinas-table-body"></tbody></table>
         </div>
         <p id="disciplinas-empty" class="empty-state" hidden>Nenhuma disciplina cadastrada ainda.</p>
       </article>
@@ -54,8 +54,8 @@
       emptyMessage: "Nenhuma disciplina cadastrada ainda.",
       columns: [{ key: "nome" }, { key: "carga" }, { key: "etapa", type: "tag" }],
       seedData: [
-        { nome: "MatemÃ¡tica", carga: "4 aulas/semana", etapa: "Ensino Fundamental" },
-        { nome: "HistÃ³ria", carga: "2 aulas/semana", etapa: "Ensino Fundamental" }
+        { nome: "Matemática", carga: "4 aulas/semana", etapa: "Ensino Fundamental" },
+        { nome: "História", carga: "2 aulas/semana", etapa: "Ensino Fundamental" }
       ]
     });
   </script>

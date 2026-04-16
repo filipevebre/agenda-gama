@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda Gama | Novo FuncionÃ¡rio</title>
+  <title>Agenda Gama | Novo Funcionário</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,9 +14,9 @@
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">OrganizaÃ§Ã£o</span>
+        <span class="pill">Organização</span>
         <h1>Cadastro da equipe</h1>
-        <p>Cadastre funcionÃ¡rios em uma pÃ¡gina exclusiva para inclusÃ£o e ediÃ§Ã£o.</p>
+        <p>Cadastre funcionários em uma página exclusiva para inclusão e edição.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -28,13 +28,13 @@
     </section>
     <section>
       <article class="panel">
-        <div class="section-heading"><div><h2>Novo funcionÃ¡rio</h2><p>Defina cargo, setor e contato para manter a equipe administrativa organizada.</p></div></div>
+        <div class="section-heading"><div><h2>Novo funcionário</h2><p>Defina cargo, setor e contato para manter a equipe administrativa organizada.</p></div></div>
         <form id="equipe-form" class="form-grid">
-          <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: JoÃ£o Pereira" required></label>
-          <label class="field"><span>Cargo</span><select name="cargo" required><option value="">Selecione</option><option>SecretÃ¡rio</option><option>Diretor</option><option>Financeiro</option><option>CoordenaÃ§Ã£o</option><option>RecepÃ§Ã£o</option><option>Outro</option></select></label>
+          <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: João Pereira" required></label>
+          <label class="field"><span>Cargo</span><select name="cargo" required><option value="">Selecione</option><option>Secretário</option><option>Diretor</option><option>Financeiro</option><option>Coordenação</option><option>Recepção</option><option>Outro</option></select></label>
           <label class="field"><span>Setor</span><input name="setor" placeholder="Ex.: Secretaria" required></label>
           <label class="field"><span>Contato</span><input name="contato" placeholder="(00) 00000-0000" required></label>
-          <button type="submit" class="btn btn-primary full">Salvar funcionÃ¡rio</button>
+          <button type="submit" class="btn btn-primary full">Salvar funcionário</button>
         </form>
       </article>
     </section>
@@ -55,8 +55,8 @@
       cancelRedirect: "equipe.html",
       columns: [{ key: "nome" }, { key: "cargo", type: "tag" }, { key: "setor" }, { key: "contato" }],
       seedData: [
-        { nome: "LÃºcia Mendes", cargo: "Diretor", setor: "DireÃ§Ã£o", contato: "(11) 99999-1001" },
-        { nome: "Rafael Costa", cargo: "SecretÃ¡rio", setor: "Secretaria", contato: "(11) 99999-1002" }
+        { nome: "Lúcia Mendes", cargo: "Diretor", setor: "Direção", contato: "(11) 99999-1001" },
+        { nome: "Rafael Costa", cargo: "Secretário", setor: "Secretaria", contato: "(11) 99999-1002" }
       ]
     });
   </script>

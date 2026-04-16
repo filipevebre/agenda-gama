@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -14,9 +14,9 @@
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">OrganizaÃ§Ã£o</span>
+        <span class="pill">Organização</span>
         <h1>Cadastro de turmas</h1>
-        <p>Preencha os dados da turma em uma pÃ¡gina exclusiva de cadastro.</p>
+        <p>Preencha os dados da turma em uma página exclusiva de cadastro.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -30,8 +30,8 @@
       <article class="panel">
         <div class="section-heading"><div><h2>Nova turma</h2><p>Cadastre turmas com turno, sala e ano letivo.</p></div></div>
         <form id="turmas-form" class="form-grid">
-          <label class="field"><span>Nome da turma</span><input name="nome" placeholder="Ex.: 7Âº Ano A" required></label>
-          <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>ManhÃ£</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
+          <label class="field"><span>Nome da turma</span><input name="nome" placeholder="Ex.: 7º Ano A" required></label>
+          <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
           <label class="field"><span>Sala</span><input name="sala" placeholder="Ex.: Sala 05" required></label>
           <label class="field"><span>Ano letivo</span><input name="ano" placeholder="2026" required></label>
           <button type="submit" class="btn btn-primary full">Salvar turma</button>
@@ -55,8 +55,8 @@
       cancelRedirect: "turmas.html",
       columns: [{ key: "nome" }, { key: "turno", type: "tag" }, { key: "sala" }, { key: "ano" }],
       seedData: [
-        { nome: "1Âº Ano A", turno: "ManhÃ£", sala: "Sala 01", ano: "2026" },
-        { nome: "5Âº Ano B", turno: "Tarde", sala: "Sala 08", ano: "2026" }
+        { nome: "1º Ano A", turno: "Manhã", sala: "Sala 01", ano: "2026" },
+        { nome: "5º Ano B", turno: "Tarde", sala: "Sala 08", ano: "2026" }
       ]
     });
   </script>
