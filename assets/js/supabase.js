@@ -219,7 +219,31 @@
     if (!client) throw new Error("Supabase nao configurado.");
 
     const { data, error } = await client.functions.invoke(name, { body });
-    if (error) throw error;
+    if (error) {
+      if (error.context && typeof error.context.json === "function") {
+        try {
+          const payload = await error.context.json();
+          throw new Error(payload?.error || payload?.message || error.message || "A Edge Function retornou um erro.");
+        } catch (parseError) {
+          if (parseError instanceof Error && parseError.message) {
+            throw parseError;
+          }
+        }
+      }
+
+      if (error.context && typeof error.context.text === "function") {
+        try {
+          const message = await error.context.text();
+          throw new Error(message || error.message || "A Edge Function retornou um erro.");
+        } catch (parseError) {
+          if (parseError instanceof Error && parseError.message) {
+            throw parseError;
+          }
+        }
+      }
+
+      throw new Error(error.message || "A Edge Function retornou um erro.");
+    }
     return data;
   }
 
