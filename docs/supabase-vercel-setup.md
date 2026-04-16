@@ -33,6 +33,7 @@ Execute a migration:
 Se o banco ja estava criado antes do fluxo de convite para professores, rode tambem:
 
 - [supabase/migrations/20260416_002_professores_access.sql](../supabase/migrations/20260416_002_professores_access.sql)
+- [supabase/migrations/20260416_003_responsaveis_aluno_id.sql](../supabase/migrations/20260416_003_responsaveis_aluno_id.sql)
 
 Ela cria:
 

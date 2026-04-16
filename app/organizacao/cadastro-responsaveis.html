@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-3">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-7">
 </head>
 <body data-page="responsaveis" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -38,7 +38,15 @@
         <form id="responsaveis-form" class="form-grid">
           <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: Mariana Alves" required></label>
           <label class="field"><span>Parentesco</span><select name="parentesco" required><option value="">Selecione</option><option>Mae</option><option>Pai</option><option>Avo</option><option>Tio(a)</option><option>Outro</option></select></label>
-          <label class="field"><span>Aluno vinculado</span><input name="aluno" placeholder="Ex.: Ana Clara Silva" required></label>
+          <label class="field full">
+            <span>Aluno vinculado</span>
+            <input id="responsavel-aluno-search" name="aluno_busca" list="responsavel-alunos-list" placeholder="Digite o nome do aluno matriculado" autocomplete="off" required>
+            <datalist id="responsavel-alunos-list"></datalist>
+            <input type="hidden" name="aluno">
+            <input type="hidden" name="aluno_id">
+            <p class="muted">Digite o inicio do nome e escolha um aluno ja cadastrado para vincular o responsavel.</p>
+            <div id="responsavel-aluno-selected" class="hint-box" hidden></div>
+          </label>
           <label class="field"><span>Contato</span><input name="contato" placeholder="(00) 00000-0000" required></label>
           <label class="field"><span>E-mail de acesso</span><input type="email" name="email" placeholder="responsavel@email.com" required></label>
 
@@ -52,13 +60,13 @@
       </article>
     </section>
   </template>
-  <script src="../../assets/js/config.js?v=20260416-3"></script>
-  <script src="../../assets/js/supabase.js?v=20260416-4"></script>
-  <script src="../../assets/js/auth.js?v=20260416-4"></script>
-  <script src="../../assets/js/app.js?v=20260416-3"></script>
-  <script src="../../assets/js/data-store.js?v=20260416-3"></script>
-  <script src="../../assets/js/forms.js?v=20260416-3"></script>
-  <script src="../../assets/js/responsaveis.js?v=20260416-3"></script>
+  <script src="../../assets/js/config.js?v=20260416-7"></script>
+  <script src="../../assets/js/supabase.js?v=20260416-7"></script>
+  <script src="../../assets/js/auth.js?v=20260416-7"></script>
+  <script src="../../assets/js/app.js?v=20260416-7"></script>
+  <script src="../../assets/js/data-store.js?v=20260416-7"></script>
+  <script src="../../assets/js/forms.js?v=20260416-7"></script>
+  <script src="../../assets/js/responsaveis.js?v=20260416-7"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaResponsaveis.mountCadastroPage();

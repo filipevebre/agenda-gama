@@ -89,6 +89,7 @@ create table if not exists public.alunos (
 create table if not exists public.responsaveis (
   id uuid primary key default gen_random_uuid(),
   auth_user_id uuid references auth.users (id) on delete set null,
+  aluno_id uuid references public.alunos (id) on delete set null,
   nome text not null,
   parentesco text not null,
   aluno text not null,

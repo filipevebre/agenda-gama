@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const normalizedEmail = normalizeEmail(record?.email)
     const configuredSiteUrl = String(siteUrl || Deno.env.get("SITE_URL") || "").trim().replace(/\/$/, "")
 
-    if (!record?.nome || !record?.parentesco || !record?.aluno || !record?.contato || !normalizedEmail) {
+    if (!record?.nome || !record?.parentesco || !record?.aluno_id || !record?.contato || !normalizedEmail) {
       return new Response(JSON.stringify({ error: "Dados obrigatorios ausentes." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -95,6 +95,26 @@ Deno.serve(async (req) => {
     if (existingProfile && existingProfile.role !== "responsaveis") {
       return new Response(JSON.stringify({ error: "Este e-mail ja esta em uso em outro perfil do sistema." }), {
         status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      })
+    }
+
+    const { data: alunoRecord, error: alunoError } = await adminClient
+      .from("alunos")
+      .select("id, nome")
+      .eq("id", record.aluno_id)
+      .maybeSingle()
+
+    if (alunoError) {
+      return new Response(JSON.stringify({ error: alunoError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      })
+    }
+
+    if (!alunoRecord) {
+      return new Response(JSON.stringify({ error: "Selecione um aluno ja cadastrado para vincular este responsavel." }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       })
     }
@@ -157,9 +177,10 @@ Deno.serve(async (req) => {
     const payload = {
       id: record.id || undefined,
       auth_user_id: authUserId,
+      aluno_id: alunoRecord.id,
       nome: record.nome,
       parentesco: record.parentesco,
-      aluno: record.aluno,
+      aluno: alunoRecord.nome,
       contato: record.contato,
       email: normalizedEmail,
       access_status: accessStatus
