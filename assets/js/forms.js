@@ -6,6 +6,19 @@
     feedbackEl.className = type ? `feedback ${type}` : "feedback";
   }
 
+  function getErrorMessage(error, fallbackMessage) {
+    if (!error) return fallbackMessage;
+    if (typeof error === "string") return error;
+    if (error.message) return error.message;
+    return fallbackMessage;
+  }
+
+  function setSubmittingState(submitButton, isSubmitting, idleLabel) {
+    if (!submitButton) return;
+    submitButton.disabled = isSubmitting;
+    submitButton.textContent = isSubmitting ? "Salvando..." : idleLabel;
+  }
+
   async function mountCrud(config) {
     const form = config.formId ? document.getElementById(config.formId) : null;
     const tableBody = config.tableBodyId ? document.getElementById(config.tableBodyId) : null;
@@ -169,94 +182,107 @@
       }
     }
 
-    await refreshItems();
-    await loadEditingStateFromUrl();
-    render();
+    try {
+      await refreshItems();
+      await loadEditingStateFromUrl();
+      render();
+    } catch (error) {
+      items = [];
+      render();
+      setFeedback(feedbackEl, getErrorMessage(error, "Nao foi possivel carregar os dados desta tela agora."), "error");
+    }
 
     form?.addEventListener("submit", async function (event) {
       event.preventDefault();
       setFeedback(feedbackEl, "", "");
+      setSubmittingState(submitButton, true, config.submitLabel || defaultSubmitText);
 
-      let data = config.getFormData
-        ? config.getFormData(form)
-        : Object.fromEntries(new FormData(form).entries());
+      try {
+        let data = config.getFormData
+          ? config.getFormData(form)
+          : Object.fromEntries(new FormData(form).entries());
 
-      if (editingId) {
-        data.id = editingId;
-      }
+        if (editingId) {
+          data.id = editingId;
+        }
 
-      const previousItem = editingId ? items.find((item) => item.id === editingId) : null;
-      let meta = null;
+        const previousItem = editingId ? items.find((item) => item.id === editingId) : null;
+        let meta = null;
 
-      if (config.beforeSave) {
-        const result = await config.beforeSave({
-          data,
-          editingId,
-          items: [...items],
-          previousItem,
-          form
-        });
+        if (config.beforeSave) {
+          const result = await config.beforeSave({
+            data,
+            editingId,
+            items: [...items],
+            previousItem,
+            form
+          });
 
-        if (result?.error) {
-          setFeedback(feedbackEl, result.error, "error");
+          if (result?.error) {
+            setFeedback(feedbackEl, result.error, "error");
+            return;
+          }
+
+          if (result && Object.prototype.hasOwnProperty.call(result, "data")) {
+            data = result.data;
+          }
+
+          if (result?.meta) {
+            meta = result.meta;
+          }
+        }
+
+        let savedItem = null;
+
+        if (config.customSave) {
+          const customSaveResult = await config.customSave({
+            data,
+            editingId,
+            items: [...items],
+            previousItem,
+            form
+          });
+
+          if (customSaveResult?.error) {
+            setFeedback(feedbackEl, customSaveResult.error, "error");
+            return;
+          }
+
+          savedItem = customSaveResult?.item || data;
+          meta = customSaveResult?.meta || meta;
+        } else {
+          savedItem = await window.AgendaGamaDataStore.save(config.storageKey, data, config.seedData || []);
+        }
+
+        if (config.afterSave) {
+          await config.afterSave({
+            data,
+            item: savedItem,
+            editingId,
+            previousItem,
+            items: [...items],
+            meta,
+            form
+          });
+        }
+
+        const redirectAfterSubmit = meta?.redirectAfterSubmit || config.redirectAfterSubmit;
+        resetEditingState();
+        await refreshItems();
+        render();
+
+        if (redirectAfterSubmit) {
+          window.location.href = redirectAfterSubmit;
           return;
         }
 
-        if (result && Object.prototype.hasOwnProperty.call(result, "data")) {
-          data = result.data;
+        if (config.successMessage) {
+          setFeedback(feedbackEl, config.successMessage, "success");
         }
-
-        if (result?.meta) {
-          meta = result.meta;
-        }
-      }
-
-      let savedItem = null;
-
-      if (config.customSave) {
-        const customSaveResult = await config.customSave({
-          data,
-          editingId,
-          items: [...items],
-          previousItem,
-          form
-        });
-
-        if (customSaveResult?.error) {
-          setFeedback(feedbackEl, customSaveResult.error, "error");
-          return;
-        }
-
-        savedItem = customSaveResult?.item || data;
-        meta = customSaveResult?.meta || meta;
-      } else {
-        savedItem = await window.AgendaGamaDataStore.save(config.storageKey, data, config.seedData || []);
-      }
-
-      if (config.afterSave) {
-        await config.afterSave({
-          data,
-          item: savedItem,
-          editingId,
-          previousItem,
-          items: [...items],
-          meta,
-          form
-        });
-      }
-
-      const redirectAfterSubmit = meta?.redirectAfterSubmit || config.redirectAfterSubmit;
-      resetEditingState();
-      await refreshItems();
-      render();
-
-      if (redirectAfterSubmit) {
-        window.location.href = redirectAfterSubmit;
-        return;
-      }
-
-      if (config.successMessage) {
-        setFeedback(feedbackEl, config.successMessage, "success");
+      } catch (error) {
+        setFeedback(feedbackEl, getErrorMessage(error, "Nao foi possivel salvar este cadastro agora."), "error");
+      } finally {
+        setSubmittingState(submitButton, false, editingId ? (config.editSubmitLabel || "Salvar alteracoes") : (config.submitLabel || defaultSubmitText));
       }
     });
 
@@ -282,48 +308,52 @@
       if (event.target.closest(".crud-delete")) {
         setFeedback(feedbackEl, "", "");
 
-        if (config.beforeDelete) {
-          const result = await config.beforeDelete({
-            id,
-            item,
-            items: [...items]
-          });
+        try {
+          if (config.beforeDelete) {
+            const result = await config.beforeDelete({
+              id,
+              item,
+              items: [...items]
+            });
 
-          if (result?.error) {
-            setFeedback(feedbackEl, result.error, "error");
-            return;
+            if (result?.error) {
+              setFeedback(feedbackEl, result.error, "error");
+              return;
+            }
+
+            if (result?.cancel) {
+              return;
+            }
           }
 
-          if (result?.cancel) {
-            return;
+          if (config.customDelete) {
+            const deleteResult = await config.customDelete({
+              id,
+              item,
+              items: [...items]
+            });
+
+            if (deleteResult?.error) {
+              setFeedback(feedbackEl, deleteResult.error, "error");
+              return;
+            }
+          } else {
+            await window.AgendaGamaDataStore.remove(config.storageKey, id, config.seedData || []);
           }
-        }
 
-        if (config.customDelete) {
-          const deleteResult = await config.customDelete({
-            id,
-            item,
-            items: [...items]
-          });
-
-          if (deleteResult?.error) {
-            setFeedback(feedbackEl, deleteResult.error, "error");
-            return;
+          if (config.afterDelete) {
+            await config.afterDelete({
+              id,
+              item,
+              items: [...items]
+            });
           }
-        } else {
-          await window.AgendaGamaDataStore.remove(config.storageKey, id, config.seedData || []);
-        }
 
-        if (config.afterDelete) {
-          await config.afterDelete({
-            id,
-            item,
-            items: [...items]
-          });
+          await refreshItems();
+          render();
+        } catch (error) {
+          setFeedback(feedbackEl, getErrorMessage(error, "Nao foi possivel excluir este registro agora."), "error");
         }
-
-        await refreshItems();
-        render();
         return;
       }
 
