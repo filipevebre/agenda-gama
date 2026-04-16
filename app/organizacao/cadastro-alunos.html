@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-8">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260416-9">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -46,16 +46,17 @@
             <input type="hidden" name="turno">
           </label>
           <button type="submit" class="btn btn-primary full">Salvar aluno</button>
+          <div id="aluno-feedback" class="feedback full" aria-live="polite"></div>
         </form>
       </article>
     </section>
   </template>
-  <script src="../../assets/js/config.js?v=20260416-8"></script>
-  <script src="../../assets/js/supabase.js?v=20260416-8"></script>
-  <script src="../../assets/js/auth.js?v=20260416-8"></script>
-  <script src="../../assets/js/app.js?v=20260416-8"></script>
-  <script src="../../assets/js/data-store.js?v=20260416-8"></script>
-  <script src="../../assets/js/forms.js?v=20260416-8"></script>
+  <script src="../../assets/js/config.js?v=20260416-9"></script>
+  <script src="../../assets/js/supabase.js?v=20260416-9"></script>
+  <script src="../../assets/js/auth.js?v=20260416-9"></script>
+  <script src="../../assets/js/app.js?v=20260416-9"></script>
+  <script src="../../assets/js/data-store.js?v=20260416-9"></script>
+  <script src="../../assets/js/forms.js?v=20260416-9"></script>
   <script>
     window.AgendaGamaApp.mountShell();
 
@@ -67,12 +68,32 @@
     let turmasCache = [];
 
     function normalizeText(value) {
-      return String(value || "").trim().toLowerCase();
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[ºª]/g, "")
+        .trim()
+        .toLowerCase();
     }
 
     function findTurmaByName(nome) {
       const normalizedName = normalizeText(nome);
       return turmasCache.find((turma) => normalizeText(turma.nome) === normalizedName) || null;
+    }
+
+    function resolveTurma(value) {
+      const exactMatch = findTurmaByName(value);
+      if (exactMatch) {
+        return exactMatch;
+      }
+
+      const normalizedSearch = normalizeText(value);
+      if (!normalizedSearch) {
+        return null;
+      }
+
+      const matchingTurmas = turmasCache.filter((item) => normalizeText(item.nome).startsWith(normalizedSearch));
+      return matchingTurmas.length === 1 ? matchingTurmas[0] : null;
     }
 
     function renderSelectedTurma(turma) {
@@ -130,24 +151,17 @@
       )).join("");
 
       turmaField.addEventListener("input", function () {
-        const turma = findTurmaByName(turmaField.value);
+        const turma = resolveTurma(turmaField.value);
         if (turma) {
           renderSelectedTurma(turma);
           return;
         }
 
-        const normalizedSearch = normalizeText(turmaField.value);
-        if (!normalizedSearch) {
-          renderSelectedTurma(null);
-          return;
-        }
-
-        const exactTyped = turmasCache.find((item) => normalizeText(item.nome) === normalizedSearch);
-        renderSelectedTurma(exactTyped);
+        renderSelectedTurma(null);
       });
 
       turmaField.addEventListener("change", function () {
-        renderSelectedTurma(findTurmaByName(turmaField.value));
+        renderSelectedTurma(resolveTurma(turmaField.value));
       });
     }
 
@@ -157,20 +171,23 @@
       storageKey: "alunos",
       formId: "alunos-form",
       totalId: "total-alunos",
+      feedbackId: "aluno-feedback",
       redirectAfterSubmit: "alunos.html",
       cancelRedirect: "alunos.html",
       columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
       beforeSave: async function ({ data }) {
-        const turma = findTurmaByName(data.turma_busca || data.turma);
+        const turma = resolveTurma(data.turma_busca || data.turma);
         if (!turma) {
           return { error: "Selecione uma turma ja cadastrada para vincular o aluno." };
         }
 
         renderSelectedTurma(turma);
 
+        const { turma_busca, ...cleanData } = data;
+
         return {
           data: {
-            ...data,
+            ...cleanData,
             turma: turma.nome,
             turno: turma.turno || ""
           }
