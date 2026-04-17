@@ -2127,25 +2127,28 @@ body[data-page="comunicacao"] .message-central-shell {
   padding-bottom: 28px;
 }
 body[data-page="comunicacao"] .message-central-layout {
-  min-height: calc(100vh - 190px);
+  min-height: max(760px, calc(100vh - 190px));
   height: auto;
 }
 body[data-page="comunicacao"] .message-sidebar-column,
 body[data-page="comunicacao"] .message-board-column,
-body[data-page="comunicacao"] .message-thread-column,
-body[data-page="comunicacao"] .thread-view {
-  height: auto;
+body[data-page="comunicacao"] .message-thread-column {
+  height: 100%;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
+}
+body[data-page="comunicacao"] .thread-view {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 body[data-page="comunicacao"] .message-channel-list,
 body[data-page="comunicacao"] .message-thread-list,
 body[data-page="comunicacao"] .message-board-list,
 body[data-page="comunicacao"] .thread-body,
 body[data-page="comunicacao"] .internal-notes-list {
-  max-height: none;
-  overflow: visible;
-  padding-right: 0;
+  overflow: auto;
+  padding-right: 4px;
 }
 body[data-page="comunicacao"] .main-content::-webkit-scrollbar {
   width: 12px;
