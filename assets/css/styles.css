@@ -2235,9 +2235,12 @@ body[data-page="comunicacao"] [hidden] {
 }
 body[data-page="comunicacao"] .message-board-card {
   display: grid;
+  grid-template-columns: 1fr !important;
   gap: 10px;
+  align-items: stretch;
 }
 body[data-page="comunicacao"] .message-board-open {
+  grid-column: 1 / -1;
   width: 100%;
   border: 0;
   background: transparent;
@@ -2250,13 +2253,19 @@ body[data-page="comunicacao"] .message-board-open {
   cursor: pointer;
 }
 body[data-page="comunicacao"] .message-board-actions {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding-left: 58px;
+  align-items: center;
 }
 body[data-page="comunicacao"] .message-board-action {
   transform: none !important;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 body[data-page="comunicacao"] .thread-action-bar {
   display: none !important;
