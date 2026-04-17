@@ -7,43 +7,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260417-2">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260417-3">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
 
   <template id="page-template">
     <section class="message-central-shell">
-      <header class="message-central-header">
-        <div>
-          <span class="pill">Central de Mensagens</span>
-          <h1>Atendimento escolar em tempo real</h1>
-          <p>Uma central inspirada em aplicativos de conversa, com organizacao por prioridade, aprovacoes e historico por familia.</p>
-        </div>
-        <div class="message-central-stats">
-          <article class="info-card">
-            <span>Conversas abertas</span>
-            <strong id="stat-open-count">00</strong>
-          </article>
-          <article class="info-card">
-            <span>Nao lidas</span>
-            <strong id="stat-unread-count">00</strong>
-          </article>
-          <article class="info-card">
-            <span>Aguardando aprovacao</span>
-            <strong id="stat-approval-count">00</strong>
-          </article>
-        </div>
-      </header>
-
       <section class="message-central-layout">
         <aside class="panel message-sidebar-column">
-          <div class="message-sidebar-top">
-            <label class="field search-field">
+          <div class="message-sidebar-top clean-sidebar-top">
+            <div class="message-sidebar-title">
+              <h1>Canais Familia</h1>
+              <p>Atendimento escolar por canal e por familia.</p>
+            </div>
+            <label class="field search-field compact-search-field">
               <span>Buscar conversa</span>
-              <input id="message-search-input" type="search" placeholder="Buscar por responsavel, aluno ou mensagem">
+              <input id="message-search-input" type="search" placeholder="Buscar">
             </label>
-            <button type="button" id="toggle-new-thread" class="btn btn-primary btn-block">Nova conversa</button>
           </div>
 
           <article id="new-thread-panel" class="message-new-thread-panel" hidden>
@@ -93,29 +74,22 @@
             <div id="new-thread-feedback" class="feedback" aria-live="polite"></div>
           </article>
 
-          <div class="message-sidebar-filters">
-            <button type="button" class="sidebar-quick-filter active" data-left-filter="all">Tudo</button>
-            <button type="button" class="sidebar-quick-filter" data-left-filter="unread">Nao lidas</button>
-            <button type="button" class="sidebar-quick-filter" data-left-filter="urgent">Urgentes</button>
-            <button type="button" class="sidebar-quick-filter" data-left-filter="pinned">Fixadas</button>
-          </div>
-
           <div class="message-sidebar-groups">
             <section class="message-sidebar-section">
               <div class="section-heading compact-heading">
                 <div>
-                  <h2>Canais</h2>
+                  <h2>Canais ativos</h2>
                   <p>Turmas e setores visiveis no seu perfil.</p>
                 </div>
               </div>
               <div id="message-channel-list" class="message-channel-list"></div>
             </section>
 
-            <section class="message-sidebar-section">
+            <section class="message-sidebar-section message-sidebar-secondary">
               <div class="section-heading compact-heading">
                 <div>
-                  <h2>Conversas</h2>
-                  <p>Lista rapida para acesso imediato.</p>
+                  <h2>Atalhos</h2>
+                  <p>Conversas recentes e prioritarias.</p>
                 </div>
               </div>
               <div id="sidebar-thread-list" class="message-thread-list"></div>
@@ -125,8 +99,17 @@
         </aside>
 
         <section class="panel message-board-column">
+          <div class="message-board-toolbar">
+            <button type="button" id="toggle-new-thread" class="btn btn-primary btn-sm">Nova conversa</button>
+            <div class="message-toolbar-stats">
+              <span class="message-toolbar-stat">Abertas <strong id="stat-open-count">00</strong></span>
+              <span class="message-toolbar-stat">Nao lidas <strong id="stat-unread-count">00</strong></span>
+              <span class="message-toolbar-stat">Aprovar <strong id="stat-approval-count">00</strong></span>
+            </div>
+          </div>
+
           <div class="message-board-header">
-            <div id="message-tab-bar" class="message-tab-bar">
+            <div id="message-tab-bar" class="message-tab-bar clean-tab-bar">
               <button type="button" class="message-tab active" data-tab="responder">Responder <span id="tab-count-responder" class="filter-count">0</span></button>
               <button type="button" class="message-tab" data-tab="aprovar">Aprovar <span id="tab-count-aprovar" class="filter-count">0</span></button>
               <button type="button" class="message-tab" data-tab="todas">Todas <span id="tab-count-todas" class="filter-count">0</span></button>
@@ -135,20 +118,20 @@
             </div>
           </div>
 
-          <div class="message-filter-grid">
-            <label class="field">
+          <div class="message-filter-grid clean-filter-grid">
+            <label class="field compact-field">
               <span>Turma</span>
               <select id="filter-turma"></select>
             </label>
-            <label class="field">
+            <label class="field compact-field">
               <span>Setor</span>
               <select id="filter-setor"></select>
             </label>
-            <label class="field">
+            <label class="field compact-field">
               <span>Status</span>
               <select id="filter-status"></select>
             </label>
-            <label class="field">
+            <label class="field compact-field">
               <span>Leitura</span>
               <select id="filter-unread"></select>
             </label>
@@ -226,12 +209,12 @@
     </section>
   </template>
 
-  <script src="../assets/js/config.js?v=20260417-2"></script>
-  <script src="../assets/js/supabase.js?v=20260417-2"></script>
-  <script src="../assets/js/auth.js?v=20260417-2"></script>
-  <script src="../assets/js/app.js?v=20260417-2"></script>
-  <script src="../assets/js/data-store.js?v=20260417-2"></script>
-  <script src="../assets/js/communication.js?v=20260417-2"></script>
+  <script src="../assets/js/config.js?v=20260417-3"></script>
+  <script src="../assets/js/supabase.js?v=20260417-3"></script>
+  <script src="../assets/js/auth.js?v=20260417-3"></script>
+  <script src="../assets/js/app.js?v=20260417-3"></script>
+  <script src="../assets/js/data-store.js?v=20260417-3"></script>
+  <script src="../assets/js/communication.js?v=20260417-3"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();

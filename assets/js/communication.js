@@ -1201,9 +1201,11 @@
 
       function renderChannelList() {
         refs.sidebarChannelList.innerHTML = state.channels.map(function (channel) {
-          const count = state.threads.filter(function (thread) {
+          const relatedThreads = state.threads.filter(function (thread) {
             return thread.channelId === channel.id || thread.channelName === channel.nome;
-          }).length;
+          });
+          const unreadCount = relatedThreads.filter(function (thread) { return thread.unreadCount > 0; }).length;
+          const count = unreadCount || relatedThreads.length;
 
           return `
             <button type="button" class="message-channel-card ${state.selectedChannelId === channel.id ? "active" : ""}" data-channel-id="${escapeHtml(channel.id)}">
