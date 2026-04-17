@@ -974,6 +974,7 @@
         filterUnread: document.getElementById("filter-unread"),
         threadEmpty: document.getElementById("thread-empty-state"),
         threadView: document.getElementById("thread-view"),
+        threadBackButton: document.getElementById("thread-back-button"),
         threadHeader: document.getElementById("thread-header-panel"),
         threadActions: document.getElementById("thread-action-bar"),
         threadAlerts: document.getElementById("thread-alerts"),
@@ -1817,10 +1818,15 @@
         }
         setViewMode("thread");
         renderAll();
+        if (refs.threadBody) refs.threadBody.scrollTop = refs.threadBody.scrollHeight;
       }
 
       refs.sidebarThreadList?.addEventListener("click", handleThreadSelection);
       refs.boardList?.addEventListener("click", handleThreadSelection);
+      refs.threadBackButton?.addEventListener("click", function () {
+        setViewMode("board");
+        renderAll();
+      });
 
       refs.quickTemplateList?.addEventListener("click", function (event) {
         const button = event.target.closest("[data-template-id]");

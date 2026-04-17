@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260417-11">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260417-12">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
@@ -148,6 +148,11 @@
 
         <aside class="panel message-thread-column">
           <div class="thread-panel-topbar">
+            <div class="thread-topbar-copy">
+              <strong>Conversa aberta</strong>
+              <span>Volte para a lista quando quiser ver outros chats.</span>
+            </div>
+            <button type="button" id="thread-back-button" class="btn btn-secondary btn-sm thread-back-button">Voltar aos chats</button>
             <div class="message-view-switcher" aria-label="Alternar painel">
               <button type="button" class="message-view-toggle" data-view="board">Atendimentos</button>
               <button type="button" class="message-view-toggle active" data-view="thread">Conversa</button>
@@ -220,12 +225,12 @@
     </section>
   </template>
 
-  <script src="../assets/js/config.js?v=20260417-11"></script>
-  <script src="../assets/js/supabase.js?v=20260417-11"></script>
-  <script src="../assets/js/auth.js?v=20260417-11"></script>
-  <script src="../assets/js/app.js?v=20260417-11"></script>
-  <script src="../assets/js/data-store.js?v=20260417-11"></script>
-  <script src="../assets/js/communication.js?v=20260417-11"></script>
+  <script src="../assets/js/config.js?v=20260417-12"></script>
+  <script src="../assets/js/supabase.js?v=20260417-12"></script>
+  <script src="../assets/js/auth.js?v=20260417-12"></script>
+  <script src="../assets/js/app.js?v=20260417-12"></script>
+  <script src="../assets/js/data-store.js?v=20260417-12"></script>
+  <script src="../assets/js/communication.js?v=20260417-12"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();
