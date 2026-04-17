@@ -1301,26 +1301,39 @@
             thread.local.urgent ? '<span class="tag">Urgente</span>' : "",
             thread.local.pinned ? '<span class="tag">Fixada</span>' : ""
           ].filter(Boolean).join("");
+          const actions = session.role === "responsaveis" ? "" : `
+            <div class="message-board-actions">
+              <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="assign">${thread.local.assignedEmail ? "Reassumir" : "Assumir"}</button>
+              <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="pin">${thread.local.pinned ? "Desafixar" : "Fixar"}</button>
+              <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="urgent">${thread.local.urgent ? "Remover urgente" : "Urgente"}</button>
+              <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="resolve">${thread.local.resolved ? "Reabrir" : "Resolver"}</button>
+              <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="archive">${thread.local.archived ? "Desarquivar" : "Arquivar"}</button>
+              <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="forward">Encaminhar</button>
+            </div>
+          `;
 
           return `
-            <button type="button" class="message-board-card ${state.selectedThreadKey === thread.key ? "active" : ""}" data-thread-key="${escapeHtml(thread.key)}">
-              <div class="message-board-avatar">${escapeHtml(getInitials(title))}</div>
-              <div class="message-board-copy">
-                <div class="message-board-headline">
-                  <div>
-                    <strong>${escapeHtml(title)}</strong>
-                    <p>${escapeHtml(subtitle)}</p>
+            <article class="message-board-card ${state.selectedThreadKey === thread.key ? "active" : ""} ${session.role === "responsaveis" ? "" : "has-actions"}" data-thread-card="${escapeHtml(thread.key)}">
+              <button type="button" class="message-board-open" data-thread-open-key="${escapeHtml(thread.key)}">
+                <div class="message-board-avatar">${escapeHtml(getInitials(title))}</div>
+                <div class="message-board-copy">
+                  <div class="message-board-headline">
+                    <div>
+                      <strong>${escapeHtml(title)}</strong>
+                      <p>${escapeHtml(subtitle)}</p>
+                    </div>
+                    <div class="message-board-meta">
+                      <small>${escapeHtml(formatShortTime(thread.lastMessage?.created_at))}</small>
+                      ${thread.unreadCount ? `<span class="message-pill-count accent">${thread.unreadCount}</span>` : ""}
+                    </div>
                   </div>
-                  <div class="message-board-meta">
-                    <small>${escapeHtml(formatShortTime(thread.lastMessage?.created_at))}</small>
-                    ${thread.unreadCount ? `<span class="message-pill-count accent">${thread.unreadCount}</span>` : ""}
-                  </div>
+                  <div class="message-board-tags">${labels}</div>
+                  <p class="message-board-subject">${escapeHtml(thread.subject || "Atendimento escolar")}</p>
+                  <p class="message-board-preview">${escapeHtml(thread.lastMessage?.parsed?.text || "Sem mensagens registradas.")}</p>
                 </div>
-                <div class="message-board-tags">${labels}</div>
-                <p class="message-board-subject">${escapeHtml(thread.subject || "Atendimento escolar")}</p>
-                <p class="message-board-preview">${escapeHtml(thread.lastMessage?.parsed?.text || "Sem mensagens registradas.")}</p>
-              </div>
-            </button>
+              </button>
+              ${actions}
+            </article>
           `;
         }).join("");
       }
@@ -1372,20 +1385,8 @@
           </div>
         `;
 
-        if (session.role === "responsaveis") {
-          refs.threadActions.innerHTML = "";
-          refs.threadActions.hidden = true;
-        } else {
-          refs.threadActions.innerHTML = `
-            <button type="button" class="btn btn-secondary btn-sm thread-action" data-action="assign">Assumir</button>
-            <button type="button" class="btn btn-secondary btn-sm thread-action" data-action="pin">${thread.local.pinned ? "Desafixar" : "Fixar"}</button>
-            <button type="button" class="btn btn-secondary btn-sm thread-action" data-action="urgent">${thread.local.urgent ? "Remover urgente" : "Marcar urgente"}</button>
-            <button type="button" class="btn btn-secondary btn-sm thread-action" data-action="resolve">${thread.local.resolved ? "Reabrir" : "Marcar resolvida"}</button>
-            <button type="button" class="btn btn-secondary btn-sm thread-action" data-action="archive">${thread.local.archived ? "Desarquivar" : "Arquivar"}</button>
-            <button type="button" class="btn btn-secondary btn-sm thread-action" data-action="forward">Encaminhar</button>
-          `;
-          refs.threadActions.hidden = false;
-        }
+        refs.threadActions.innerHTML = "";
+        refs.threadActions.hidden = true;
 
         if (session.canApprove && thread.pendingApprovalCount > 0) {
           refs.threadAlerts.innerHTML = `
@@ -1808,9 +1809,9 @@
       });
 
       function handleThreadSelection(event) {
-        const button = event.target.closest("[data-thread-key]");
+        const button = event.target.closest("[data-thread-open-key], [data-thread-key]");
         if (!button) return;
-        state.selectedThreadKey = button.dataset.threadKey;
+        state.selectedThreadKey = button.dataset.threadOpenKey || button.dataset.threadKey;
         const selectedThread = getSelectedThread();
         if (selectedThread?.lastMessage?.created_at) {
           state.viewState = markThreadRead(state.viewState, session, selectedThread.key, selectedThread.lastMessage.created_at);
@@ -1826,6 +1827,60 @@
       refs.threadBackButton?.addEventListener("click", function () {
         setViewMode("board");
         renderAll();
+      });
+
+      async function runThreadAction(thread, action) {
+        if (!thread) return;
+
+        if (action === "assign") {
+          updateThreadState(state, thread.key, { assignedTo: session.name, assignedEmail: session.email });
+          rebuildThreads();
+          refs.composerFeedback.textContent = "Conversa assumida. Voce ja pode responder em tempo real.";
+          refs.composerFeedback.className = "feedback success";
+          await refreshAll();
+          return;
+        }
+        if (action === "pin") {
+          updateThreadState(state, thread.key, { pinned: !thread.local.pinned });
+        }
+        if (action === "urgent") {
+          updateThreadState(state, thread.key, { urgent: !thread.local.urgent });
+        }
+        if (action === "resolve") {
+          updateThreadState(state, thread.key, { resolved: !thread.local.resolved });
+        }
+        if (action === "archive") {
+          updateThreadState(state, thread.key, { archived: !thread.local.archived });
+        }
+        if (action === "forward") {
+          refs.newThreadPanel.hidden = false;
+          refs.newThreadType.value = "family";
+          setSelectValueIfPresent(refs.newThreadChannel, thread.channelId || "");
+          setSelectValueIfPresent(refs.newThreadStudent, thread.studentId || "");
+          setSelectValueIfPresent(refs.newThreadResponsavel, thread.responsibleId || "");
+          setSelectValueIfPresent(refs.newThreadSector, thread.sector || "Secretaria");
+          syncNewThreadVisibility();
+          refs.newThreadSubject.value = `Encaminhamento: ${thread.subject || thread.channelName}`;
+          refs.newThreadMessage.value = thread.lastMessage?.parsed?.text || "";
+        }
+
+        await refreshAll();
+      }
+
+      refs.boardList?.addEventListener("click", function (event) {
+        const actionButton = event.target.closest(".message-board-action");
+        if (!actionButton) return;
+        const card = actionButton.closest("[data-thread-card]");
+        const threadKey = card?.dataset.threadCard;
+        if (!threadKey) return;
+        event.preventDefault();
+        event.stopPropagation();
+        state.selectedThreadKey = threadKey;
+        const thread = getSelectedThread();
+        runThreadAction(thread, actionButton.dataset.action).catch(function (error) {
+          refs.composerFeedback.textContent = error?.message || "Nao foi possivel atualizar a conversa.";
+          refs.composerFeedback.className = "feedback error";
+        });
       });
 
       refs.quickTemplateList?.addEventListener("click", function (event) {
@@ -1886,51 +1941,6 @@
           refs.composerFeedback.textContent = error?.message || "Nao foi possivel enviar a mensagem.";
           refs.composerFeedback.className = "feedback error";
         });
-      });
-
-      refs.threadActions?.addEventListener("click", async function (event) {
-        const button = event.target.closest(".thread-action");
-        if (!button) return;
-
-        const thread = getSelectedThread();
-        if (!thread) return;
-        const action = button.dataset.action;
-
-        if (action === "assign") {
-          updateThreadState(state, thread.key, { assignedTo: session.name, assignedEmail: session.email });
-          rebuildThreads();
-          setViewMode("thread");
-          renderAll();
-          refs.composerFeedback.textContent = "Conversa assumida. Voce ja pode responder em tempo real.";
-          refs.composerFeedback.className = "feedback success";
-          refs.composerInput.focus();
-          return;
-        }
-        if (action === "pin") {
-          updateThreadState(state, thread.key, { pinned: !thread.local.pinned });
-        }
-        if (action === "urgent") {
-          updateThreadState(state, thread.key, { urgent: !thread.local.urgent });
-        }
-        if (action === "resolve") {
-          updateThreadState(state, thread.key, { resolved: !thread.local.resolved });
-        }
-        if (action === "archive") {
-          updateThreadState(state, thread.key, { archived: !thread.local.archived });
-        }
-        if (action === "forward") {
-          refs.newThreadPanel.hidden = false;
-          refs.newThreadType.value = "family";
-          setSelectValueIfPresent(refs.newThreadChannel, thread.channelId || "");
-          setSelectValueIfPresent(refs.newThreadStudent, thread.studentId || "");
-          setSelectValueIfPresent(refs.newThreadResponsavel, thread.responsibleId || "");
-          setSelectValueIfPresent(refs.newThreadSector, thread.sector || "Secretaria");
-          syncNewThreadVisibility();
-          refs.newThreadSubject.value = `Encaminhamento: ${thread.subject || thread.channelName}`;
-          refs.newThreadMessage.value = thread.lastMessage?.parsed?.text || "";
-        }
-
-        await refreshAll();
       });
 
       refs.threadAlerts?.addEventListener("click", async function (event) {
