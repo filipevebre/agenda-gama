@@ -2255,17 +2255,30 @@ body[data-page="comunicacao"] .message-board-open {
 body[data-page="comunicacao"] .message-board-actions {
   grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   padding-left: 58px;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
 }
 body[data-page="comunicacao"] .message-board-action {
+  flex: 0 0 auto;
   transform: none !important;
-  padding: 8px 12px;
+  padding: 8px 11px;
   border-radius: 12px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   white-space: nowrap;
+}
+body[data-page="comunicacao"] .message-board-actions::-webkit-scrollbar {
+  height: 8px;
+}
+body[data-page="comunicacao"] .message-board-actions::-webkit-scrollbar-thumb {
+  background: rgba(25, 50, 77, 0.18);
+  border-radius: 999px;
 }
 body[data-page="comunicacao"] .thread-action-bar {
   display: none !important;
