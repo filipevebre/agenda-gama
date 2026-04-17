@@ -2157,3 +2157,65 @@ body[data-page="comunicacao"] .main-content::-webkit-scrollbar-thumb {
   background: rgba(25, 50, 77, 0.22);
   border-radius: 999px;
 }
+
+@media (min-width: 981px) {
+  body[data-page="comunicacao"] .message-central-layout {
+    grid-template-columns: 320px minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    align-items: stretch;
+  }
+  body[data-page="comunicacao"] .message-sidebar-column {
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    border-right: 1px solid rgba(18, 38, 63, 0.08);
+    border-bottom: 0;
+  }
+  body[data-page="comunicacao"] .message-board-column,
+  body[data-page="comunicacao"] .message-thread-column {
+    min-height: 0;
+    border-right: 0;
+    border-top: 0;
+  }
+  body[data-page="comunicacao"] .message-board-column {
+    display: none !important;
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  }
+  body[data-page="comunicacao"] .message-thread-column {
+    display: none !important;
+    grid-template-rows: auto minmax(0, 1fr);
+    background: #fcfdff;
+  }
+  body[data-page="comunicacao"] .message-central-layout.is-board-view .message-board-column {
+    display: grid !important;
+  }
+  body[data-page="comunicacao"] .message-central-layout.is-thread-view .message-thread-column {
+    display: grid !important;
+  }
+  body[data-page="comunicacao"] .message-view-switcher {
+    display: inline-flex !important;
+  }
+  body[data-page="comunicacao"] .thread-panel-topbar {
+    display: block !important;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(18, 38, 63, 0.08);
+    background: #ffffff;
+  }
+  body[data-page="comunicacao"] .message-sidebar-groups,
+  body[data-page="comunicacao"] .message-sidebar-section,
+  body[data-page="comunicacao"] .thread-view {
+    min-height: 0;
+  }
+  body[data-page="comunicacao"] .thread-view {
+    display: grid;
+    height: 100%;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto;
+  }
+  body[data-page="comunicacao"] .message-channel-list,
+  body[data-page="comunicacao"] .message-thread-list,
+  body[data-page="comunicacao"] .message-board-list,
+  body[data-page="comunicacao"] .thread-body,
+  body[data-page="comunicacao"] .internal-notes-list {
+    overflow: auto;
+  }
+}
