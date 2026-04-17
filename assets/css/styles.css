@@ -2167,12 +2167,18 @@ body[data-page="comunicacao"] .main-content::-webkit-scrollbar-thumb {
   }
   body[data-page="comunicacao"] .message-sidebar-column {
     display: grid !important;
+    grid-area: auto !important;
+    grid-column: 1;
+    grid-row: 1;
     grid-template-rows: auto auto minmax(0, 1fr);
     border-right: 1px solid rgba(18, 38, 63, 0.08);
     border-bottom: 0;
   }
   body[data-page="comunicacao"] .message-board-column,
   body[data-page="comunicacao"] .message-thread-column {
+    grid-area: auto !important;
+    grid-column: 2;
+    grid-row: 1;
     min-height: 0;
     border-right: 0;
     border-top: 0;
