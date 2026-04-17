@@ -3,6 +3,7 @@
   const THREAD_STATE_KEY = "agenda-gama-message-thread-state";
   const THREAD_VIEW_KEY = "agenda-gama-message-thread-view";
   const CHANNEL_FILTER_KEY = "agenda-gama-message-left-filter";
+  const MESSAGE_PANEL_MODE_KEY = "agenda-gama-message-panel-mode";
 
   const DEFAULT_DIRECTORY = {
     turmas: [
@@ -924,6 +925,7 @@
       if (!session) return;
 
       const refs = {
+        layout: document.getElementById("message-central-layout"),
         searchInput: document.getElementById("message-search-input"),
         toggleNewThread: document.getElementById("toggle-new-thread"),
         newThreadPanel: document.getElementById("new-thread-panel"),
@@ -975,6 +977,7 @@
         statOpen: document.getElementById("stat-open-count"),
         statUnread: document.getElementById("stat-unread-count"),
         statApproval: document.getElementById("stat-approval-count"),
+        viewToggles: Array.from(document.querySelectorAll(".message-view-toggle")),
         tabCountResponder: document.getElementById("tab-count-responder"),
         tabCountAprovar: document.getElementById("tab-count-aprovar"),
         tabCountTodas: document.getElementById("tab-count-todas"),
@@ -995,6 +998,7 @@
         selectedChannelId: null,
         selectedThreadKey: null,
         activeTab: "responder",
+        viewMode: localStorage.getItem(MESSAGE_PANEL_MODE_KEY) || "board",
         leftFilter: localStorage.getItem(CHANNEL_FILTER_KEY) || "all",
         searchTerm: "",
         filters: {
@@ -1049,6 +1053,12 @@
 
       function getSelectedThread() {
         return state.threads.find(function (thread) { return thread.key === state.selectedThreadKey; }) || null;
+      }
+
+      function setViewMode(mode) {
+        const nextMode = mode === "thread" ? "thread" : "board";
+        state.viewMode = nextMode;
+        localStorage.setItem(MESSAGE_PANEL_MODE_KEY, nextMode);
       }
 
       function getVisibleSidebarThreads() {
@@ -1474,6 +1484,11 @@
         refs.filterSetor.value = state.filters.sector;
         refs.filterStatus.value = state.filters.status;
         refs.filterUnread.value = state.filters.unread;
+        refs.layout?.classList.toggle("is-board-view", state.viewMode === "board");
+        refs.layout?.classList.toggle("is-thread-view", state.viewMode === "thread");
+        refs.viewToggles.forEach(function (button) {
+          button.classList.toggle("active", button.dataset.view === state.viewMode);
+        });
       }
 
       async function refreshAll() {
@@ -1657,6 +1672,7 @@
 
         state.selectedChannelId = channel.id;
         state.selectedThreadKey = thread.key;
+        setViewMode("thread");
         refs.newThreadForm.reset();
         refs.newThreadFeedback.textContent = "Conversa criada com sucesso.";
         refs.newThreadFeedback.className = "feedback success";
@@ -1694,6 +1710,13 @@
         renderAll();
       });
 
+      refs.viewToggles.forEach(function (button) {
+        button.addEventListener("click", function () {
+          setViewMode(button.dataset.view || "board");
+          renderAll();
+        });
+      });
+
       refs.leftFilters.forEach(function (button) {
         button.addEventListener("click", function () {
           state.leftFilter = button.dataset.leftFilter || "all";
@@ -1705,24 +1728,29 @@
       refs.tabBar.forEach(function (button) {
         button.addEventListener("click", function () {
           state.activeTab = button.dataset.tab || "todas";
+          setViewMode("board");
           renderAll();
         });
       });
 
       refs.filterTurma?.addEventListener("change", function () {
         state.filters.turma = refs.filterTurma.value;
+        setViewMode("board");
         renderAll();
       });
       refs.filterSetor?.addEventListener("change", function () {
         state.filters.sector = refs.filterSetor.value;
+        setViewMode("board");
         renderAll();
       });
       refs.filterStatus?.addEventListener("change", function () {
         state.filters.status = refs.filterStatus.value;
+        setViewMode("board");
         renderAll();
       });
       refs.filterUnread?.addEventListener("change", function () {
         state.filters.unread = refs.filterUnread.value;
+        setViewMode("board");
         renderAll();
       });
 
@@ -1731,6 +1759,7 @@
         if (!button) return;
         state.selectedChannelId = state.selectedChannelId === button.dataset.channelId ? "" : button.dataset.channelId;
         state.filters.channelId = state.selectedChannelId;
+        setViewMode("board");
         renderAll();
       });
 
@@ -1743,6 +1772,7 @@
           state.viewState = markThreadRead(state.viewState, session, selectedThread.key, selectedThread.lastMessage.created_at);
           rebuildThreads();
         }
+        setViewMode("thread");
         renderAll();
       }
 
