@@ -3,153 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda Gama | Comunicacao</title>
+  <title>Agenda Gama | Central de Mensagens</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260416-5">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260417-2">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
 
   <template id="page-template">
-    <section class="page-hero">
-      <div>
-        <span class="pill">Comunicacao</span>
-        <h1>Canais da familia</h1>
-        <p>Abra um canal, acompanhe os avisos da turma e converse com a escola em um layout mais proximo de uma caixa de entrada.</p>
-      </div>
-      <div class="page-actions">
-        <article class="info-card">
-          <span>Canais visiveis</span>
-          <strong id="channels-total">00</strong>
-        </article>
-      </div>
-    </section>
+    <section class="message-central-shell">
+      <header class="message-central-header">
+        <div>
+          <span class="pill">Central de Mensagens</span>
+          <h1>Atendimento escolar em tempo real</h1>
+          <p>Uma central inspirada em aplicativos de conversa, com organizacao por prioridade, aprovacoes e historico por familia.</p>
+        </div>
+        <div class="message-central-stats">
+          <article class="info-card">
+            <span>Conversas abertas</span>
+            <strong id="stat-open-count">00</strong>
+          </article>
+          <article class="info-card">
+            <span>Nao lidas</span>
+            <strong id="stat-unread-count">00</strong>
+          </article>
+          <article class="info-card">
+            <span>Aguardando aprovacao</span>
+            <strong id="stat-approval-count">00</strong>
+          </article>
+        </div>
+      </header>
 
-    <section class="status-grid">
-      <article class="status-card">
-        <span>Rascunho</span>
-        <strong id="status-rascunho">00</strong>
-      </article>
-      <article class="status-card">
-        <span>Pendente</span>
-        <strong id="status-pendente">00</strong>
-      </article>
-      <article class="status-card">
-        <span>Aprovada</span>
-        <strong id="status-aprovada">00</strong>
-      </article>
-      <article class="status-card">
-        <span>Enviada</span>
-        <strong id="status-enviada">00</strong>
-      </article>
-    </section>
-
-    <section class="communication-inbox" style="margin-top: 20px;">
-      <aside class="panel inbox-sidebar">
-        <div class="section-heading">
-          <div>
-            <h2>Canais da familia</h2>
-            <p>Selecione o canal que deseja acompanhar.</p>
+      <section class="message-central-layout">
+        <aside class="panel message-sidebar-column">
+          <div class="message-sidebar-top">
+            <label class="field search-field">
+              <span>Buscar conversa</span>
+              <input id="message-search-input" type="search" placeholder="Buscar por responsavel, aluno ou mensagem">
+            </label>
+            <button type="button" id="toggle-new-thread" class="btn btn-primary btn-block">Nova conversa</button>
           </div>
-        </div>
 
-        <div class="communication-search-row">
-          <label class="field search-field">
-            <span>Buscar canal</span>
-            <input id="channel-search" placeholder="Pesquisar canal">
-          </label>
-          <button type="button" id="toggle-channel-form" class="btn btn-secondary channel-plus-button" title="Criar canal">+</button>
-        </div>
+          <article id="new-thread-panel" class="message-new-thread-panel" hidden>
+            <div class="section-heading compact-heading">
+              <div>
+                <h2>Nova conversa</h2>
+                <p>Abra um novo atendimento com familia, setor ou canal.</p>
+              </div>
+            </div>
+            <form id="new-thread-form" class="stack-md">
+              <label class="field">
+                <span>Tipo</span>
+                <select id="new-thread-type" name="threadType">
+                  <option value="family">Conversa com responsavel</option>
+                  <option value="broadcast">Canal da turma</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Canal</span>
+                <select id="new-thread-channel" name="channelId"></select>
+              </label>
+              <label id="new-thread-student-field" class="field">
+                <span>Aluno</span>
+                <select id="new-thread-student" name="studentId"></select>
+              </label>
+              <label id="new-thread-responsavel-field" class="field">
+                <span>Responsavel</span>
+                <select id="new-thread-responsavel" name="responsavelId"></select>
+              </label>
+              <label class="field">
+                <span>Setor</span>
+                <select id="new-thread-sector" name="sector"></select>
+              </label>
+              <label class="field">
+                <span>Assunto</span>
+                <input id="new-thread-subject" name="subject" placeholder="Ex.: Duvida sobre agenda e uniforme">
+              </label>
+              <label class="field">
+                <span>Mensagem inicial</span>
+                <textarea id="new-thread-message" name="message" placeholder="Escreva a primeira mensagem desta conversa."></textarea>
+              </label>
+              <div class="toolbar">
+                <button type="submit" class="btn btn-primary">Criar conversa</button>
+                <button type="button" id="cancel-new-thread" class="btn btn-secondary">Cancelar</button>
+              </div>
+            </form>
+            <div id="new-thread-feedback" class="feedback" aria-live="polite"></div>
+          </article>
 
-        <article id="channel-form-panel" class="hint-box" hidden>
-          <div class="section-heading">
-            <div>
-              <h2>Novo canal</h2>
-              <p>Crie um canal vinculado a uma turma.</p>
+          <div class="message-sidebar-filters">
+            <button type="button" class="sidebar-quick-filter active" data-left-filter="all">Tudo</button>
+            <button type="button" class="sidebar-quick-filter" data-left-filter="unread">Nao lidas</button>
+            <button type="button" class="sidebar-quick-filter" data-left-filter="urgent">Urgentes</button>
+            <button type="button" class="sidebar-quick-filter" data-left-filter="pinned">Fixadas</button>
+          </div>
+
+          <div class="message-sidebar-groups">
+            <section class="message-sidebar-section">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2>Canais</h2>
+                  <p>Turmas e setores visiveis no seu perfil.</p>
+                </div>
+              </div>
+              <div id="message-channel-list" class="message-channel-list"></div>
+            </section>
+
+            <section class="message-sidebar-section">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2>Conversas</h2>
+                  <p>Lista rapida para acesso imediato.</p>
+                </div>
+              </div>
+              <div id="sidebar-thread-list" class="message-thread-list"></div>
+              <p id="sidebar-thread-empty" class="empty-state" hidden>Nenhuma conversa encontrada.</p>
+            </section>
+          </div>
+        </aside>
+
+        <section class="panel message-board-column">
+          <div class="message-board-header">
+            <div id="message-tab-bar" class="message-tab-bar">
+              <button type="button" class="message-tab active" data-tab="responder">Responder <span id="tab-count-responder" class="filter-count">0</span></button>
+              <button type="button" class="message-tab" data-tab="aprovar">Aprovar <span id="tab-count-aprovar" class="filter-count">0</span></button>
+              <button type="button" class="message-tab" data-tab="todas">Todas <span id="tab-count-todas" class="filter-count">0</span></button>
+              <button type="button" class="message-tab" data-tab="arquivadas">Arquivadas <span id="tab-count-arquivadas" class="filter-count">0</span></button>
+              <button type="button" class="message-tab" data-tab="nao-lidas">Nao lidas <span id="tab-count-nao-lidas" class="filter-count">0</span></button>
             </div>
           </div>
-          <form id="channel-form" class="stack-md">
+
+          <div class="message-filter-grid">
             <label class="field">
-              <span>Nome do canal</span>
-              <input name="nome" placeholder="Ex.: Canal do 1o Ano A" required>
+              <span>Turma</span>
+              <select id="filter-turma"></select>
             </label>
             <label class="field">
-              <span>Turma vinculada</span>
-              <select id="channel-turma" name="publico" required></select>
+              <span>Setor</span>
+              <select id="filter-setor"></select>
             </label>
             <label class="field">
-              <span>Descricao</span>
-              <textarea name="descricao" placeholder="Explique o objetivo deste canal." required></textarea>
+              <span>Status</span>
+              <select id="filter-status"></select>
             </label>
-            <button type="submit" class="btn btn-primary">Criar canal</button>
-          </form>
-          <div id="channel-feedback" class="feedback" aria-live="polite"></div>
-        </article>
-
-        <div id="channel-button-list" class="inbox-channel-list"></div>
-        <p id="channel-empty" class="empty-state" hidden>Nenhum canal disponivel para este perfil.</p>
-      </aside>
-
-      <section class="panel inbox-board">
-        <div class="inbox-topbar">
-          <button type="button" id="quick-open-chat" class="btn btn-primary">Nova conversa</button>
-          <div id="conversation-tabs" class="inbox-filter-tabs">
-            <button type="button" class="conversation-filter active" data-filter="responder">Responder <span id="filter-count-responder" class="filter-count">0</span></button>
-            <button type="button" class="conversation-filter" data-filter="aprovar">Aprovar <span id="filter-count-aprovar" class="filter-count">0</span></button>
-            <button type="button" class="conversation-filter" data-filter="todas">Todas <span id="filter-count-todas" class="filter-count">0</span></button>
-          </div>
-        </div>
-
-        <div class="conversation-workspace">
-          <div class="conversation-list-column">
-            <div id="conversation-list" class="conversation-list"></div>
+            <label class="field">
+              <span>Leitura</span>
+              <select id="filter-unread"></select>
+            </label>
           </div>
 
-          <div class="conversation-thread-column">
-            <div id="thread-header" class="thread-header"></div>
-            <div id="thread-meta" class="hint-box" hidden></div>
-            <div id="thread-body" class="chat-thread"></div>
+          <div class="message-board-summary" id="message-board-summary"></div>
+          <div class="message-board-list" id="message-board-list"></div>
+          <p id="message-board-empty" class="empty-state" hidden>Nenhuma conversa encontrada nesse painel.</p>
+        </section>
 
-            <article id="thread-composer-panel" class="chat-composer" hidden>
-              <form id="chat-form" class="stack-md">
-                <div id="staff-target-panel" class="stack-md" hidden>
-                  <label class="field">
-                    <span>Modo de envio</span>
-                    <select id="staff-target-mode" name="targetMode">
-                      <option value="geral">Enviar para todos os responsaveis da turma</option>
-                      <option value="individual">Selecionar responsaveis</option>
-                    </select>
-                  </label>
-                  <label id="staff-target-list-field" class="field" hidden>
-                    <span>Responsaveis</span>
-                    <select id="staff-target-list" name="targetRecipients" multiple></select>
-                  </label>
-                  <p id="target-hint" class="muted"></p>
+        <aside class="panel message-thread-column">
+          <div id="thread-empty-state" class="thread-empty-state">
+            <div class="message-empty-illustration">AG</div>
+            <h2>Selecione uma conversa</h2>
+            <p>Abra um card do painel ou uma conversa na lateral para visualizar o atendimento completo.</p>
+          </div>
+
+          <div id="thread-view" class="thread-view" hidden>
+            <header id="thread-header-panel" class="thread-header-panel"></header>
+
+            <div id="thread-action-bar" class="thread-action-bar"></div>
+
+            <div id="thread-alerts" class="thread-alerts"></div>
+
+            <section id="thread-body" class="thread-body"></section>
+
+            <aside id="internal-notes-panel" class="internal-notes-panel" hidden>
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2>Observacoes internas</h2>
+                  <p>Notas internas visiveis apenas para a escola.</p>
                 </div>
+              </div>
+              <div id="internal-notes-list" class="internal-notes-list"></div>
+            </aside>
 
-                <label class="field">
-                  <span>Mensagem</span>
-                  <textarea id="chat-message-input" name="content" placeholder="Digite sua mensagem." required></textarea>
-                </label>
+            <section class="thread-templates-panel">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2>Respostas rapidas</h2>
+                  <p>Modelos prontos para agilizar o atendimento.</p>
+                </div>
+              </div>
+              <div id="quick-template-list" class="quick-template-list"></div>
+            </section>
 
-                <div id="chat-actions" class="toolbar"></div>
-              </form>
-              <div id="chat-feedback" class="feedback" aria-live="polite"></div>
-            </article>
+            <form id="thread-composer-form" class="thread-composer-form">
+              <div class="composer-toolbar">
+                <button type="button" id="attach-message-button" class="btn btn-secondary btn-sm">Anexo</button>
+                <button type="button" id="internal-note-button" class="btn btn-secondary btn-sm">Obs. interna</button>
+                <button type="button" id="clear-attachments-button" class="btn btn-secondary btn-sm" hidden>Limpar anexos</button>
+                <span id="typing-indicator" class="tag" hidden>Digitando...</span>
+              </div>
+
+              <input id="thread-attachment-input" type="file" multiple hidden>
+              <div id="attachment-preview-list" class="attachment-preview-list" hidden></div>
+
+              <label class="field">
+                <span>Mensagem</span>
+                <textarea id="thread-message-input" name="message" placeholder="Escreva sua resposta ou observacao interna"></textarea>
+              </label>
+
+              <div class="composer-footer">
+                <div id="composer-context" class="muted"></div>
+                <div class="toolbar">
+                  <button type="button" id="save-draft-button" class="btn btn-secondary">Salvar rascunho</button>
+                  <button type="submit" id="send-message-button" class="btn btn-primary">Enviar mensagem</button>
+                </div>
+              </div>
+              <div id="thread-composer-feedback" class="feedback" aria-live="polite"></div>
+            </form>
           </div>
-        </div>
+        </aside>
       </section>
     </section>
   </template>
 
-  <script src="../assets/js/config.js?v=20260416-4"></script>
-  <script src="../assets/js/supabase.js?v=20260416-4"></script>
-  <script src="../assets/js/auth.js?v=20260416-4"></script>
-  <script src="../assets/js/app.js?v=20260416-4"></script>
-  <script src="../assets/js/data-store.js?v=20260416-4"></script>
-  <script src="../assets/js/communication.js?v=20260416-5"></script>
+  <script src="../assets/js/config.js?v=20260417-2"></script>
+  <script src="../assets/js/supabase.js?v=20260417-2"></script>
+  <script src="../assets/js/auth.js?v=20260417-2"></script>
+  <script src="../assets/js/app.js?v=20260417-2"></script>
+  <script src="../assets/js/data-store.js?v=20260417-2"></script>
+  <script src="../assets/js/communication.js?v=20260417-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();
