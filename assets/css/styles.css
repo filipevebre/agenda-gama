@@ -2000,3 +2000,157 @@ td { color: var(--text-muted); }
     grid-template-columns: 1fr;
   }
 }
+
+@media (min-width: 981px) {
+  .message-central-layout {
+    grid-template-columns: 360px minmax(0, 1fr) !important;
+    grid-template-rows: 240px minmax(0, 1fr);
+    grid-template-areas:
+      "sidebar thread"
+      "board thread";
+    min-height: calc(100vh - 260px);
+  }
+  .message-central-layout .message-sidebar-column {
+    grid-area: sidebar;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr);
+    border-right: 1px solid rgba(18, 38, 63, 0.08);
+    border-bottom: 1px solid rgba(18, 38, 63, 0.08);
+  }
+  .message-central-layout .message-board-column {
+    grid-area: board;
+    display: grid !important;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    border-right: 1px solid rgba(18, 38, 63, 0.08);
+  }
+  .message-central-layout .message-thread-column {
+    grid-area: thread;
+    display: grid !important;
+    min-height: 0;
+    background: #f8fbfe;
+  }
+  .message-central-layout.is-board-view .message-thread-column,
+  .message-central-layout.is-thread-view .message-board-column {
+    display: grid !important;
+  }
+  .message-view-switcher,
+  .thread-panel-topbar {
+    display: none !important;
+  }
+  .message-sidebar-groups {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .message-channel-list {
+    min-height: 0;
+    overflow: auto;
+  }
+  .message-board-toolbar {
+    padding: 14px 16px 10px;
+    align-items: center;
+  }
+  .message-toolbar-stats {
+    margin-left: auto;
+  }
+  .message-board-header {
+    padding: 0 16px;
+  }
+  .clean-filter-grid {
+    padding: 12px 16px;
+  }
+  .message-board-summary {
+    padding: 10px 16px;
+  }
+  .message-board-list {
+    min-height: 0;
+    overflow: auto;
+  }
+  .message-board-card {
+    padding: 14px 16px;
+  }
+  .thread-view {
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto;
+  }
+  .thread-header-panel,
+  .thread-action-bar,
+  .thread-alerts,
+  .thread-composer-form,
+  .thread-templates-panel,
+  .internal-notes-panel {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .thread-body {
+    min-height: 0;
+    padding: 22px 20px;
+  }
+  .thread-bubble {
+    max-width: 78%;
+    font-size: 0.98rem;
+  }
+  .thread-bubble p {
+    font-size: 1rem;
+  }
+  .thread-composer-form {
+    background: #ffffff;
+    border-top: 1px solid rgba(18, 38, 63, 0.08);
+  }
+  .message-thread-column .field textarea {
+    min-height: 110px;
+  }
+}
+
+body[data-page="comunicacao"].app-shell-body {
+  overflow: auto;
+}
+body[data-page="comunicacao"] .main-content {
+  height: auto;
+  min-height: calc(100vh - 44px);
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+body[data-page="comunicacao"] .main-stack {
+  position: static;
+  inset: auto;
+  min-height: calc(100vh - 88px);
+  padding: 22px 24px 40px;
+}
+body[data-page="comunicacao"] .page-content {
+  overflow: visible;
+  min-height: auto;
+  padding-right: 8px;
+}
+body[data-page="comunicacao"] .message-central-shell {
+  min-height: auto;
+  padding-bottom: 28px;
+}
+body[data-page="comunicacao"] .message-central-layout {
+  min-height: calc(100vh - 190px);
+  height: auto;
+}
+body[data-page="comunicacao"] .message-sidebar-column,
+body[data-page="comunicacao"] .message-board-column,
+body[data-page="comunicacao"] .message-thread-column,
+body[data-page="comunicacao"] .thread-view {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+body[data-page="comunicacao"] .message-channel-list,
+body[data-page="comunicacao"] .message-thread-list,
+body[data-page="comunicacao"] .message-board-list,
+body[data-page="comunicacao"] .thread-body,
+body[data-page="comunicacao"] .internal-notes-list {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+body[data-page="comunicacao"] .main-content::-webkit-scrollbar {
+  width: 12px;
+}
+body[data-page="comunicacao"] .main-content::-webkit-scrollbar-thumb {
+  background: rgba(25, 50, 77, 0.22);
+  border-radius: 999px;
+}
