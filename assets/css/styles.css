@@ -1925,6 +1925,12 @@ td { color: var(--text-muted); }
 .message-central-layout {
   grid-template-columns: 280px minmax(0, 1fr);
 }
+.message-central-layout .message-board-column {
+  display: grid;
+}
+.message-central-layout .message-thread-column {
+  display: none;
+}
 .message-central-layout.is-board-view .message-board-column,
 .message-central-layout.is-thread-view .message-thread-column {
   display: grid;

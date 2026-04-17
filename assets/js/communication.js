@@ -807,6 +807,10 @@
     select.value = values.includes(normalizedValue) ? normalizedValue : values[0];
   }
 
+  function normalizeViewMode(value) {
+    return value === "thread" ? "thread" : "board";
+  }
+
   function buildStatusBadge(label) {
     const normalized = normalizeText(label);
     let className = "status-enviada";
@@ -998,7 +1002,7 @@
         selectedChannelId: null,
         selectedThreadKey: null,
         activeTab: "responder",
-        viewMode: localStorage.getItem(MESSAGE_PANEL_MODE_KEY) || "board",
+        viewMode: normalizeViewMode(localStorage.getItem(MESSAGE_PANEL_MODE_KEY)),
         leftFilter: localStorage.getItem(CHANNEL_FILTER_KEY) || "all",
         searchTerm: "",
         filters: {
@@ -1056,7 +1060,7 @@
       }
 
       function setViewMode(mode) {
-        const nextMode = mode === "thread" ? "thread" : "board";
+        const nextMode = normalizeViewMode(mode);
         state.viewMode = nextMode;
         localStorage.setItem(MESSAGE_PANEL_MODE_KEY, nextMode);
       }
