@@ -2238,12 +2238,18 @@ body[data-page="comunicacao"] .message-board-card {
   grid-template-columns: 1fr !important;
   gap: 6px;
   align-items: stretch;
+  align-self: start;
   padding: 10px 14px;
   border: 0 !important;
   border-bottom: 1px solid rgba(18, 38, 63, 0.12) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   background: #ffffff !important;
+}
+body[data-page="comunicacao"] .message-board-list {
+  display: grid !important;
+  grid-auto-rows: max-content;
+  align-content: start !important;
 }
 body[data-page="comunicacao"] .message-board-card:first-child {
   border-top: 1px solid rgba(18, 38, 63, 0.12);
