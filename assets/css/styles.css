@@ -2236,7 +2236,7 @@ body[data-page="comunicacao"] [hidden] {
 body[data-page="comunicacao"] .message-board-card {
   display: grid;
   grid-template-columns: 1fr !important;
-  gap: 10px;
+  gap: 6px;
   align-items: stretch;
 }
 body[data-page="comunicacao"] .message-board-open {
@@ -2256,25 +2256,29 @@ body[data-page="comunicacao"] .message-board-actions {
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
-  padding-left: 58px;
+  gap: 6px;
+  padding-left: 48px;
+  margin-top: -2px;
   align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
   scrollbar-width: thin;
 }
 body[data-page="comunicacao"] .message-board-action {
   flex: 0 0 auto;
   transform: none !important;
-  padding: 8px 11px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
   white-space: nowrap;
 }
 body[data-page="comunicacao"] .message-board-actions::-webkit-scrollbar {
-  height: 8px;
+  height: 6px;
 }
 body[data-page="comunicacao"] .message-board-actions::-webkit-scrollbar-thumb {
   background: rgba(25, 50, 77, 0.18);
