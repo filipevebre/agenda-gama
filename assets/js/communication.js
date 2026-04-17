@@ -782,6 +782,18 @@
     return Boolean(thread && session.role === "responsaveis" && thread.type === "broadcast");
   }
 
+  function isAssignedToCurrentUser(thread, session) {
+    return Boolean(thread && normalizeEmail(thread.local.assignedEmail) === normalizeEmail(session.email));
+  }
+
+  function canReplyToThread(thread, session) {
+    if (!thread) return false;
+    if (isReadOnlyThread(thread, session)) return false;
+    if (session.role === "responsaveis") return true;
+    if (session.role === "administrador" || session.canApprove) return true;
+    return isAssignedToCurrentUser(thread, session);
+  }
+
   function getComposerContext(thread, session, internalMode) {
     if (!thread) return "";
     if (internalMode && session.role !== "responsaveis") {
@@ -789,6 +801,9 @@
     }
     if (isReadOnlyThread(thread, session)) {
       return "Canal somente leitura para a familia. Use uma conversa individual para falar com a escola.";
+    }
+    if (session.role !== "responsaveis" && !session.canApprove && !isAssignedToCurrentUser(thread, session)) {
+      return "Assuma essa conversa para responder em tempo real e registrar o atendimento.";
     }
     if (thread.type === "broadcast") {
       return `Canal da turma ${thread.turma || thread.channelName}.`;
@@ -1448,18 +1463,21 @@
           return `<button type="button" class="quick-template-chip" data-template-id="${escapeHtml(template.id)}">${escapeHtml(template.label)}</button>`;
         }).join("");
 
+        const canReply = canReplyToThread(thread, session);
         refs.composerContext.textContent = getComposerContext(thread, session, state.internalMode);
-        refs.composerInput.disabled = readOnlyThread;
-        refs.attachButton.disabled = readOnlyThread;
-        refs.attachmentInput.disabled = readOnlyThread;
-        refs.saveDraftButton.disabled = readOnlyThread;
-        refs.sendMessageButton.disabled = readOnlyThread;
+        refs.composerInput.disabled = !canReply;
+        refs.attachButton.disabled = !canReply;
+        refs.attachmentInput.disabled = !canReply;
+        refs.saveDraftButton.disabled = !canReply;
+        refs.sendMessageButton.disabled = !canReply;
         refs.internalNoteButton.hidden = session.role === "responsaveis";
-        refs.internalNoteButton.disabled = readOnlyThread;
-        refs.composerForm.classList.toggle("is-read-only", readOnlyThread);
-        refs.composerInput.placeholder = readOnlyThread
+        refs.internalNoteButton.disabled = !canReply;
+        refs.composerForm.classList.toggle("is-read-only", !canReply);
+        refs.composerInput.placeholder = isReadOnlyThread(thread, session)
           ? "Esse canal e somente leitura para a familia."
-          : "Escreva sua resposta ou observacao interna";
+          : !canReply
+            ? "Assuma essa conversa para responder."
+            : "Escreva sua resposta ou observacao interna";
       }
 
       function renderAttachmentPreview() {
@@ -1547,14 +1565,30 @@
           created_at: nowIso()
         };
 
-        await window.AgendaGamaDataStore.save("messages", message, DEFAULT_MESSAGES);
+        return await window.AgendaGamaDataStore.save("messages", message, DEFAULT_MESSAGES);
+      }
+
+      function appendSavedMessage(savedMessage) {
+        if (!savedMessage) return;
+        const parsedMessage = parseStoredMessage(savedMessage, state.directory, state.channels, state.maps);
+        state.parsedMessages = state.parsedMessages.concat(parsedMessage);
+        rebuildThreads();
+        const thread = state.threads.find(function (item) {
+          return item.key === parsedMessage.parsed.thread?.key;
+        }) || null;
+        if (thread?.lastMessage?.created_at) {
+          state.viewState = markThreadRead(state.viewState, session, thread.key, thread.lastMessage.created_at);
+          rebuildThreads();
+        }
       }
 
       async function handleComposerSubmit(mode) {
         const thread = getSelectedThread();
         if (!thread) return;
-        if (isReadOnlyThread(thread, session)) {
-          refs.composerFeedback.textContent = "Esse canal e somente leitura para a familia.";
+        if (!canReplyToThread(thread, session)) {
+          refs.composerFeedback.textContent = isReadOnlyThread(thread, session)
+            ? "Esse canal e somente leitura para a familia."
+            : "Assuma essa conversa para responder em tempo real.";
           refs.composerFeedback.className = "feedback error";
           return;
         }
@@ -1573,7 +1607,9 @@
             ? "sent"
             : session.role === "responsaveis" || session.canApprove
               ? "sent"
-              : "pending_approval";
+              : isAssignedToCurrentUser(thread, session)
+                ? "sent"
+                : "pending_approval";
         const recipientType = thread.type === "broadcast"
           ? "turmas"
           : session.role === "responsaveis"
@@ -1585,7 +1621,7 @@
             ? [thread.sector || thread.channelName]
             : [thread.responsibleEmail || thread.responsibleName];
 
-        await saveMessage(thread, {
+        const savedMessage = await saveMessage(thread, {
           text: text,
           internalOnly: internalOnly,
           attachments: state.pendingAttachments,
@@ -1593,6 +1629,7 @@
           recipientType: recipientType,
           recipients: recipients
         });
+        appendSavedMessage(savedMessage);
 
         refs.composerInput.value = "";
         state.pendingAttachments = [];
@@ -1605,7 +1642,8 @@
             ? "Mensagem enviada para aprovacao."
             : "Mensagem enviada com sucesso.";
         refs.composerFeedback.className = "feedback success";
-        await refreshAll();
+        renderAll();
+        refs.composerInput.focus();
       }
 
       async function handleNewThreadSubmit(event) {
@@ -1661,7 +1699,7 @@
           subject: subject
         };
 
-        await saveMessage(thread, {
+        const savedMessage = await saveMessage(thread, {
           text: text,
           internalOnly: false,
           attachments: [],
@@ -1673,6 +1711,7 @@
               ? [thread.sector || channel.nome]
               : [thread.responsibleEmail || thread.responsibleName]
         });
+        appendSavedMessage(savedMessage);
 
         state.selectedChannelId = channel.id;
         state.selectedThreadKey = thread.key;
@@ -1681,7 +1720,7 @@
         refs.newThreadFeedback.textContent = "Conversa criada com sucesso.";
         refs.newThreadFeedback.className = "feedback success";
         refs.newThreadPanel.hidden = true;
-        await refreshAll();
+        renderAll();
       }
 
       refs.toggleNewThread?.addEventListener("click", function () {
@@ -1853,6 +1892,13 @@
 
         if (action === "assign") {
           updateThreadState(state, thread.key, { assignedTo: session.name, assignedEmail: session.email });
+          rebuildThreads();
+          setViewMode("thread");
+          renderAll();
+          refs.composerFeedback.textContent = "Conversa assumida. Voce ja pode responder em tempo real.";
+          refs.composerFeedback.className = "feedback success";
+          refs.composerInput.focus();
+          return;
         }
         if (action === "pin") {
           updateThreadState(state, thread.key, { pinned: !thread.local.pinned });
