@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260422-6">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260422-7">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
@@ -25,6 +25,9 @@
               <span>Buscar conversa</span>
               <input id="message-search-input" type="search" placeholder="Buscar">
             </label>
+            <div class="message-sidebar-actions">
+              <button type="button" id="open-channel-manager" class="btn btn-secondary btn-sm">Gerenciar canais</button>
+            </div>
           </div>
 
           <div class="message-sidebar-groups">
@@ -227,6 +230,62 @@
           </article>
         </div>
       </div>
+
+      <div id="channel-manager-modal" class="message-modal" hidden>
+        <div class="message-modal-backdrop" data-close-channel-manager="true"></div>
+        <div class="message-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="channel-manager-title">
+          <section class="message-new-thread-panel message-new-thread-modal-panel channel-manager-panel">
+            <div class="message-modal-header">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2 id="channel-manager-title">Gerenciar canais</h2>
+                  <p>Crie novos canais e acompanhe os canais ja cadastrados no sistema.</p>
+                </div>
+              </div>
+              <button type="button" id="close-channel-manager" class="btn btn-secondary message-modal-close" aria-label="Fechar gerenciamento de canais">x</button>
+            </div>
+
+            <form id="channel-manager-form" class="stack-md">
+              <label class="field">
+                <span>Tipo do canal</span>
+                <select id="channel-manager-type" name="channelType">
+                  <option value="turma">Canal de turma</option>
+                  <option value="custom">Canal livre</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Nome do canal</span>
+                <input id="channel-manager-name" name="name" placeholder="Ex.: Canal 2o Ano A ou Secretaria infantil">
+              </label>
+              <label class="field">
+                <span>Publico ou turma</span>
+                <input id="channel-manager-publico" name="publico" list="channel-manager-publico-options" placeholder="Ex.: 2o Ano A ou Atendimento geral">
+                <datalist id="channel-manager-publico-options"></datalist>
+              </label>
+              <label class="field">
+                <span>Descricao</span>
+                <textarea id="channel-manager-description" name="description" placeholder="Descreva rapidamente o objetivo do canal."></textarea>
+              </label>
+              <div class="toolbar">
+                <button type="submit" class="btn btn-primary">Criar canal</button>
+                <button type="button" id="cancel-channel-manager" class="btn btn-secondary">Fechar</button>
+              </div>
+            </form>
+
+            <div id="channel-manager-feedback" class="feedback" aria-live="polite"></div>
+
+            <section class="channel-manager-list-section">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2>Canais cadastrados</h2>
+                  <p>Os canais do sistema ficam visiveis para consulta e os canais criados aqui podem ser excluidos.</p>
+                </div>
+              </div>
+              <div id="channel-manager-list" class="channel-manager-list"></div>
+            </section>
+          </section>
+        </div>
+      </div>
     </section>
   </template>
 
@@ -235,7 +294,7 @@
   <script src="../assets/js/auth.js?v=20260417-20"></script>
   <script src="../assets/js/app.js?v=20260422-5"></script>
   <script src="../assets/js/data-store.js?v=20260417-20"></script>
-  <script src="../assets/js/communication.js?v=20260422-3"></script>
+  <script src="../assets/js/communication.js?v=20260422-4"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();

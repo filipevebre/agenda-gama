@@ -1009,6 +1009,7 @@
         layout: document.getElementById("message-central-layout"),
         searchInput: document.getElementById("message-search-input"),
         toggleNewThread: document.getElementById("toggle-new-thread"),
+        openChannelManager: document.getElementById("open-channel-manager"),
         newThreadModal: document.getElementById("new-thread-modal"),
         newThreadPanel: document.getElementById("new-thread-panel"),
         newThreadForm: document.getElementById("new-thread-form"),
@@ -1024,6 +1025,17 @@
         newThreadResponsavel: document.getElementById("new-thread-responsavel"),
         newThreadSector: document.getElementById("new-thread-sector"),
         newThreadSubject: document.getElementById("new-thread-subject"),
+        channelManagerModal: document.getElementById("channel-manager-modal"),
+        closeChannelManager: document.getElementById("close-channel-manager"),
+        cancelChannelManager: document.getElementById("cancel-channel-manager"),
+        channelManagerForm: document.getElementById("channel-manager-form"),
+        channelManagerType: document.getElementById("channel-manager-type"),
+        channelManagerName: document.getElementById("channel-manager-name"),
+        channelManagerPublico: document.getElementById("channel-manager-publico"),
+        channelManagerPublicoOptions: document.getElementById("channel-manager-publico-options"),
+        channelManagerDescription: document.getElementById("channel-manager-description"),
+        channelManagerFeedback: document.getElementById("channel-manager-feedback"),
+        channelManagerList: document.getElementById("channel-manager-list"),
         sidebarChannelList: document.getElementById("message-channel-list"),
         sidebarThreadList: document.getElementById("sidebar-thread-list"),
         sidebarThreadEmpty: document.getElementById("sidebar-thread-empty"),
@@ -1073,6 +1085,8 @@
         session: session,
         directory: null,
         maps: null,
+        storedChannels: [],
+        allChannels: [],
         channels: [],
         actorContext: null,
         parsedMessages: [],
@@ -1126,7 +1140,9 @@
 
         state.directory = { turmas: turmas, alunos: alunos, responsaveis: responsaveis, professores: professores, equipe: equipe };
         state.actorContext = getActorContext(session, state.directory);
-        state.channels = getVisibleChannelsForSession(session, state.actorContext, getAllChannels(storedChannels));
+        state.storedChannels = storedChannels;
+        state.allChannels = getAllChannels(storedChannels);
+        state.channels = getVisibleChannelsForSession(session, state.actorContext, state.allChannels);
 
         state.maps = buildMaps(state.directory);
         state.parsedMessages = storedMessages.map(function (message) {
@@ -1251,6 +1267,15 @@
         refs.newThreadFeedback.className = "feedback";
       }
 
+      function canManageChannels() {
+        return session.role === "administrador" || session.role === "funcionarios" || session.canApprove;
+      }
+
+      function updateModalBodyState() {
+        const hasOpenModal = !refs.newThreadModal?.hidden || !refs.channelManagerModal?.hidden;
+        document.body.classList.toggle("message-modal-open", Boolean(hasOpenModal));
+      }
+
       function getNewThreadFocusTarget() {
         if (!refs.newThreadStudentField.hidden) return refs.newThreadStudent;
         if (!refs.newThreadChannelField.hidden) return refs.newThreadChannel;
@@ -1260,7 +1285,7 @@
       function openNewThreadModal() {
         if (!refs.newThreadModal) return;
         refs.newThreadModal.hidden = false;
-        document.body.classList.add("message-modal-open");
+        updateModalBodyState();
         resetNewThreadFeedback();
         window.requestAnimationFrame(function () {
           getNewThreadFocusTarget()?.focus();
@@ -1270,8 +1295,80 @@
       function closeNewThreadModal() {
         if (!refs.newThreadModal) return;
         refs.newThreadModal.hidden = true;
-        document.body.classList.remove("message-modal-open");
+        updateModalBodyState();
         resetNewThreadFeedback();
+      }
+
+      function resetChannelManagerFeedback() {
+        refs.channelManagerFeedback.textContent = "";
+        refs.channelManagerFeedback.className = "feedback";
+      }
+
+      function populateChannelManagerOptions() {
+        refs.channelManagerPublicoOptions.innerHTML = (state.directory?.turmas || []).map(function (turma) {
+          return `<option value="${escapeHtml(turma.nome)}"></option>`;
+        }).join("");
+      }
+
+      function isSystemChannel(channel) {
+        return VIRTUAL_CHANNELS.some(function (item) { return item.id === channel.id; });
+      }
+
+      function getChannelConversationCount(channel) {
+        return state.threads.filter(function (thread) {
+          return thread.channelId === channel.id || normalizeText(thread.channelName) === normalizeText(channel.nome);
+        }).length;
+      }
+
+      function renderChannelManagerList() {
+        if (!refs.channelManagerList) return;
+
+        refs.channelManagerList.innerHTML = state.allChannels.map(function (channel) {
+          const systemChannel = isSystemChannel(channel);
+          const conversationCount = getChannelConversationCount(channel);
+          const channelTypeLabel = channel.channelType === "turma" ? "Turma" : systemChannel ? "Sistema" : "Canal";
+
+          return `
+            <article class="channel-manager-card">
+              <div class="channel-manager-card-copy">
+                <div class="channel-manager-card-head">
+                  <strong>${escapeHtml(channel.nome)}</strong>
+                  <div class="inline-tags">
+                    <span class="tag">${escapeHtml(channelTypeLabel)}</span>
+                    <span class="tag">${escapeHtml(channel.publico || "Sem publico")}</span>
+                  </div>
+                </div>
+                <p>${escapeHtml(channel.descricao || "Canal sem descricao cadastrada.")}</p>
+                <small>${escapeHtml(`${conversationCount} conversa(s) vinculada(s)`)}</small>
+              </div>
+              <div class="channel-manager-card-actions">
+                ${systemChannel ? '<span class="muted">Canal do sistema</span>' : `<button type="button" class="btn btn-secondary btn-sm" data-channel-remove-id="${escapeHtml(channel.id)}">Excluir</button>`}
+              </div>
+            </article>
+          `;
+        }).join("") || '<p class="empty-state">Nenhum canal disponivel no momento.</p>';
+      }
+
+      function openChannelManagerModal() {
+        if (!refs.channelManagerModal || !canManageChannels()) return;
+        refs.channelManagerModal.hidden = false;
+        updateModalBodyState();
+        refs.channelManagerForm?.reset();
+        refs.channelManagerType.value = "turma";
+        resetChannelManagerFeedback();
+        populateChannelManagerOptions();
+        renderChannelManagerList();
+        window.requestAnimationFrame(function () {
+          refs.channelManagerName?.focus();
+        });
+      }
+
+      function closeChannelManagerModal() {
+        if (!refs.channelManagerModal) return;
+        refs.channelManagerModal.hidden = true;
+        updateModalBodyState();
+        refs.channelManagerForm?.reset();
+        resetChannelManagerFeedback();
       }
 
       function populateFilterOptions() {
@@ -1646,14 +1743,19 @@
       function renderAll() {
         ensureSelections();
         populateNewThreadOptions();
+        populateChannelManagerOptions();
         populateFilterOptions();
         renderStats();
         renderTabs();
         renderChannelList();
+        renderChannelManagerList();
         renderSidebarThreads();
         renderBoard();
         renderThread();
         renderAttachmentPreview();
+        if (refs.openChannelManager) {
+          refs.openChannelManager.hidden = !canManageChannels();
+        }
         refs.leftFilters.forEach(function (button) {
           button.classList.toggle("active", button.dataset.leftFilter === state.leftFilter);
         });
@@ -1884,8 +1986,81 @@
         refs.composerInput.focus();
       }
 
+      async function handleChannelManagerSubmit(event) {
+        event.preventDefault();
+        const channelType = String(refs.channelManagerType.value || "turma");
+        const rawName = String(refs.channelManagerName.value || "").trim();
+        const rawPublico = String(refs.channelManagerPublico.value || "").trim();
+        const rawDescription = String(refs.channelManagerDescription.value || "").trim();
+        const matchedTurma = (state.directory.turmas || []).find(function (turma) {
+          return normalizeText(turma.nome) === normalizeText(rawPublico);
+        }) || null;
+        const publico = matchedTurma?.nome || rawPublico;
+        const nome = rawName || (channelType === "turma" && publico ? `Canal ${publico}` : "");
+
+        if (!nome) {
+          refs.channelManagerFeedback.textContent = "Informe o nome do canal para continuar.";
+          refs.channelManagerFeedback.className = "feedback error";
+          return;
+        }
+
+        if (!publico) {
+          refs.channelManagerFeedback.textContent = "Informe a turma ou publico deste canal.";
+          refs.channelManagerFeedback.className = "feedback error";
+          return;
+        }
+
+        const duplicatedChannel = state.storedChannels.find(function (channel) {
+          return normalizeText(channel.nome) === normalizeText(nome)
+            && normalizeText(channel.publico) === normalizeText(publico);
+        });
+        if (duplicatedChannel) {
+          refs.channelManagerFeedback.textContent = "Ja existe um canal com esse nome e esse publico.";
+          refs.channelManagerFeedback.className = "feedback error";
+          return;
+        }
+
+        await window.AgendaGamaDataStore.save("channels", {
+          nome: nome,
+          publico: publico,
+          descricao: rawDescription || (channelType === "turma"
+            ? `Canal geral da turma ${publico} para recados e comunicados.`
+            : "Canal complementar de atendimento escolar."),
+          channelType: channelType === "turma" || matchedTurma ? "turma" : "custom",
+          created_by_name: session.name,
+          created_at: nowIso()
+        }, STORED_CHANNELS_SEED);
+
+        refs.channelManagerForm.reset();
+        refs.channelManagerType.value = "turma";
+        refs.channelManagerFeedback.textContent = "Canal criado com sucesso.";
+        refs.channelManagerFeedback.className = "feedback success";
+        await refreshAll();
+      }
+
+      async function handleChannelRemove(channelId) {
+        const channel = state.storedChannels.find(function (item) { return item.id === channelId; }) || null;
+        if (!channel) return;
+
+        const conversationCount = getChannelConversationCount(channel);
+        const confirmText = conversationCount > 0
+          ? `Esse canal tem ${conversationCount} conversa(s) vinculada(s). Deseja excluir mesmo assim?`
+          : "Deseja excluir este canal?";
+
+        if (!window.confirm(confirmText)) return;
+
+        await window.AgendaGamaDataStore.remove("channels", channel.id, STORED_CHANNELS_SEED);
+        refs.channelManagerFeedback.textContent = "Canal excluido com sucesso.";
+        refs.channelManagerFeedback.className = "feedback success";
+        await refreshAll();
+      }
+
       refs.toggleNewThread?.addEventListener("click", function () {
         openNewThreadModal();
+      });
+
+      refs.openChannelManager?.addEventListener("click", function () {
+        openChannelManagerModal();
       });
 
       refs.cancelNewThread?.addEventListener("click", function () {
@@ -1901,15 +2076,50 @@
         closeNewThreadModal();
       });
 
+      refs.cancelChannelManager?.addEventListener("click", function () {
+        closeChannelManagerModal();
+      });
+
+      refs.closeChannelManager?.addEventListener("click", function () {
+        closeChannelManagerModal();
+      });
+
+      refs.channelManagerModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-close-channel-manager]")) return;
+        closeChannelManagerModal();
+      });
+
       document.addEventListener("keydown", function (event) {
-        if (event.key !== "Escape" || refs.newThreadModal?.hidden) return;
-        closeNewThreadModal();
+        if (event.key !== "Escape") return;
+        if (!refs.channelManagerModal?.hidden) {
+          closeChannelManagerModal();
+          return;
+        }
+        if (!refs.newThreadModal?.hidden) {
+          closeNewThreadModal();
+        }
       });
 
       refs.newThreadForm?.addEventListener("submit", function (event) {
         handleNewThreadSubmit(event).catch(function (error) {
           refs.newThreadFeedback.textContent = error?.message || "Nao foi possivel criar a conversa.";
           refs.newThreadFeedback.className = "feedback error";
+        });
+      });
+
+      refs.channelManagerForm?.addEventListener("submit", function (event) {
+        handleChannelManagerSubmit(event).catch(function (error) {
+          refs.channelManagerFeedback.textContent = error?.message || "Nao foi possivel criar o canal.";
+          refs.channelManagerFeedback.className = "feedback error";
+        });
+      });
+
+      refs.channelManagerList?.addEventListener("click", function (event) {
+        const removeButton = event.target.closest("[data-channel-remove-id]");
+        if (!removeButton) return;
+        handleChannelRemove(removeButton.dataset.channelRemoveId).catch(function (error) {
+          refs.channelManagerFeedback.textContent = error?.message || "Nao foi possivel excluir o canal.";
+          refs.channelManagerFeedback.className = "feedback error";
         });
       });
 

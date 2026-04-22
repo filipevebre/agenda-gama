@@ -765,6 +765,13 @@ td { color: var(--text-muted); }
   display: grid;
   gap: 12px;
 }
+.message-sidebar-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+.message-sidebar-actions .btn {
+  width: 100%;
+}
 .message-new-thread-panel {
   padding: 18px;
   border-radius: 24px;
@@ -2653,6 +2660,59 @@ body[data-page="comunicacao"] .message-modal-close {
 body[data-page="comunicacao"] .message-new-thread-modal-panel .toolbar {
   justify-content: flex-end;
 }
+body[data-page="comunicacao"] .channel-manager-panel {
+  display: grid;
+  gap: 18px;
+}
+body[data-page="comunicacao"] .channel-manager-panel textarea {
+  min-height: 96px;
+}
+body[data-page="comunicacao"] .channel-manager-list-section {
+  display: grid;
+  gap: 12px;
+}
+body[data-page="comunicacao"] .channel-manager-list {
+  display: grid;
+  gap: 10px;
+  max-height: 300px;
+  overflow: auto;
+  padding-right: 4px;
+}
+body[data-page="comunicacao"] .channel-manager-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(18, 38, 63, 0.08);
+  background: #f8fbfe;
+}
+body[data-page="comunicacao"] .channel-manager-card-copy {
+  display: grid;
+  gap: 6px;
+}
+body[data-page="comunicacao"] .channel-manager-card-copy p,
+body[data-page="comunicacao"] .channel-manager-card-copy small {
+  margin: 0;
+  color: var(--text-muted);
+}
+body[data-page="comunicacao"] .channel-manager-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+body[data-page="comunicacao"] .channel-manager-card-head strong {
+  color: var(--title);
+  font-family: "Outfit", sans-serif;
+  font-size: 1rem;
+}
+body[data-page="comunicacao"] .channel-manager-card-actions {
+  display: flex;
+  align-items: center;
+}
 body[data-page="comunicacao"] .thread-start-placeholder {
   padding: 16px 18px;
   border-radius: 18px;
@@ -2727,6 +2787,12 @@ body[data-page="comunicacao"] .message-board-actions {
   }
   body[data-page="comunicacao"] .message-modal-header {
     gap: 12px;
+  }
+  body[data-page="comunicacao"] .channel-manager-card {
+    grid-template-columns: 1fr;
+  }
+  body[data-page="comunicacao"] .channel-manager-card-actions {
+    justify-content: flex-start;
   }
   .notification-panel {
     right: -8px;
