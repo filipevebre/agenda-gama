@@ -268,6 +268,30 @@
     return normalizeText(value);
   }
 
+  function normalizeTurmaLabel(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[º°]/g, "o")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function turmaMatches(left, right) {
+    const normalizedLeft = normalizeTurmaLabel(left);
+    const normalizedRight = normalizeTurmaLabel(right);
+    return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
+  }
+
+  function setHasTurma(values, target) {
+    return [...(values || [])].some(function (item) {
+      return turmaMatches(item, target);
+    });
+  }
+
   function slugify(value) {
     return normalizeText(value)
       .normalize("NFD")
@@ -561,7 +585,7 @@
     }
 
     const isTurmaChannel = (directory?.turmas || []).some(function (turma) {
-      return normalizeText(turma.nome) === normalizeText(channel?.publico);
+      return turmaMatches(turma.nome, channel?.publico);
     });
 
     return isTurmaChannel ? "turma" : "custom";
@@ -590,7 +614,7 @@
     if (session.role === "administrador" || session.canApprove) return true;
     if (session.role === "professores") {
       if (channel.channelType && channel.channelType !== "turma") return normalizeText(channel.nome) === "professor";
-      return actorContext.professorTurmas.has(channel.publico);
+      return setHasTurma(actorContext.professorTurmas, channel.publico);
     }
     if (session.role === "funcionarios") {
       if (channel.channelType && channel.channelType !== "turma") {
@@ -602,7 +626,7 @@
     }
     if (session.role === "responsaveis") {
       if (channel.channelType && channel.channelType !== "turma") return true;
-      return actorContext.responsavelTurmas.has(channel.publico);
+      return setHasTurma(actorContext.responsavelTurmas, channel.publico);
     }
     return false;
   }
@@ -701,14 +725,14 @@
     if (session.role === "administrador" || session.canApprove) return true;
     if (session.role === "responsaveis") {
       if (thread.type === "broadcast") {
-        return actorContext.responsavelTurmas.has(thread.turma);
+        return setHasTurma(actorContext.responsavelTurmas, thread.turma);
       }
 
       return normalizeEmail(thread.responsibleEmail) === normalizeEmail(session.email);
     }
 
     if (session.role === "professores") {
-      return actorContext.professorTurmas.has(thread.turma)
+      return setHasTurma(actorContext.professorTurmas, thread.turma)
         || thread.messages.some(function (message) {
           return normalizeEmail(message.sender_email) === normalizeEmail(session.email);
         })
@@ -865,11 +889,11 @@
   }
 
   function getResponsaveisForTurma(directory, turma) {
-    const normalizedTurma = normalizeText(turma);
+    const normalizedTurma = normalizeTurmaLabel(turma);
     if (!normalizedTurma) return [];
 
     const alunosDaTurma = (directory.alunos || []).filter(function (student) {
-      return normalizeText(student.turma) === normalizedTurma;
+      return normalizeTurmaLabel(student.turma) === normalizedTurma;
     });
     const alunosPorId = new Set(alunosDaTurma.map(function (student) { return student.id; }));
     const alunosPorNome = new Set(alunosDaTurma.map(function (student) { return normalizeText(student.nome); }));
@@ -895,7 +919,7 @@
     }
 
     return channels.find(function (item) {
-      return item.channelType === "turma" && normalizeText(item.publico) === normalizeText(student.turma);
+      return item.channelType === "turma" && turmaMatches(item.publico, student.turma);
     }) || channels.find(function (item) {
       return item.id === "setor-secretaria";
     }) || channels[0] || null;
