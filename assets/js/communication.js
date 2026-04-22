@@ -554,11 +554,33 @@
     };
   }
 
-  function getAllChannels(storedChannels) {
-    const merged = [...(storedChannels || [])];
+  function deriveChannelType(channel, directory) {
+    if (channel?.channelType) return channel.channelType;
+    if (VIRTUAL_CHANNELS.some(function (item) { return item.id === channel?.id; })) {
+      return VIRTUAL_CHANNELS.find(function (item) { return item.id === channel?.id; })?.channelType || "custom";
+    }
+
+    const isTurmaChannel = (directory?.turmas || []).some(function (turma) {
+      return normalizeText(turma.nome) === normalizeText(channel?.publico);
+    });
+
+    return isTurmaChannel ? "turma" : "custom";
+  }
+
+  function withDerivedChannelType(channel, directory) {
+    return {
+      ...channel,
+      channelType: deriveChannelType(channel, directory)
+    };
+  }
+
+  function getAllChannels(storedChannels, directory) {
+    const merged = [...(storedChannels || [])].map(function (channel) {
+      return withDerivedChannelType(channel, directory);
+    });
     VIRTUAL_CHANNELS.forEach(function (channel) {
       if (!merged.some(function (item) { return item.id === channel.id; })) {
-        merged.push(channel);
+        merged.push(withDerivedChannelType(channel, directory));
       }
     });
     return merged;
@@ -1141,7 +1163,7 @@
         state.directory = { turmas: turmas, alunos: alunos, responsaveis: responsaveis, professores: professores, equipe: equipe };
         state.actorContext = getActorContext(session, state.directory);
         state.storedChannels = storedChannels;
-        state.allChannels = getAllChannels(storedChannels);
+        state.allChannels = getAllChannels(storedChannels, state.directory);
         state.channels = getVisibleChannelsForSession(session, state.actorContext, state.allChannels);
 
         state.maps = buildMaps(state.directory);
@@ -2020,15 +2042,22 @@
           return;
         }
 
-        await window.AgendaGamaDataStore.save("channels", {
+        const nextChannel = withDerivedChannelType({
           nome: nome,
           publico: publico,
           descricao: rawDescription || (channelType === "turma"
             ? `Canal geral da turma ${publico} para recados e comunicados.`
             : "Canal complementar de atendimento escolar."),
-          channelType: channelType === "turma" || matchedTurma ? "turma" : "custom",
           created_by_name: session.name,
           created_at: nowIso()
+        }, state.directory);
+
+        await window.AgendaGamaDataStore.save("channels", {
+          nome: nextChannel.nome,
+          publico: nextChannel.publico,
+          descricao: nextChannel.descricao,
+          created_by_name: nextChannel.created_by_name,
+          created_at: nextChannel.created_at
         }, STORED_CHANNELS_SEED);
 
         refs.channelManagerForm.reset();
