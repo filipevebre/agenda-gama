@@ -687,7 +687,10 @@
                       <strong>Notificacoes</strong>
                       <span>Acompanhe mensagens novas e pendencias.</span>
                     </div>
-                    <button id="notification-mark-all" type="button" class="btn btn-secondary btn-sm">Marcar lidas</button>
+                    <div class="notification-panel-actions">
+                      <button id="notification-mark-all" type="button" class="btn btn-secondary btn-sm">Marcar lidas</button>
+                      <button id="notification-close" type="button" class="btn btn-secondary btn-sm notification-close" aria-label="Fechar notificacoes">Fechar</button>
+                    </div>
                   </div>
                   <div id="notification-list" class="notification-list"></div>
                   <p id="notification-empty" class="notification-empty">Sem notificacoes no momento.</p>
@@ -747,6 +750,7 @@
     const notificationBadge = document.getElementById("notification-badge");
     const notificationEmpty = document.getElementById("notification-empty");
     const notificationMarkAll = document.getElementById("notification-mark-all");
+    const notificationClose = document.getElementById("notification-close");
 
     activeNotificationElements = {
       toggle: notificationToggle,
@@ -816,10 +820,25 @@
       markAllNotificationsRead();
     });
 
+    notificationClose?.addEventListener("click", function (event) {
+      event.stopPropagation();
+      closeNotificationPanel();
+    });
+
+    notificationPanel?.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+
     document.addEventListener("click", function (event) {
       if (!notificationPanel || notificationPanel.hidden) return;
       if (notificationPanel.contains(event.target) || notificationToggle?.contains(event.target)) return;
       closeNotificationPanel();
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeNotificationPanel();
+      }
     });
 
     window.addEventListener("storage", function (event) {
