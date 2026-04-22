@@ -886,7 +886,7 @@
       .filter(Boolean);
     const uniqueEmails = [...new Set(emails)];
 
-    return uniqueEmails.length ? uniqueEmails : [turma || fallbackLabel];
+    return uniqueEmails;
   }
 
   function pickThreadChannelForStudent(student, channels) {
@@ -905,6 +905,16 @@
     if (!thread?.lastMessage) return "Conversa iniciada. Abra o chat para enviar a primeira mensagem.";
     if (thread.lastMessage.parsed?.placeholder) return "Conversa iniciada. Abra o chat para enviar a primeira mensagem.";
     return thread.lastMessage.parsed?.text || "Sem mensagens registradas.";
+  }
+
+  function getAvailableChannelsForNewThread(threadType, channels) {
+    if (threadType === "broadcast") {
+      return (channels || []).filter(function (channel) {
+        return channel.channelType === "turma";
+      });
+    }
+
+    return channels || [];
   }
 
   function setSelectValueIfPresent(select, value) {
@@ -1241,15 +1251,18 @@
       }
 
       function populateNewThreadOptions() {
+        const currentThreadType = session.role === "responsaveis" ? "family" : String(refs.newThreadType.value || "family");
         const currentValues = {
-          type: refs.newThreadType.value,
+          type: currentThreadType,
           channel: refs.newThreadChannel.value,
           student: refs.newThreadStudent.value,
           responsavel: refs.newThreadResponsavel.value,
           sector: refs.newThreadSector.value
         };
 
-        refs.newThreadChannel.innerHTML = state.channels.map(function (channel) {
+        const availableChannels = getAvailableChannelsForNewThread(currentThreadType, state.channels);
+
+        refs.newThreadChannel.innerHTML = availableChannels.map(function (channel) {
           return `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.nome)}${channel.publico ? ` - ${escapeHtml(channel.publico)}` : ""}</option>`;
         }).join("");
 
@@ -1939,6 +1952,12 @@
             ? [thread.sector || thread.channelName]
             : [thread.responsibleEmail || thread.responsibleName];
 
+        if (thread.type === "broadcast" && !recipients.length) {
+          refs.composerFeedback.textContent = "Esse canal nao possui responsaveis vinculados a turma selecionada.";
+          refs.composerFeedback.className = "feedback error";
+          return;
+        }
+
         const savedMessage = await saveMessage(thread, {
           text: text,
           internalOnly: internalOnly,
@@ -1983,6 +2002,11 @@
           refs.newThreadFeedback.className = "feedback error";
           return;
         }
+        if (threadType === "broadcast" && channel.channelType !== "turma") {
+          refs.newThreadFeedback.textContent = "Para envio geral, selecione um canal vinculado a uma turma.";
+          refs.newThreadFeedback.className = "feedback error";
+          return;
+        }
         if (threadType !== "broadcast" && !student) {
           refs.newThreadFeedback.textContent = "Selecione um aluno vinculado para abrir a conversa.";
           refs.newThreadFeedback.className = "feedback error";
@@ -2018,6 +2042,15 @@
           subject: subject
         };
 
+        const broadcastRecipients = thread.type === "broadcast"
+          ? getBroadcastRecipients(state.directory, thread.turma, channel.nome)
+          : [];
+        if (thread.type === "broadcast" && !broadcastRecipients.length) {
+          refs.newThreadFeedback.textContent = "Nenhum responsavel vinculado foi encontrado para essa turma.";
+          refs.newThreadFeedback.className = "feedback error";
+          return;
+        }
+
         const savedMessage = await saveMessage(thread, {
           text: "",
           internalOnly: false,
@@ -2026,7 +2059,7 @@
           workflowStatus: "draft",
           recipientType: thread.type === "broadcast" ? "turmas" : session.role === "responsaveis" ? "escola" : "responsaveis",
           recipients: thread.type === "broadcast"
-            ? getBroadcastRecipients(state.directory, thread.turma, channel.nome)
+            ? broadcastRecipients
             : session.role === "responsaveis"
               ? [thread.sector || channel.nome]
               : [thread.responsibleEmail || thread.responsibleName]
@@ -2258,7 +2291,7 @@
       });
 
       refs.newThreadType?.addEventListener("change", function () {
-        syncNewThreadVisibility();
+        populateNewThreadOptions();
       });
 
       refs.newThreadStudent?.addEventListener("change", function () {
