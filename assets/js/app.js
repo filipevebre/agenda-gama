@@ -689,7 +689,7 @@
                     </div>
                     <div class="notification-panel-actions">
                       <button id="notification-mark-all" type="button" class="btn btn-secondary btn-sm">Marcar lidas</button>
-                      <button id="notification-close" type="button" class="btn btn-secondary btn-sm notification-close" aria-label="Fechar notificacoes">Fechar</button>
+                      <button id="notification-close" type="button" class="btn btn-secondary btn-sm notification-close" data-notification-close="true" aria-label="Fechar notificacoes">x</button>
                     </div>
                   </div>
                   <div id="notification-list" class="notification-list"></div>
@@ -750,8 +750,6 @@
     const notificationBadge = document.getElementById("notification-badge");
     const notificationEmpty = document.getElementById("notification-empty");
     const notificationMarkAll = document.getElementById("notification-mark-all");
-    const notificationClose = document.getElementById("notification-close");
-
     activeNotificationElements = {
       toggle: notificationToggle,
       panel: notificationPanel,
@@ -820,12 +818,13 @@
       markAllNotificationsRead();
     });
 
-    notificationClose?.addEventListener("click", function (event) {
-      event.stopPropagation();
-      closeNotificationPanel();
-    });
-
     notificationPanel?.addEventListener("click", function (event) {
+      const closeButton = event.target.closest("[data-notification-close]");
+      if (closeButton) {
+        event.preventDefault();
+        closeNotificationPanel();
+        return;
+      }
       event.stopPropagation();
     });
 
