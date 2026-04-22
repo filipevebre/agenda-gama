@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260422-5">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260422-6">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
@@ -26,50 +26,6 @@
               <input id="message-search-input" type="search" placeholder="Buscar">
             </label>
           </div>
-
-          <article id="new-thread-panel" class="message-new-thread-panel" hidden>
-            <div class="section-heading compact-heading">
-              <div>
-                <h2>Nova conversa</h2>
-                <p>Abra um novo atendimento com familia, setor ou canal.</p>
-              </div>
-            </div>
-            <form id="new-thread-form" class="stack-md">
-              <label class="field">
-                <span>Tipo</span>
-                <select id="new-thread-type" name="threadType">
-                  <option value="family">Conversa com responsavel</option>
-                  <option value="broadcast">Canal da turma</option>
-                </select>
-              </label>
-              <label id="new-thread-channel-field" class="field">
-                <span>Canal</span>
-                <select id="new-thread-channel" name="channelId"></select>
-              </label>
-              <label id="new-thread-student-field" class="field">
-                <span>Aluno vinculado</span>
-                <select id="new-thread-student" name="studentId"></select>
-              </label>
-              <label id="new-thread-responsavel-field" class="field">
-                <span>Responsavel</span>
-                <select id="new-thread-responsavel" name="responsavelId"></select>
-              </label>
-              <label class="field">
-                <span>Setor</span>
-                <select id="new-thread-sector" name="sector"></select>
-              </label>
-              <label class="field">
-                <span>Assunto</span>
-                <input id="new-thread-subject" name="subject" placeholder="Ex.: Duvida sobre agenda e uniforme">
-              </label>
-              <p class="muted new-thread-helper">A conversa sera aberta no chat ao lado. A primeira mensagem sera digitada dentro do atendimento.</p>
-              <div class="toolbar">
-                <button type="submit" class="btn btn-primary">Criar conversa</button>
-                <button type="button" id="cancel-new-thread" class="btn btn-secondary">Cancelar</button>
-              </div>
-            </form>
-            <div id="new-thread-feedback" class="feedback" aria-live="polite"></div>
-          </article>
 
           <div class="message-sidebar-groups">
             <section class="message-sidebar-section">
@@ -219,6 +175,58 @@
           </div>
         </aside>
       </section>
+
+      <div id="new-thread-modal" class="message-modal" hidden>
+        <div class="message-modal-backdrop" data-close-new-thread="true"></div>
+        <div class="message-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="new-thread-title">
+          <article id="new-thread-panel" class="message-new-thread-panel message-new-thread-modal-panel">
+            <div class="message-modal-header">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2 id="new-thread-title">Nova conversa</h2>
+                  <p>Abra um novo atendimento com familia, setor ou canal.</p>
+                </div>
+              </div>
+              <button type="button" id="close-new-thread" class="btn btn-secondary message-modal-close" aria-label="Fechar nova conversa">x</button>
+            </div>
+            <form id="new-thread-form" class="stack-md">
+              <label class="field">
+                <span>Tipo</span>
+                <select id="new-thread-type" name="threadType">
+                  <option value="family">Conversa com responsavel</option>
+                  <option value="broadcast">Canal da turma</option>
+                </select>
+              </label>
+              <label id="new-thread-channel-field" class="field">
+                <span>Canal</span>
+                <select id="new-thread-channel" name="channelId"></select>
+              </label>
+              <label id="new-thread-student-field" class="field">
+                <span>Aluno vinculado</span>
+                <select id="new-thread-student" name="studentId"></select>
+              </label>
+              <label id="new-thread-responsavel-field" class="field">
+                <span>Responsavel</span>
+                <select id="new-thread-responsavel" name="responsavelId"></select>
+              </label>
+              <label class="field">
+                <span>Setor</span>
+                <select id="new-thread-sector" name="sector"></select>
+              </label>
+              <label class="field">
+                <span>Assunto</span>
+                <input id="new-thread-subject" name="subject" placeholder="Ex.: Duvida sobre agenda e uniforme">
+              </label>
+              <p class="muted new-thread-helper">A conversa sera aberta no chat ao lado. A primeira mensagem sera digitada dentro do atendimento.</p>
+              <div class="toolbar">
+                <button type="submit" class="btn btn-primary">Criar conversa</button>
+                <button type="button" id="cancel-new-thread" class="btn btn-secondary">Cancelar</button>
+              </div>
+            </form>
+            <div id="new-thread-feedback" class="feedback" aria-live="polite"></div>
+          </article>
+        </div>
+      </div>
     </section>
   </template>
 
@@ -227,7 +235,7 @@
   <script src="../assets/js/auth.js?v=20260417-20"></script>
   <script src="../assets/js/app.js?v=20260422-5"></script>
   <script src="../assets/js/data-store.js?v=20260417-20"></script>
-  <script src="../assets/js/communication.js?v=20260422-1"></script>
+  <script src="../assets/js/communication.js?v=20260422-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();

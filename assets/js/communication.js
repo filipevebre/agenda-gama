@@ -984,9 +984,11 @@
         layout: document.getElementById("message-central-layout"),
         searchInput: document.getElementById("message-search-input"),
         toggleNewThread: document.getElementById("toggle-new-thread"),
+        newThreadModal: document.getElementById("new-thread-modal"),
         newThreadPanel: document.getElementById("new-thread-panel"),
         newThreadForm: document.getElementById("new-thread-form"),
         cancelNewThread: document.getElementById("cancel-new-thread"),
+        closeNewThread: document.getElementById("close-new-thread"),
         newThreadFeedback: document.getElementById("new-thread-feedback"),
         newThreadType: document.getElementById("new-thread-type"),
         newThreadChannelField: document.getElementById("new-thread-channel-field"),
@@ -1217,6 +1219,34 @@
             refs.newThreadResponsavel.value = relatedResponsaveis[0].id;
           }
         }
+      }
+
+      function resetNewThreadFeedback() {
+        refs.newThreadFeedback.textContent = "";
+        refs.newThreadFeedback.className = "feedback";
+      }
+
+      function getNewThreadFocusTarget() {
+        if (!refs.newThreadStudentField.hidden) return refs.newThreadStudent;
+        if (!refs.newThreadChannelField.hidden) return refs.newThreadChannel;
+        return refs.newThreadSubject;
+      }
+
+      function openNewThreadModal() {
+        if (!refs.newThreadModal) return;
+        refs.newThreadModal.hidden = false;
+        document.body.classList.add("message-modal-open");
+        resetNewThreadFeedback();
+        window.requestAnimationFrame(function () {
+          getNewThreadFocusTarget()?.focus();
+        });
+      }
+
+      function closeNewThreadModal() {
+        if (!refs.newThreadModal) return;
+        refs.newThreadModal.hidden = true;
+        document.body.classList.remove("message-modal-open");
+        resetNewThreadFeedback();
       }
 
       function populateFilterOptions() {
@@ -1822,21 +1852,33 @@
         state.selectedThreadKey = thread.key;
         setViewMode("thread");
         refs.newThreadForm.reset();
-        refs.newThreadFeedback.textContent = "Conversa criada com sucesso.";
-        refs.newThreadFeedback.className = "feedback success";
-        refs.newThreadPanel.hidden = true;
+        closeNewThreadModal();
         renderAll();
+        refs.composerFeedback.textContent = "Conversa criada com sucesso. Digite a primeira mensagem no chat.";
+        refs.composerFeedback.className = "feedback success";
         refs.composerInput.focus();
       }
 
       refs.toggleNewThread?.addEventListener("click", function () {
-        refs.newThreadPanel.hidden = !refs.newThreadPanel.hidden;
-        refs.newThreadFeedback.textContent = "";
-        refs.newThreadFeedback.className = "feedback";
+        openNewThreadModal();
       });
 
       refs.cancelNewThread?.addEventListener("click", function () {
-        refs.newThreadPanel.hidden = true;
+        closeNewThreadModal();
+      });
+
+      refs.closeNewThread?.addEventListener("click", function () {
+        closeNewThreadModal();
+      });
+
+      refs.newThreadModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-close-new-thread]")) return;
+        closeNewThreadModal();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape" || refs.newThreadModal?.hidden) return;
+        closeNewThreadModal();
       });
 
       refs.newThreadForm?.addEventListener("submit", function (event) {
@@ -1957,7 +1999,7 @@
           updateThreadState(state, thread.key, { archived: !thread.local.archived });
         }
         if (action === "forward") {
-          refs.newThreadPanel.hidden = false;
+          openNewThreadModal();
           refs.newThreadType.value = "family";
           setSelectValueIfPresent(refs.newThreadChannel, thread.channelId || "");
           setSelectValueIfPresent(refs.newThreadStudent, thread.studentId || "");
