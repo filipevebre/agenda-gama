@@ -7,16 +7,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260422-5">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260422-6">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">Organização</span>
+        <span class="pill">Organizacao</span>
         <h1>Alunos cadastrados</h1>
-        <p>Visualize, pesquise e gerencie os estudantes já registrados.</p>
+        <p>Visualize, pesquise e gerencie os estudantes ja registrados.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -29,13 +29,24 @@
     <section>
       <article class="table-card">
         <h3>Alunos cadastrados</h3>
-        <p>Acompanhe rapidamente matrículas e enturmação.</p>
+        <p>Acompanhe rapidamente matriculas, enturmacao e responsaveis vinculados.</p>
         <label class="field search-box">
           <span>Pesquisar aluno</span>
-          <input id="alunos-search" placeholder="Busque por nome, matrícula, turma ou turno">
+          <input id="alunos-search" placeholder="Busque por nome, matricula, turma ou turno">
         </label>
         <div class="table-wrapper">
-          <table><thead><tr><th>Aluno</th><th>Matrícula</th><th>Turma</th><th>Turno</th></tr></thead><tbody id="alunos-table-body"></tbody></table>
+          <table>
+            <thead>
+              <tr>
+                <th>Aluno</th>
+                <th>Matricula</th>
+                <th>Turma</th>
+                <th>Turno</th>
+                <th>Responsaveis</th>
+              </tr>
+            </thead>
+            <tbody id="alunos-table-body"></tbody>
+          </table>
         </div>
         <p id="alunos-empty" class="empty-state" hidden>Nenhum aluno cadastrado ainda.</p>
       </article>
@@ -45,26 +56,80 @@
   <script src="../../assets/js/supabase.js?v=20260416-4"></script>
   <script src="../../assets/js/auth.js?v=20260416-4"></script>
   <script src="../../assets/js/app.js?v=20260422-5"></script>
-  <script src="../../assets/js/data-store.js?v=20260415-4"></script>
-  <script src="../../assets/js/forms.js?v=20260415-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260422-6"></script>
+  <script src="../../assets/js/forms.js?v=20260422-6"></script>
   <script>
     window.AgendaGamaApp.mountShell();
-    window.AgendaGamaForms.mountCrud({
-      storageKey: "alunos",
-      tableBodyId: "alunos-table-body",
-      emptyStateId: "alunos-empty",
-      totalId: "total-alunos",
-      searchInputId: "alunos-search",
-      searchKeys: ["nome", "matricula", "turma", "turno"],
-      editPageUrl: "cadastro-alunos.html",
-      emptyMessage: "Nenhum aluno cadastrado ainda.",
-      columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
-      seedData: [
-        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5º Ano B", turno: "Tarde" },
-        { nome: "Pedro Henrique", matricula: "20260051", turma: "1º Ano A", turno: "Manhã" }
-      ]
-    });
+
+    const RESPONSAVEIS_SEED = [];
+    let responsaveisCache = [];
+
+    function normalizeAlunoText(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase();
+    }
+
+    function getResponsaveisVinculados(aluno) {
+      return responsaveisCache.filter(function (responsavel) {
+        if (responsavel.aluno_id && aluno.id) {
+          return responsavel.aluno_id === aluno.id;
+        }
+
+        return normalizeAlunoText(responsavel.aluno) === normalizeAlunoText(aluno.nome);
+      });
+    }
+
+    function renderResponsaveisVinculados(aluno) {
+      const responsaveis = getResponsaveisVinculados(aluno);
+
+      if (!responsaveis.length) {
+        return '<span class="muted">Sem responsaveis vinculados</span>';
+      }
+
+      return `
+        <div class="inline-tags">
+          ${responsaveis.map(function (responsavel) {
+            return `<span class="tag">${responsavel.nome}</span>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    async function iniciarPaginaAlunos() {
+      responsaveisCache = await window.AgendaGamaDataStore.list("responsaveis", RESPONSAVEIS_SEED);
+
+      window.AgendaGamaForms.mountCrud({
+        storageKey: "alunos",
+        tableBodyId: "alunos-table-body",
+        emptyStateId: "alunos-empty",
+        totalId: "total-alunos",
+        searchInputId: "alunos-search",
+        searchKeys: ["nome", "matricula", "turma", "turno"],
+        editPageUrl: "cadastro-alunos.html",
+        emptyMessage: "Nenhum aluno cadastrado ainda.",
+        columns: [
+          { key: "nome" },
+          { key: "matricula" },
+          { key: "turma" },
+          { key: "turno", type: "tag" },
+          {
+            key: "responsaveis",
+            render: function (_, item) {
+              return renderResponsaveisVinculados(item);
+            }
+          }
+        ],
+        seedData: [
+          { nome: "Ana Clara Silva", matricula: "20260045", turma: "5o Ano B", turno: "Tarde" },
+          { nome: "Pedro Henrique", matricula: "20260051", turma: "1o Ano A", turno: "Manha" }
+        ]
+      });
+    }
+
+    iniciarPaginaAlunos();
   </script>
 </body>
 </html>
-
