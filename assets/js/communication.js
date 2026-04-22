@@ -811,7 +811,7 @@
       return "Assuma essa conversa para responder em tempo real e registrar o atendimento.";
     }
     if (thread.type === "broadcast") {
-      return `Canal da turma ${thread.turma || thread.channelName}.`;
+      return `Canal da turma ${thread.turma || thread.channelName}. Sem selecao individual, a mensagem segue para todos os responsaveis vinculados a essa turma.`;
     }
     return `${thread.responsibleName} | ${thread.studentName || "Aluno"} | ${thread.turma || thread.sector || "Atendimento"}`;
   }
@@ -826,6 +826,31 @@
       seen.add(student.id);
       return student;
     }).filter(Boolean);
+  }
+
+  function getResponsaveisForTurma(directory, turma) {
+    const normalizedTurma = normalizeText(turma);
+    if (!normalizedTurma) return [];
+
+    const alunosDaTurma = (directory.alunos || []).filter(function (student) {
+      return normalizeText(student.turma) === normalizedTurma;
+    });
+    const alunosPorId = new Set(alunosDaTurma.map(function (student) { return student.id; }));
+    const alunosPorNome = new Set(alunosDaTurma.map(function (student) { return normalizeText(student.nome); }));
+
+    return (directory.responsaveis || []).filter(function (item) {
+      if (item.aluno_id && alunosPorId.has(item.aluno_id)) return true;
+      return alunosPorNome.has(normalizeText(item.aluno));
+    });
+  }
+
+  function getBroadcastRecipients(directory, turma, fallbackLabel) {
+    const emails = getResponsaveisForTurma(directory, turma)
+      .map(function (item) { return normalizeEmail(item.email); })
+      .filter(Boolean);
+    const uniqueEmails = [...new Set(emails)];
+
+    return uniqueEmails.length ? uniqueEmails : [turma || fallbackLabel];
   }
 
   function pickThreadChannelForStudent(student, channels) {
@@ -1749,7 +1774,7 @@
             ? "escola"
             : "responsaveis";
         const recipients = thread.type === "broadcast"
-          ? [thread.turma || thread.channelName]
+          ? getBroadcastRecipients(state.directory, thread.turma, thread.channelName)
           : session.role === "responsaveis"
             ? [thread.sector || thread.channelName]
             : [thread.responsibleEmail || thread.responsibleName];
@@ -1841,7 +1866,7 @@
           workflowStatus: "draft",
           recipientType: thread.type === "broadcast" ? "turmas" : session.role === "responsaveis" ? "escola" : "responsaveis",
           recipients: thread.type === "broadcast"
-            ? [thread.turma || channel.nome]
+            ? getBroadcastRecipients(state.directory, thread.turma, channel.nome)
             : session.role === "responsaveis"
               ? [thread.sector || channel.nome]
               : [thread.responsibleEmail || thread.responsibleName]
