@@ -398,7 +398,8 @@
         text: raw,
         internalOnly: false,
         attachments: [],
-        thread: null
+        thread: null,
+        placeholder: false
       };
     }
 
@@ -409,7 +410,8 @@
         text: raw,
         internalOnly: false,
         attachments: [],
-        thread: null
+        thread: null,
+        placeholder: false
       };
     }
   }
@@ -495,7 +497,8 @@
         text: envelope.text || "",
         internalOnly: Boolean(envelope.internalOnly),
         attachments: Array.isArray(envelope.attachments) ? envelope.attachments : [],
-        thread: envelope.thread || inferLegacyThread(message, directory, channels, maps)
+        thread: envelope.thread || inferLegacyThread(message, directory, channels, maps),
+        placeholder: Boolean(envelope.placeholder)
       }
     };
   }
@@ -611,6 +614,7 @@
     if (thread.local.archived) return "Arquivada";
     if (thread.pendingApprovalCount > 0) return "Aguardando aprovacao";
     if (thread.local.resolved) return "Encerrada";
+    if (thread.lastMessage?.parsed?.placeholder) return session.role === "responsaveis" ? "Aguardando retorno" : "Aguardando resposta";
     if (thread.unreadCount > 0) {
       if (session.role === "responsaveis") return "Aguardando retorno";
       return "Aguardando resposta";
@@ -639,6 +643,7 @@
     return sortByRecent(Array.from(grouped.values()).map(function (thread) {
       const sortedMessages = sortByOldest(thread.messages, function (item) { return item.created_at; });
       const visibleMessages = sortedMessages.filter(function (message) {
+        if (message.parsed.placeholder) return false;
         if (message.parsed.internalOnly) return false;
         if (session.role === "responsaveis" && message.workflowStatus !== "sent" && normalizeEmail(message.sender_email) !== normalizeEmail(session.email)) return false;
         return true;
@@ -811,6 +816,36 @@
     return `${thread.responsibleName} | ${thread.studentName || "Aluno"} | ${thread.turma || thread.sector || "Atendimento"}`;
   }
 
+  function getResponsibleLinkedStudents(state) {
+    const seen = new Set();
+    return state.actorContext.responsavelRecords.map(function (item) {
+      const student = item.aluno_id
+        ? (state.directory.alunos || []).find(function (candidate) { return candidate.id === item.aluno_id; })
+        : findStudentByName(state.directory, item.aluno);
+      if (!student || seen.has(student.id)) return null;
+      seen.add(student.id);
+      return student;
+    }).filter(Boolean);
+  }
+
+  function pickThreadChannelForStudent(student, channels) {
+    if (!student) {
+      return channels.find(function (item) { return item.id === "setor-secretaria"; }) || channels[0] || null;
+    }
+
+    return channels.find(function (item) {
+      return item.channelType === "turma" && normalizeText(item.publico) === normalizeText(student.turma);
+    }) || channels.find(function (item) {
+      return item.id === "setor-secretaria";
+    }) || channels[0] || null;
+  }
+
+  function getThreadPreview(thread) {
+    if (!thread?.lastMessage) return "Conversa iniciada. Abra o chat para enviar a primeira mensagem.";
+    if (thread.lastMessage.parsed?.placeholder) return "Conversa iniciada. Abra o chat para enviar a primeira mensagem.";
+    return thread.lastMessage.parsed?.text || "Sem mensagens registradas.";
+  }
+
   function setSelectValueIfPresent(select, value) {
     if (!select) return;
     const normalizedValue = String(value || "");
@@ -942,6 +977,8 @@
     ensureShellContent(async function () {
       const session = window.AgendaGamaAuth.getSession();
       if (!session) return;
+      const initialUrl = new URL(window.location.href);
+      const initialThreadParam = initialUrl.searchParams.get("thread");
 
       const refs = {
         layout: document.getElementById("message-central-layout"),
@@ -952,6 +989,7 @@
         cancelNewThread: document.getElementById("cancel-new-thread"),
         newThreadFeedback: document.getElementById("new-thread-feedback"),
         newThreadType: document.getElementById("new-thread-type"),
+        newThreadChannelField: document.getElementById("new-thread-channel-field"),
         newThreadChannel: document.getElementById("new-thread-channel"),
         newThreadStudentField: document.getElementById("new-thread-student-field"),
         newThreadStudent: document.getElementById("new-thread-student"),
@@ -959,7 +997,6 @@
         newThreadResponsavel: document.getElementById("new-thread-responsavel"),
         newThreadSector: document.getElementById("new-thread-sector"),
         newThreadSubject: document.getElementById("new-thread-subject"),
-        newThreadMessage: document.getElementById("new-thread-message"),
         sidebarChannelList: document.getElementById("message-channel-list"),
         sidebarThreadList: document.getElementById("sidebar-thread-list"),
         sidebarThreadEmpty: document.getElementById("sidebar-thread-empty"),
@@ -1016,9 +1053,7 @@
         threadState: readThreadState(),
         viewState: readJson(THREAD_VIEW_KEY, {}),
         selectedChannelId: null,
-        selectedThreadKey: null,
         activeTab: "responder",
-        viewMode: normalizeViewMode(localStorage.getItem(MESSAGE_PANEL_MODE_KEY)),
         leftFilter: localStorage.getItem(CHANNEL_FILTER_KEY) || "all",
         searchTerm: "",
         filters: {
@@ -1032,7 +1067,9 @@
         internalMode: false,
         refreshLock: false,
         typingTimer: null,
-        forwardThread: null
+        forwardThread: null,
+        selectedThreadKey: initialThreadParam || null,
+        viewMode: normalizeViewMode(initialThreadParam ? "thread" : localStorage.getItem(MESSAGE_PANEL_MODE_KEY))
       };
 
       function rebuildThreads() {
@@ -1131,12 +1168,12 @@
         }).join("");
 
         if (session.role === "responsaveis") {
+          const linkedStudents = getResponsibleLinkedStudents(state);
           refs.newThreadType.value = "family";
           refs.newThreadType.innerHTML = '<option value="family">Conversa com a escola</option>';
+          refs.newThreadChannelField.hidden = true;
           refs.newThreadResponsavelField.hidden = true;
-          refs.newThreadStudent.innerHTML = state.actorContext.responsavelRecords.map(function (item) {
-            const student = item.aluno_id ? (state.directory.alunos || []).find(function (candidate) { return candidate.id === item.aluno_id; }) : findStudentByName(state.directory, item.aluno);
-            if (!student) return "";
+          refs.newThreadStudent.innerHTML = linkedStudents.map(function (student) {
             return `<option value="${escapeHtml(student.id)}">${escapeHtml(student.nome)} - ${escapeHtml(student.turma)}</option>`;
           }).join("");
         } else {
@@ -1144,6 +1181,7 @@
             <option value="family">Conversa com responsavel</option>
             <option value="broadcast">Canal da turma</option>
           `;
+          refs.newThreadChannelField.hidden = false;
           refs.newThreadResponsavelField.hidden = false;
         }
 
@@ -1158,12 +1196,18 @@
       function syncNewThreadVisibility() {
         const threadType = session.role === "responsaveis" ? "family" : String(refs.newThreadType.value || "family");
         const isBroadcast = threadType === "broadcast";
+        refs.newThreadChannelField.hidden = session.role === "responsaveis";
         refs.newThreadStudentField.hidden = isBroadcast;
         refs.newThreadResponsavelField.hidden = session.role === "responsaveis" || isBroadcast;
 
         const selectedStudent = (state.directory?.alunos || []).find(function (item) {
           return item.id === refs.newThreadStudent.value;
         }) || null;
+
+        if (session.role === "responsaveis") {
+          const suggestedChannel = pickThreadChannelForStudent(selectedStudent, state.channels);
+          setSelectValueIfPresent(refs.newThreadChannel, suggestedChannel?.id || "");
+        }
 
         if (!isBroadcast && selectedStudent && session.role !== "responsaveis") {
           const relatedResponsaveis = (state.directory.responsaveis || []).filter(function (item) {
@@ -1295,6 +1339,7 @@
         refs.boardList.innerHTML = threads.map(function (thread) {
           const title = getThreadTitle(thread);
           const subtitle = getThreadSubtitle(thread);
+          const preview = getThreadPreview(thread);
           const labels = [
             buildStatusBadge(thread.cardStatus),
             thread.sector ? `<span class="tag">${escapeHtml(thread.sector)}</span>` : "",
@@ -1329,7 +1374,7 @@
                   </div>
                   <div class="message-board-tags">${labels}</div>
                   <p class="message-board-subject">${escapeHtml(thread.subject || "Atendimento escolar")}</p>
-                  <p class="message-board-preview">${escapeHtml(thread.lastMessage?.parsed?.text || "Sem mensagens registradas.")}</p>
+                  <p class="message-board-preview">${escapeHtml(preview)}</p>
                 </div>
               </button>
               ${actions}
@@ -1420,35 +1465,42 @@
           refs.threadAlerts.innerHTML = "";
         }
 
-        refs.threadBody.innerHTML = groupMessagesByDate(thread.visibleMessages).map(function (group) {
-          return `
-            <div class="thread-date-group">
-              <div class="thread-date-divider"><span>${escapeHtml(group.label)}</span></div>
-              <div class="thread-message-stack">
-                ${group.items.map(function (message) {
-                  const mine = normalizeEmail(message.sender_email) === normalizeEmail(session.email);
-                  const attachments = message.parsed.attachments.map(function (item) {
-                    return `<a class="message-attachment" href="${escapeHtml(item.dataUrl || "#")}" download="${escapeHtml(item.name)}">${escapeHtml(item.name)} <small>${escapeHtml(formatBytes(item.size))}</small></a>`;
-                  }).join("");
+        refs.threadBody.innerHTML = thread.visibleMessages.length
+          ? groupMessagesByDate(thread.visibleMessages).map(function (group) {
+            return `
+              <div class="thread-date-group">
+                <div class="thread-date-divider"><span>${escapeHtml(group.label)}</span></div>
+                <div class="thread-message-stack">
+                  ${group.items.map(function (message) {
+                    const mine = normalizeEmail(message.sender_email) === normalizeEmail(session.email);
+                    const attachments = message.parsed.attachments.map(function (item) {
+                      return `<a class="message-attachment" href="${escapeHtml(item.dataUrl || "#")}" download="${escapeHtml(item.name)}">${escapeHtml(item.name)} <small>${escapeHtml(formatBytes(item.size))}</small></a>`;
+                    }).join("");
 
-                  return `
-                    <article class="thread-bubble ${mine ? "mine" : ""} ${message.parsed.internalOnly ? "internal" : ""}">
-                      <div class="thread-bubble-head">
-                        <strong>${escapeHtml(message.sender_name)}</strong>
-                        <span>${escapeHtml(formatShortTime(message.created_at))}</span>
-                      </div>
-                      <p>${escapeHtml(message.parsed.text)}</p>
-                      ${attachments ? `<div class="message-attachment-list">${attachments}</div>` : ""}
-                      <div class="thread-bubble-meta">
-                        ${buildStatusBadge(getWorkflowLabel(message.workflowStatus))}
-                      </div>
-                    </article>
-                  `;
-                }).join("")}
+                    return `
+                      <article class="thread-bubble ${mine ? "mine" : ""} ${message.parsed.internalOnly ? "internal" : ""}">
+                        <div class="thread-bubble-head">
+                          <strong>${escapeHtml(message.sender_name)}</strong>
+                          <span>${escapeHtml(formatShortTime(message.created_at))}</span>
+                        </div>
+                        <p>${escapeHtml(message.parsed.text)}</p>
+                        ${attachments ? `<div class="message-attachment-list">${attachments}</div>` : ""}
+                        <div class="thread-bubble-meta">
+                          ${buildStatusBadge(getWorkflowLabel(message.workflowStatus))}
+                        </div>
+                      </article>
+                    `;
+                  }).join("")}
+                </div>
               </div>
-            </div>
+            `;
+          }).join("")
+          : `
+            <article class="thread-start-placeholder">
+              <strong>Conversa iniciada</strong>
+              <p>Esse atendimento ja esta aberto. Use o campo abaixo para enviar a primeira mensagem no chat.</p>
+            </article>
           `;
-        }).join("");
 
         refs.internalNotesPanel.hidden = session.role === "responsaveis" || thread.internalNotes.length === 0;
         refs.internalNotesList.innerHTML = thread.internalNotes.map(function (message) {
@@ -1490,6 +1542,52 @@
         }).join("");
       }
 
+      function syncUrlState() {
+        const url = new URL(window.location.href);
+        if (state.viewMode === "thread" && state.selectedThreadKey) {
+          url.searchParams.set("thread", state.selectedThreadKey);
+        } else {
+          url.searchParams.delete("thread");
+        }
+        window.history.replaceState({}, "", url);
+      }
+
+      function buildNotificationAlerts() {
+        return state.threads.flatMap(function (thread) {
+          const alerts = [];
+
+          if (thread.unreadCount > 0) {
+            alerts.push({
+              kind: "communication-thread",
+              dedupeKey: `thread:${thread.key}`,
+              threadKey: thread.key,
+              title: session.role === "responsaveis"
+                ? (thread.type === "broadcast" ? `Novo aviso em ${thread.channelName}` : "Nova resposta da escola")
+                : `Nova mensagem em ${getThreadTitle(thread)}`,
+              body: session.role === "responsaveis"
+                ? `${thread.studentName || thread.turma || thread.channelName} • ${getThreadPreview(thread)}`
+                : `${thread.studentName || thread.turma || thread.sector || "Atendimento"} • ${getThreadPreview(thread)}`,
+              createdAt: thread.lastMessage?.created_at || new Date().toISOString(),
+              sourceStamp: thread.lastMessage?.created_at || `${thread.key}:${thread.unreadCount}`
+            });
+          }
+
+          if (session.canApprove && thread.pendingApprovalCount > 0) {
+            alerts.push({
+              kind: "communication-approval",
+              dedupeKey: `approval:${thread.key}`,
+              threadKey: thread.key,
+              title: "Mensagem aguardando aprovacao",
+              body: `${thread.pendingApprovalCount} mensagem(ns) pendente(s) em ${getThreadTitle(thread)}.`,
+              createdAt: thread.lastMessage?.created_at || new Date().toISOString(),
+              sourceStamp: `${thread.pendingApprovalCount}:${thread.lastMessage?.created_at || thread.key}`
+            });
+          }
+
+          return alerts;
+        });
+      }
+
       function renderAll() {
         ensureSelections();
         populateNewThreadOptions();
@@ -1513,6 +1611,8 @@
         refs.viewToggles.forEach(function (button) {
           button.classList.toggle("active", button.dataset.view === state.viewMode);
         });
+        syncUrlState();
+        window.AgendaGamaApp?.syncCommunicationNotifications?.(session, buildNotificationAlerts());
       }
 
       async function refreshAll() {
@@ -1545,6 +1645,7 @@
             text: options.text,
             internalOnly: Boolean(options.internalOnly),
             attachments: options.attachments || [],
+            placeholder: Boolean(options.placeholder),
             thread: {
               key: thread.key,
               type: thread.type,
@@ -1651,22 +1752,23 @@
       async function handleNewThreadSubmit(event) {
         event.preventDefault();
         const formData = new FormData(refs.newThreadForm);
-        const channel = state.channels.find(function (item) { return item.id === formData.get("channelId"); }) || VIRTUAL_CHANNELS[0];
         const student = (state.directory.alunos || []).find(function (item) { return item.id === formData.get("studentId"); }) || null;
+        const channel = state.channels.find(function (item) { return item.id === formData.get("channelId"); })
+          || (session.role === "responsaveis" ? pickThreadChannelForStudent(student, state.channels) : null)
+          || VIRTUAL_CHANNELS[0];
         const responsavel = session.role === "responsaveis"
           ? state.actorContext.responsavelRecords.find(function (item) { return item.aluno_id === student?.id; }) || state.actorContext.responsavelRecords[0] || null
           : (state.directory.responsaveis || []).find(function (item) { return item.id === formData.get("responsavelId"); }) || null;
         const threadType = String(formData.get("threadType") || "family");
         const sector = String(formData.get("sector") || "Secretaria");
         const subject = String(formData.get("subject") || "").trim() || "Atendimento escolar";
-        const text = String(formData.get("message") || "").trim();
 
-        if (!channel || !text) {
-          refs.newThreadFeedback.textContent = "Selecione um canal e escreva a mensagem inicial.";
+        if (!channel) {
+          refs.newThreadFeedback.textContent = "Nao foi possivel localizar um canal para esse atendimento.";
           refs.newThreadFeedback.className = "feedback error";
           return;
         }
-        if (threadType !== "broadcast" && !student && session.role !== "responsaveis") {
+        if (threadType !== "broadcast" && !student) {
           refs.newThreadFeedback.textContent = "Selecione um aluno vinculado para abrir a conversa.";
           refs.newThreadFeedback.className = "feedback error";
           return;
@@ -1702,10 +1804,11 @@
         };
 
         const savedMessage = await saveMessage(thread, {
-          text: text,
+          text: "",
           internalOnly: false,
           attachments: [],
-          workflowStatus: session.role === "responsaveis" || session.canApprove ? "sent" : "pending_approval",
+          placeholder: true,
+          workflowStatus: "draft",
           recipientType: thread.type === "broadcast" ? "turmas" : session.role === "responsaveis" ? "escola" : "responsaveis",
           recipients: thread.type === "broadcast"
             ? [thread.turma || channel.nome]
@@ -1723,6 +1826,7 @@
         refs.newThreadFeedback.className = "feedback success";
         refs.newThreadPanel.hidden = true;
         renderAll();
+        refs.composerInput.focus();
       }
 
       refs.toggleNewThread?.addEventListener("click", function () {
@@ -1861,7 +1965,6 @@
           setSelectValueIfPresent(refs.newThreadSector, thread.sector || "Secretaria");
           syncNewThreadVisibility();
           refs.newThreadSubject.value = `Encaminhamento: ${thread.subject || thread.channelName}`;
-          refs.newThreadMessage.value = thread.lastMessage?.parsed?.text || "";
         }
 
         await refreshAll();
