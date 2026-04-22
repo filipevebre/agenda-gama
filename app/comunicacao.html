@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260422-9">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260422-10">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
@@ -205,12 +205,22 @@
                 <select id="new-thread-channel" name="channelId"></select>
               </label>
               <label id="new-thread-student-field" class="field">
-                <span>Aluno vinculado</span>
+                <span>Aluno (opcional para filtrar)</span>
                 <select id="new-thread-student" name="studentId"></select>
               </label>
               <label id="new-thread-responsavel-field" class="field">
-                <span>Responsavel</span>
-                <select id="new-thread-responsavel" name="responsavelId"></select>
+                <span>Responsaveis</span>
+                <div class="recipient-picker">
+                  <div class="recipient-picker-toolbar">
+                    <input id="new-thread-responsavel-search" type="search" placeholder="Buscar responsavel">
+                    <div class="toolbar">
+                      <button type="button" id="new-thread-select-all" class="btn btn-secondary btn-sm">Todos</button>
+                      <button type="button" id="new-thread-clear-selection" class="btn btn-secondary btn-sm">Limpar</button>
+                    </div>
+                  </div>
+                  <div id="new-thread-responsavel-list" class="student-selection-list recipient-selection-list"></div>
+                </div>
+                <small id="new-thread-selection-summary" class="muted"></small>
               </label>
               <label class="field">
                 <span>Setor</span>
@@ -286,6 +296,63 @@
           </section>
         </div>
       </div>
+
+      <div id="forward-message-modal" class="message-modal" hidden>
+        <div class="message-modal-backdrop" data-close-forward-message="true"></div>
+        <div class="message-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="forward-message-title">
+          <article class="message-new-thread-panel message-new-thread-modal-panel">
+            <div class="message-modal-header">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2 id="forward-message-title">Encaminhar mensagem</h2>
+                  <p>Escolha um ou mais responsaveis para receber a mesma mensagem.</p>
+                </div>
+              </div>
+              <button type="button" id="close-forward-message" class="btn btn-secondary message-modal-close" aria-label="Fechar encaminhamento">x</button>
+            </div>
+
+            <div id="forward-message-preview" class="thread-start-placeholder"></div>
+
+            <form id="forward-message-form" class="stack-md">
+              <label class="field">
+                <span>Canal</span>
+                <select id="forward-message-channel" name="channelId"></select>
+              </label>
+              <label class="field">
+                <span>Aluno (opcional para filtrar)</span>
+                <select id="forward-message-student" name="studentId"></select>
+              </label>
+              <label class="field">
+                <span>Setor</span>
+                <select id="forward-message-sector" name="sector"></select>
+              </label>
+              <label class="field">
+                <span>Assunto</span>
+                <input id="forward-message-subject" name="subject" placeholder="Ex.: Encaminhamento de recado importante">
+              </label>
+              <label class="field">
+                <span>Responsaveis</span>
+                <div class="recipient-picker">
+                  <div class="recipient-picker-toolbar">
+                    <input id="forward-message-responsavel-search" type="search" placeholder="Buscar responsavel">
+                    <div class="toolbar">
+                      <button type="button" id="forward-message-select-all" class="btn btn-secondary btn-sm">Todos</button>
+                      <button type="button" id="forward-message-clear-selection" class="btn btn-secondary btn-sm">Limpar</button>
+                    </div>
+                  </div>
+                  <div id="forward-message-responsavel-list" class="student-selection-list recipient-selection-list"></div>
+                </div>
+                <small id="forward-message-selection-summary" class="muted"></small>
+              </label>
+              <div class="toolbar">
+                <button type="submit" class="btn btn-primary">Encaminhar</button>
+                <button type="button" id="cancel-forward-message" class="btn btn-secondary">Cancelar</button>
+              </div>
+            </form>
+            <div id="forward-message-feedback" class="feedback" aria-live="polite"></div>
+          </article>
+        </div>
+      </div>
     </section>
   </template>
 
@@ -294,7 +361,7 @@
   <script src="../assets/js/auth.js?v=20260417-20"></script>
   <script src="../assets/js/app.js?v=20260422-5"></script>
   <script src="../assets/js/data-store.js?v=20260417-20"></script>
-  <script src="../assets/js/communication.js?v=20260422-11"></script>
+  <script src="../assets/js/communication.js?v=20260422-12"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();

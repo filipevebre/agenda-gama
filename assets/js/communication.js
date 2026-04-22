@@ -752,6 +752,11 @@
 
   function matchesSearch(thread, searchTerm) {
     if (!searchTerm) return true;
+    const batchTargets = Array.isArray(thread.targetResponsaveis)
+      ? thread.targetResponsaveis.map(function (item) {
+        return [item?.responsibleName, item?.studentName, item?.turma].filter(Boolean).join(" ");
+      }).join(" ")
+      : "";
     const haystack = [
       thread.responsibleName,
       thread.studentName,
@@ -759,6 +764,7 @@
       thread.subject,
       thread.channelName,
       thread.sector,
+      batchTargets,
       thread.lastMessage?.parsed?.text
     ].join(" ");
 
@@ -817,13 +823,23 @@
 
   function getThreadTitle(thread) {
     if (!thread) return "";
-    return thread.type === "broadcast" ? thread.channelName : (thread.responsibleName || thread.channelName);
+    if (thread.type === "broadcast") return thread.channelName;
+    if (thread.type === "batch") {
+      const count = Array.isArray(thread.targetResponsaveis) ? thread.targetResponsaveis.length : 0;
+      return thread.batchLabel || `${count || 0} responsaveis selecionados`;
+    }
+    return thread.responsibleName || thread.channelName;
   }
 
   function getThreadSubtitle(thread) {
     if (!thread) return "";
     if (thread.type === "broadcast") {
       return [thread.turma || thread.channelName, thread.sector || "Canal escolar"].filter(Boolean).join(" | ");
+    }
+
+    if (thread.type === "batch") {
+      const count = Array.isArray(thread.targetResponsaveis) ? thread.targetResponsaveis.length : 0;
+      return [count ? `${count} responsavel(is)` : "", thread.turma || "", thread.sector || ""].filter(Boolean).join(" | ");
     }
 
     return [thread.studentName || "Aluno sem vinculo", thread.turma || "", thread.sector || ""].filter(Boolean).join(" | ");
@@ -851,6 +867,17 @@
     return false;
   }
 
+  function canForwardMessage(message, thread, session) {
+    if (!message || !thread || session.role === "responsaveis") return false;
+
+    if (session.role === "administrador" || session.canApprove) return true;
+    if (session.role === "professores" || session.role === "funcionarios") {
+      return true;
+    }
+
+    return false;
+  }
+
   function canReplyToThread(thread, session) {
     if (!thread) return false;
     if (isReadOnlyThread(thread, session)) return false;
@@ -872,6 +899,10 @@
     }
     if (thread.type === "broadcast") {
       return `Canal da turma ${thread.turma || thread.channelName}. Sem selecao individual, a mensagem segue para todos os responsaveis vinculados a essa turma.`;
+    }
+    if (thread.type === "batch") {
+      const count = Array.isArray(thread.targetResponsaveis) ? thread.targetResponsaveis.length : 0;
+      return `A mesma mensagem sera enviada para ${count} responsavel(is) selecionado(s).`;
     }
     return `${thread.responsibleName} | ${thread.studentName || "Aluno"} | ${thread.turma || thread.sector || "Atendimento"}`;
   }
@@ -1088,13 +1119,15 @@
           sector: thread.sector,
           responsibleId: thread.responsibleId || null,
           responsibleName: thread.responsibleName || "",
-          responsibleEmail: thread.responsibleEmail || "",
-          studentId: thread.studentId || null,
-          studentName: thread.studentName || "",
-          turma: thread.turma || "",
-          subject: thread.subject || thread.channelName
-        }
-      }),
+            responsibleEmail: thread.responsibleEmail || "",
+            studentId: thread.studentId || null,
+            studentName: thread.studentName || "",
+            turma: thread.turma || "",
+            subject: thread.subject || thread.channelName,
+            batchLabel: thread.batchLabel || "",
+            targetResponsaveis: Array.isArray(thread.targetResponsaveis) ? thread.targetResponsaveis : []
+          }
+        }),
       status: "sent",
       approved_by: "",
       sent_by: senderName,
@@ -1126,7 +1159,11 @@
         newThreadStudentField: document.getElementById("new-thread-student-field"),
         newThreadStudent: document.getElementById("new-thread-student"),
         newThreadResponsavelField: document.getElementById("new-thread-responsavel-field"),
-        newThreadResponsavel: document.getElementById("new-thread-responsavel"),
+        newThreadResponsavelSearch: document.getElementById("new-thread-responsavel-search"),
+        newThreadResponsavelList: document.getElementById("new-thread-responsavel-list"),
+        newThreadSelectAll: document.getElementById("new-thread-select-all"),
+        newThreadClearSelection: document.getElementById("new-thread-clear-selection"),
+        newThreadSelectionSummary: document.getElementById("new-thread-selection-summary"),
         newThreadSector: document.getElementById("new-thread-sector"),
         newThreadSubject: document.getElementById("new-thread-subject"),
         channelManagerModal: document.getElementById("channel-manager-modal"),
@@ -1140,6 +1177,21 @@
         channelManagerDescription: document.getElementById("channel-manager-description"),
         channelManagerFeedback: document.getElementById("channel-manager-feedback"),
         channelManagerList: document.getElementById("channel-manager-list"),
+        forwardMessageModal: document.getElementById("forward-message-modal"),
+        closeForwardMessage: document.getElementById("close-forward-message"),
+        cancelForwardMessage: document.getElementById("cancel-forward-message"),
+        forwardMessageForm: document.getElementById("forward-message-form"),
+        forwardMessagePreview: document.getElementById("forward-message-preview"),
+        forwardMessageChannel: document.getElementById("forward-message-channel"),
+        forwardMessageStudent: document.getElementById("forward-message-student"),
+        forwardMessageSector: document.getElementById("forward-message-sector"),
+        forwardMessageSubject: document.getElementById("forward-message-subject"),
+        forwardMessageResponsavelSearch: document.getElementById("forward-message-responsavel-search"),
+        forwardMessageResponsavelList: document.getElementById("forward-message-responsavel-list"),
+        forwardMessageSelectAll: document.getElementById("forward-message-select-all"),
+        forwardMessageClearSelection: document.getElementById("forward-message-clear-selection"),
+        forwardMessageSelectionSummary: document.getElementById("forward-message-selection-summary"),
+        forwardMessageFeedback: document.getElementById("forward-message-feedback"),
         sidebarChannelList: document.getElementById("message-channel-list"),
         sidebarThreadList: document.getElementById("sidebar-thread-list"),
         sidebarThreadEmpty: document.getElementById("sidebar-thread-empty"),
@@ -1213,6 +1265,10 @@
         refreshLock: false,
         typingTimer: null,
         forwardThread: null,
+        forwardMessageId: null,
+        forwardSourceThreadKey: null,
+        newThreadSelectedResponsaveis: [],
+        forwardSelectedResponsaveis: [],
         selectedThreadKey: initialThreadParam || null,
         viewMode: normalizeViewMode(initialThreadParam ? "thread" : localStorage.getItem(MESSAGE_PANEL_MODE_KEY))
       };
@@ -1259,6 +1315,133 @@
         return state.threads.find(function (thread) { return thread.key === state.selectedThreadKey; }) || null;
       }
 
+      function getStudentForResponsavelRecord(responsavel) {
+        if (!responsavel) return null;
+        return responsavel.aluno_id
+          ? (state.directory.alunos || []).find(function (item) { return item.id === responsavel.aluno_id; }) || null
+          : findStudentByName(state.directory, responsavel.aluno);
+      }
+
+      function matchesResponsavelStudent(responsavel, student) {
+        if (!responsavel || !student) return false;
+        if (responsavel.aluno_id && student.id) {
+          return responsavel.aluno_id === student.id;
+        }
+        return normalizeText(responsavel.aluno) === normalizeText(student.nome);
+      }
+
+      function matchesResponsavelChannel(responsavel, channel) {
+        if (!responsavel || !channel || channel.channelType !== "turma") return true;
+        const student = getStudentForResponsavelRecord(responsavel);
+        return turmaMatches(student?.turma, channel.publico);
+      }
+
+      function getVisibleResponsavelPool() {
+        const responsaveis = state.directory?.responsaveis || [];
+
+        if (session.role === "administrador" || session.canApprove || session.role === "funcionarios") {
+          return responsaveis;
+        }
+
+        if (session.role === "professores") {
+          return responsaveis.filter(function (responsavel) {
+            const student = getStudentForResponsavelRecord(responsavel);
+            return Boolean(student?.turma) && setHasTurma(state.actorContext.professorTurmas, student.turma);
+          });
+        }
+
+        if (session.role === "responsaveis") {
+          return state.actorContext.responsavelRecords || [];
+        }
+
+        return responsaveis;
+      }
+
+      function getResponsavelCandidates(options) {
+        const studentId = String(options?.studentId || "");
+        const channelId = String(options?.channelId || "");
+        const searchTerm = normalizeText(options?.searchTerm || "");
+        const student = (state.directory.alunos || []).find(function (item) { return item.id === studentId; }) || null;
+        const channel = state.channels.find(function (item) { return item.id === channelId; }) || null;
+
+        return getVisibleResponsavelPool().filter(function (responsavel) {
+          if (student && !matchesResponsavelStudent(responsavel, student)) {
+            return false;
+          }
+
+          if (!matchesResponsavelChannel(responsavel, channel)) {
+            return false;
+          }
+
+          if (!searchTerm) {
+            return true;
+          }
+
+          const linkedStudent = getStudentForResponsavelRecord(responsavel);
+          const haystack = [
+            responsavel.nome,
+            responsavel.email,
+            responsavel.aluno,
+            linkedStudent?.nome,
+            linkedStudent?.turma,
+            responsavel.parentesco
+          ].map(normalizeText).join(" ");
+
+          return haystack.includes(searchTerm);
+        }).sort(function (left, right) {
+          return String(left.nome || "").localeCompare(String(right.nome || ""), "pt-BR");
+        });
+      }
+
+      function syncRecipientSelection(candidateList, selectedIds) {
+        const allowedIds = new Set(candidateList.map(function (item) { return item.id; }));
+        return [...new Set((selectedIds || []).filter(function (id) {
+          return allowedIds.has(id);
+        }))];
+      }
+
+      function buildRecipientSelectionSummary(selectedIds, candidateList) {
+        if (!candidateList.length) {
+          return "Nenhum responsavel disponivel para esse filtro.";
+        }
+
+        if (!selectedIds.length) {
+          return "Selecione um ou mais responsaveis para enviar a mesma mensagem.";
+        }
+
+        return `${selectedIds.length} responsavel(is) selecionado(s).`;
+      }
+
+      function renderRecipientSelectionList(container, candidateList, selectedIds, mode) {
+        if (!container) return;
+
+        if (!candidateList.length) {
+          container.innerHTML = '<p class="empty-state">Nenhum responsavel encontrado para os filtros atuais.</p>';
+          return;
+        }
+
+        container.innerHTML = candidateList.map(function (responsavel) {
+          const linkedStudent = getStudentForResponsavelRecord(responsavel);
+          const checked = selectedIds.includes(responsavel.id);
+          const subtitle = [
+            responsavel.parentesco,
+            linkedStudent?.nome || responsavel.aluno || "Aluno sem vinculo",
+            linkedStudent?.turma || ""
+          ].filter(Boolean).join(" | ");
+
+          return `
+            <label class="student-selection-item recipient-selection-item">
+              <input type="checkbox" data-recipient-mode="${escapeHtml(mode)}" data-recipient-id="${escapeHtml(responsavel.id)}" ${checked ? "checked" : ""}>
+              <div>
+                <strong>${escapeHtml(responsavel.nome)}</strong>
+                <p>${escapeHtml(subtitle)}</p>
+                <small>${escapeHtml(responsavel.email || "Sem e-mail cadastrado")}</small>
+              </div>
+            </label>
+          `;
+        }).join("");
+      }
+
       function setViewMode(mode) {
         const nextMode = normalizeViewMode(mode);
         state.viewMode = nextMode;
@@ -1295,7 +1478,6 @@
           type: currentThreadType,
           channel: refs.newThreadChannel.value,
           student: refs.newThreadStudent.value,
-          responsavel: refs.newThreadResponsavel.value,
           sector: refs.newThreadSector.value
         };
 
@@ -1309,13 +1491,9 @@
           return `<option value="${escapeHtml(sector)}">${escapeHtml(sector)}</option>`;
         }).join("");
 
-        refs.newThreadStudent.innerHTML = (state.directory.alunos || []).map(function (student) {
+        refs.newThreadStudent.innerHTML = ['<option value="">Todos os alunos</option>'].concat((state.directory.alunos || []).map(function (student) {
           return `<option value="${escapeHtml(student.id)}">${escapeHtml(student.nome)} - ${escapeHtml(student.turma)}</option>`;
-        }).join("");
-
-        refs.newThreadResponsavel.innerHTML = (state.directory.responsaveis || []).map(function (item) {
-          return `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)} - ${escapeHtml(item.aluno || "Sem aluno")}</option>`;
-        }).join("");
+        })).join("");
 
         if (session.role === "responsaveis") {
           const linkedStudents = getResponsibleLinkedStudents(state);
@@ -1338,9 +1516,35 @@
         setSelectValueIfPresent(refs.newThreadType, session.role === "responsaveis" ? "family" : (currentValues.type || "family"));
         setSelectValueIfPresent(refs.newThreadChannel, currentValues.channel);
         setSelectValueIfPresent(refs.newThreadStudent, currentValues.student);
-        setSelectValueIfPresent(refs.newThreadResponsavel, currentValues.responsavel);
         setSelectValueIfPresent(refs.newThreadSector, currentValues.sector || "Secretaria");
         syncNewThreadVisibility();
+      }
+
+      function renderNewThreadResponsavelSelection() {
+        const threadType = session.role === "responsaveis" ? "family" : String(refs.newThreadType.value || "family");
+        const isBroadcast = threadType === "broadcast";
+
+        if (session.role === "responsaveis" || isBroadcast) {
+          refs.newThreadResponsavelList.innerHTML = "";
+          refs.newThreadSelectionSummary.textContent = "";
+          return;
+        }
+
+        const allCandidates = getResponsavelCandidates({
+          studentId: refs.newThreadStudent.value,
+          channelId: refs.newThreadChannel.value,
+          searchTerm: ""
+        });
+        state.newThreadSelectedResponsaveis = syncRecipientSelection(allCandidates, state.newThreadSelectedResponsaveis);
+
+        const visibleCandidates = getResponsavelCandidates({
+          studentId: refs.newThreadStudent.value,
+          channelId: refs.newThreadChannel.value,
+          searchTerm: refs.newThreadResponsavelSearch.value
+        });
+
+        renderRecipientSelectionList(refs.newThreadResponsavelList, visibleCandidates, state.newThreadSelectedResponsaveis, "new-thread");
+        refs.newThreadSelectionSummary.textContent = buildRecipientSelectionSummary(state.newThreadSelectedResponsaveis, allCandidates);
       }
 
       function syncNewThreadVisibility() {
@@ -1359,14 +1563,7 @@
           setSelectValueIfPresent(refs.newThreadChannel, suggestedChannel?.id || "");
         }
 
-        if (!isBroadcast && selectedStudent && session.role !== "responsaveis") {
-          const relatedResponsaveis = (state.directory.responsaveis || []).filter(function (item) {
-            return item.aluno_id === selectedStudent.id || normalizeText(item.aluno) === normalizeText(selectedStudent.nome);
-          });
-          if (relatedResponsaveis.length && !relatedResponsaveis.some(function (item) { return item.id === refs.newThreadResponsavel.value; })) {
-            refs.newThreadResponsavel.value = relatedResponsaveis[0].id;
-          }
-        }
+        renderNewThreadResponsavelSelection();
       }
 
       function resetNewThreadFeedback() {
@@ -1379,11 +1576,12 @@
       }
 
       function updateModalBodyState() {
-        const hasOpenModal = !refs.newThreadModal?.hidden || !refs.channelManagerModal?.hidden;
+        const hasOpenModal = !refs.newThreadModal?.hidden || !refs.channelManagerModal?.hidden || !refs.forwardMessageModal?.hidden;
         document.body.classList.toggle("message-modal-open", Boolean(hasOpenModal));
       }
 
       function getNewThreadFocusTarget() {
+        if (!refs.newThreadResponsavelField.hidden) return refs.newThreadResponsavelSearch;
         if (!refs.newThreadStudentField.hidden) return refs.newThreadStudent;
         if (!refs.newThreadChannelField.hidden) return refs.newThreadChannel;
         return refs.newThreadSubject;
@@ -1391,6 +1589,10 @@
 
       function openNewThreadModal() {
         if (!refs.newThreadModal) return;
+        state.newThreadSelectedResponsaveis = [];
+        refs.newThreadForm?.reset();
+        refs.newThreadResponsavelSearch.value = "";
+        populateNewThreadOptions();
         refs.newThreadModal.hidden = false;
         updateModalBodyState();
         resetNewThreadFeedback();
@@ -1403,7 +1605,12 @@
         if (!refs.newThreadModal) return;
         refs.newThreadModal.hidden = true;
         updateModalBodyState();
+        refs.newThreadForm?.reset();
         resetNewThreadFeedback();
+        state.newThreadSelectedResponsaveis = [];
+        refs.newThreadResponsavelSearch.value = "";
+        refs.newThreadResponsavelList.innerHTML = "";
+        refs.newThreadSelectionSummary.textContent = "";
       }
 
       function resetChannelManagerFeedback() {
@@ -1476,6 +1683,88 @@
         updateModalBodyState();
         refs.channelManagerForm?.reset();
         resetChannelManagerFeedback();
+      }
+
+      function resetForwardMessageFeedback() {
+        refs.forwardMessageFeedback.textContent = "";
+        refs.forwardMessageFeedback.className = "feedback";
+      }
+
+      function populateForwardMessageOptions(sourceThread, sourceMessage) {
+        const availableChannels = state.channels || [];
+
+        refs.forwardMessageChannel.innerHTML = availableChannels.map(function (channel) {
+          return `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.nome)}${channel.publico ? ` - ${escapeHtml(channel.publico)}` : ""}</option>`;
+        }).join("");
+
+        refs.forwardMessageStudent.innerHTML = ['<option value="">Todos os alunos</option>'].concat((state.directory.alunos || []).map(function (student) {
+          return `<option value="${escapeHtml(student.id)}">${escapeHtml(student.nome)} - ${escapeHtml(student.turma)}</option>`;
+        })).join("");
+
+        refs.forwardMessageSector.innerHTML = ["Secretaria", "Coordenacao", "Financeiro", "Professor"].map(function (sector) {
+          return `<option value="${escapeHtml(sector)}">${escapeHtml(sector)}</option>`;
+        }).join("");
+
+        setSelectValueIfPresent(refs.forwardMessageChannel, sourceThread?.channelId || availableChannels[0]?.id || "");
+        setSelectValueIfPresent(refs.forwardMessageStudent, sourceThread?.studentId || "");
+        setSelectValueIfPresent(refs.forwardMessageSector, sourceThread?.sector || "Secretaria");
+        refs.forwardMessageSubject.value = sourceThread?.subject || sourceThread?.channelName || "Encaminhamento";
+
+        refs.forwardMessagePreview.innerHTML = `
+          <strong>${escapeHtml(sourceMessage?.sender_name || "Mensagem selecionada")}</strong>
+          <p>${escapeHtml(sourceMessage?.parsed?.text || "Sem conteudo para encaminhar.")}</p>
+        `;
+      }
+
+      function renderForwardResponsavelSelection() {
+        const allCandidates = getResponsavelCandidates({
+          studentId: refs.forwardMessageStudent.value,
+          channelId: refs.forwardMessageChannel.value,
+          searchTerm: ""
+        });
+        state.forwardSelectedResponsaveis = syncRecipientSelection(allCandidates, state.forwardSelectedResponsaveis);
+
+        const visibleCandidates = getResponsavelCandidates({
+          studentId: refs.forwardMessageStudent.value,
+          channelId: refs.forwardMessageChannel.value,
+          searchTerm: refs.forwardMessageResponsavelSearch.value
+        });
+
+        renderRecipientSelectionList(refs.forwardMessageResponsavelList, visibleCandidates, state.forwardSelectedResponsaveis, "forward-message");
+        refs.forwardMessageSelectionSummary.textContent = buildRecipientSelectionSummary(state.forwardSelectedResponsaveis, allCandidates);
+      }
+
+      function openForwardMessageModal(message, sourceThread) {
+        if (!refs.forwardMessageModal || !message || session.role === "responsaveis") return;
+
+        state.forwardMessageId = message.id;
+        state.forwardSourceThreadKey = sourceThread?.key || null;
+        state.forwardSelectedResponsaveis = [];
+        refs.forwardMessageForm?.reset();
+        refs.forwardMessageResponsavelSearch.value = "";
+        resetForwardMessageFeedback();
+        populateForwardMessageOptions(sourceThread, message);
+        renderForwardResponsavelSelection();
+        refs.forwardMessageModal.hidden = false;
+        updateModalBodyState();
+        window.requestAnimationFrame(function () {
+          refs.forwardMessageResponsavelSearch?.focus();
+        });
+      }
+
+      function closeForwardMessageModal() {
+        if (!refs.forwardMessageModal) return;
+        refs.forwardMessageModal.hidden = true;
+        updateModalBodyState();
+        refs.forwardMessageForm?.reset();
+        refs.forwardMessagePreview.innerHTML = "";
+        refs.forwardMessageResponsavelList.innerHTML = "";
+        refs.forwardMessageSelectionSummary.textContent = "";
+        refs.forwardMessageResponsavelSearch.value = "";
+        state.forwardMessageId = null;
+        state.forwardSourceThreadKey = null;
+        state.forwardSelectedResponsaveis = [];
+        resetForwardMessageFeedback();
       }
 
       function populateFilterOptions() {
@@ -1734,6 +2023,7 @@
                   ${group.items.map(function (message) {
                     const mine = normalizeEmail(message.sender_email) === normalizeEmail(session.email);
                     const canDelete = canDeleteMessage(message, thread, session);
+                    const canForward = canForwardMessage(message, thread, session) && !message.parsed.internalOnly && !message.parsed.placeholder;
                     const attachments = message.parsed.attachments.map(function (item) {
                       return `<a class="message-attachment" href="${escapeHtml(item.dataUrl || "#")}" download="${escapeHtml(item.name)}">${escapeHtml(item.name)} <small>${escapeHtml(formatBytes(item.size))}</small></a>`;
                     }).join("");
@@ -1748,6 +2038,7 @@
                         ${attachments ? `<div class="message-attachment-list">${attachments}</div>` : ""}
                         <div class="thread-bubble-meta">
                           ${buildStatusBadge(getWorkflowLabel(message.workflowStatus))}
+                          ${canForward ? `<button type="button" class="thread-message-delete btn btn-secondary btn-sm" data-message-forward-id="${escapeHtml(message.id)}">Encaminhar</button>` : ""}
                           ${canDelete ? `<button type="button" class="thread-message-delete btn btn-secondary btn-sm" data-message-remove-id="${escapeHtml(message.id)}">Excluir</button>` : ""}
                         </div>
                       </article>
@@ -1922,13 +2213,15 @@
               sector: thread.sector,
               responsibleId: thread.responsibleId || null,
               responsibleName: thread.responsibleName || "",
-              responsibleEmail: thread.responsibleEmail || "",
-              studentId: thread.studentId || null,
-              studentName: thread.studentName || "",
-              turma: thread.turma || "",
-              subject: thread.subject || thread.channelName
-            }
-          }),
+          responsibleEmail: thread.responsibleEmail || "",
+          studentId: thread.studentId || null,
+          studentName: thread.studentName || "",
+          turma: thread.turma || "",
+          subject: thread.subject || thread.channelName,
+          batchLabel: thread.batchLabel || "",
+          targetResponsaveis: Array.isArray(thread.targetResponsaveis) ? thread.targetResponsaveis : []
+        }
+      }),
           status: options.workflowStatus,
           approved_by: options.workflowStatus === "approved" || (options.workflowStatus === "sent" && session.canApprove && !options.internalOnly) ? session.name : "",
           sent_by: options.workflowStatus === "sent" ? session.name : "",
@@ -1950,6 +2243,54 @@
           state.viewState = markThreadRead(state.viewState, session, thread.key, thread.lastMessage.created_at);
           rebuildThreads();
         }
+      }
+
+      function buildFamilyThreadForTarget(baseThread, target) {
+        const student = target.student;
+        const responsavel = target.responsavel;
+
+        return {
+          key: `family:${baseThread.channelId || slugify(baseThread.channelName)}:${responsavel.id || normalizeEmail(responsavel.email)}:${slugify(baseThread.sector) || "secretaria"}`,
+          type: "family",
+          channelId: baseThread.channelId || null,
+          channelName: baseThread.channelName,
+          channelType: baseThread.channelType || "turma",
+          sector: baseThread.sector,
+          responsibleId: responsavel.id || null,
+          responsibleName: responsavel.nome || "",
+          responsibleEmail: responsavel.email || "",
+          studentId: student?.id || responsavel.aluno_id || null,
+          studentName: student?.nome || responsavel.aluno || "",
+          turma: student?.turma || baseThread.turma || "",
+          subject: baseThread.subject || baseThread.channelName
+        };
+      }
+
+      async function distributeMessageToTargets(baseThread, targets, options) {
+        if (!targets.length) {
+          throw new Error("Nenhum responsavel elegivel foi encontrado para esse envio.");
+        }
+
+        const createdThreads = [];
+        const savedMessages = await Promise.all(targets.map(function (target) {
+          const familyThread = buildFamilyThreadForTarget(baseThread, target);
+          createdThreads.push(familyThread);
+
+          return saveMessage(familyThread, {
+            text: options.text,
+            internalOnly: false,
+            attachments: options.attachments || [],
+            workflowStatus: options.workflowStatus || "sent",
+            recipientType: "responsaveis",
+            recipients: [target.responsavel.email || target.responsavel.nome]
+          });
+        }));
+
+        savedMessages.forEach(function (savedMessage) {
+          appendSavedMessage(savedMessage);
+        });
+
+        return createdThreads;
       }
 
       async function handleComposerSubmit(mode) {
@@ -1982,23 +2323,36 @@
                 : "pending_approval";
         const recipientType = thread.type === "broadcast"
           ? "turmas"
+          : thread.type === "batch"
+            ? "responsaveis"
           : session.role === "responsaveis"
             ? "escola"
             : "responsaveis";
         const recipients = thread.type === "broadcast"
           ? getBroadcastRecipients(state.directory, thread.turma, thread.channelName)
+          : thread.type === "batch"
+            ? (thread.targetResponsaveis || []).map(function (item) {
+              return item.responsibleEmail || item.responsibleName;
+            }).filter(Boolean)
           : session.role === "responsaveis"
             ? [thread.sector || thread.channelName]
             : [thread.responsibleEmail || thread.responsibleName];
 
-        if (thread.type === "broadcast" && !recipients.length) {
-          refs.composerFeedback.textContent = "Esse canal nao possui responsaveis vinculados a turma selecionada.";
+        if ((thread.type === "broadcast" || thread.type === "batch") && !recipients.length) {
+          refs.composerFeedback.textContent = thread.type === "broadcast"
+            ? "Esse canal nao possui responsaveis vinculados a turma selecionada."
+            : "Nenhum responsavel foi selecionado para receber essa mensagem.";
           refs.composerFeedback.className = "feedback error";
           return;
         }
 
-        if (thread.type === "broadcast" && workflowStatus === "sent" && !internalOnly) {
-          const createdThreads = await distributeBroadcastMessage(thread, {
+        if ((thread.type === "broadcast" || thread.type === "batch") && workflowStatus === "sent" && !internalOnly) {
+          const createdThreads = thread.type === "broadcast"
+            ? await distributeBroadcastMessage(thread, {
+              text: text,
+              attachments: state.pendingAttachments
+            })
+            : await distributeBatchMessage(thread, {
             text: text,
             attachments: state.pendingAttachments
           });
@@ -2009,7 +2363,9 @@
           refs.typingIndicator.hidden = true;
           state.selectedThreadKey = createdThreads[0]?.key || null;
           setViewMode(createdThreads.length ? "thread" : "board");
-          refs.composerFeedback.textContent = `Mensagem enviada e conversa iniciada para ${createdThreads.length} responsavel(is) da turma.`;
+          refs.composerFeedback.textContent = thread.type === "broadcast"
+            ? `Mensagem enviada e conversa iniciada para ${createdThreads.length} responsavel(is) da turma.`
+            : `Mensagem enviada para ${createdThreads.length} responsavel(is) selecionado(s).`;
           refs.composerFeedback.className = "feedback success";
           await refreshAll();
           if (createdThreads.length) {
@@ -2050,12 +2406,24 @@
         const channel = state.channels.find(function (item) { return item.id === formData.get("channelId"); })
           || (session.role === "responsaveis" ? pickThreadChannelForStudent(student, state.channels) : null)
           || VIRTUAL_CHANNELS[0];
-        const responsavel = session.role === "responsaveis"
-          ? state.actorContext.responsavelRecords.find(function (item) { return item.aluno_id === student?.id; }) || state.actorContext.responsavelRecords[0] || null
-          : (state.directory.responsaveis || []).find(function (item) { return item.id === formData.get("responsavelId"); }) || null;
         const threadType = String(formData.get("threadType") || "family");
         const sector = String(formData.get("sector") || "Secretaria");
         const subject = String(formData.get("subject") || "").trim() || "Atendimento escolar";
+        const selectedResponsaveis = session.role === "responsaveis"
+          ? [state.actorContext.responsavelRecords.find(function (item) { return item.aluno_id === student?.id; }) || state.actorContext.responsavelRecords[0] || null].filter(Boolean)
+          : (state.directory.responsaveis || []).filter(function (item) {
+            return state.newThreadSelectedResponsaveis.includes(item.id);
+          });
+        const selectedTargets = selectedResponsaveis.map(function (item) {
+          return {
+            responsavel: item,
+            student: getStudentForResponsavelRecord(item)
+          };
+        }).filter(function (target) {
+          return Boolean(target.responsavel?.email);
+        });
+        const responsavel = selectedTargets[0]?.responsavel || null;
+        const responsavelStudent = selectedTargets[0]?.student || getStudentForResponsavelRecord(responsavel);
 
         if (!channel) {
           refs.newThreadFeedback.textContent = "Nao foi possivel localizar um canal para esse atendimento.";
@@ -2067,13 +2435,13 @@
           refs.newThreadFeedback.className = "feedback error";
           return;
         }
-        if (threadType !== "broadcast" && !student) {
-          refs.newThreadFeedback.textContent = "Selecione um aluno vinculado para abrir a conversa.";
+        if (threadType !== "broadcast" && !selectedResponsaveis.length) {
+          refs.newThreadFeedback.textContent = "Selecione pelo menos um responsavel para continuar.";
           refs.newThreadFeedback.className = "feedback error";
           return;
         }
-        if (threadType !== "broadcast" && !responsavel) {
-          refs.newThreadFeedback.textContent = "Selecione um responsavel para continuar.";
+        if (threadType !== "broadcast" && !selectedTargets.length) {
+          refs.newThreadFeedback.textContent = "Os responsaveis selecionados precisam ter e-mail para receber a mensagem.";
           refs.newThreadFeedback.className = "feedback error";
           return;
         }
@@ -2085,7 +2453,33 @@
           channelName: channel.nome,
           channelType: channel.channelType || "turma",
           sector: sector,
-          turma: channel.publico || student?.turma || ""
+          turma: channel.publico || student?.turma || "",
+          subject: subject
+        } : selectedTargets.length > 1 ? {
+          key: `batch:${channel.id}:${slugify(sector)}:${Date.now()}`,
+          type: "batch",
+          channelId: channel.id,
+          channelName: channel.nome,
+          channelType: channel.channelType || "turma",
+          sector: sector,
+          turma: (() => {
+            const turmas = [...new Set(selectedTargets.map(function (target) {
+              return target.student?.turma || "";
+            }).filter(Boolean))];
+            return turmas.length === 1 ? turmas[0] : (channel.publico || "");
+          })(),
+          subject: subject,
+          batchLabel: `${selectedTargets.length} responsaveis selecionados`,
+          targetResponsaveis: selectedTargets.map(function (target) {
+            return {
+              responsibleId: target.responsavel.id || null,
+              responsibleName: target.responsavel.nome || "",
+              responsibleEmail: target.responsavel.email || "",
+              studentId: target.student?.id || target.responsavel.aluno_id || null,
+              studentName: target.student?.nome || target.responsavel.aluno || "",
+              turma: target.student?.turma || ""
+            };
+          })
         } : {
           key: `family:${channel.id}:${responsavel?.id || normalizeEmail(responsavel?.email || session.email)}:${slugify(sector) || "secretaria"}`,
           type: "family",
@@ -2096,9 +2490,9 @@
           responsibleId: responsavel?.id || null,
           responsibleName: responsavel?.nome || session.name,
           responsibleEmail: responsavel?.email || session.email,
-          studentId: student?.id || responsavel?.aluno_id || null,
-          studentName: student?.nome || responsavel?.aluno || "",
-          turma: student?.turma || channel.publico || "",
+          studentId: student?.id || responsavelStudent?.id || responsavel?.aluno_id || null,
+          studentName: student?.nome || responsavelStudent?.nome || responsavel?.aluno || "",
+          turma: student?.turma || responsavelStudent?.turma || channel.publico || "",
           subject: subject
         };
 
@@ -2117,24 +2511,109 @@
           attachments: [],
           placeholder: true,
           workflowStatus: "draft",
-          recipientType: thread.type === "broadcast" ? "turmas" : session.role === "responsaveis" ? "escola" : "responsaveis",
+          recipientType: thread.type === "broadcast" ? "turmas" : thread.type === "batch" ? "responsaveis" : session.role === "responsaveis" ? "escola" : "responsaveis",
           recipients: thread.type === "broadcast"
             ? broadcastRecipients
+            : thread.type === "batch"
+              ? selectedTargets.map(function (target) {
+                return target.responsavel.email || target.responsavel.nome;
+              })
             : session.role === "responsaveis"
               ? [thread.sector || channel.nome]
               : [thread.responsibleEmail || thread.responsibleName]
         });
         appendSavedMessage(savedMessage);
 
+        if (session.role !== "responsaveis") {
+          updateThreadState(state, thread.key, {
+            assignedTo: session.name,
+            assignedEmail: session.email
+          });
+        }
+
         state.selectedChannelId = channel.id;
         state.selectedThreadKey = thread.key;
         setViewMode("thread");
         refs.newThreadForm.reset();
+        state.newThreadSelectedResponsaveis = [];
         closeNewThreadModal();
         renderAll();
         refs.composerFeedback.textContent = "Conversa criada com sucesso. Digite a primeira mensagem no chat.";
         refs.composerFeedback.className = "feedback success";
         refs.composerInput.focus();
+      }
+
+      async function handleForwardMessageSubmit(event) {
+        event.preventDefault();
+
+        const sourceMessage = state.parsedMessages.find(function (item) {
+          return item.id === state.forwardMessageId;
+        }) || null;
+        const sourceThread = state.threads.find(function (item) {
+          return item.key === state.forwardSourceThreadKey;
+        }) || getSelectedThread();
+
+        if (!sourceMessage || !sourceThread) {
+          refs.forwardMessageFeedback.textContent = "Nao foi possivel localizar a mensagem para encaminhar.";
+          refs.forwardMessageFeedback.className = "feedback error";
+          return;
+        }
+
+        const channel = state.channels.find(function (item) {
+          return item.id === refs.forwardMessageChannel.value;
+        }) || sourceThread && state.channels.find(function (item) {
+          return item.id === sourceThread.channelId;
+        }) || VIRTUAL_CHANNELS[0];
+
+        const sector = String(refs.forwardMessageSector.value || sourceThread.sector || "Secretaria");
+        const subject = String(refs.forwardMessageSubject.value || "").trim() || sourceThread.subject || "Encaminhamento";
+        const selectedTargets = (state.directory.responsaveis || []).filter(function (item) {
+          return state.forwardSelectedResponsaveis.includes(item.id);
+        }).map(function (responsavel) {
+          return {
+            responsavel: responsavel,
+            student: getStudentForResponsavelRecord(responsavel)
+          };
+        }).filter(function (target) {
+          return Boolean(target.responsavel?.email);
+        });
+
+        if (!selectedTargets.length) {
+          refs.forwardMessageFeedback.textContent = "Selecione pelo menos um responsavel para encaminhar a mensagem.";
+          refs.forwardMessageFeedback.className = "feedback error";
+          return;
+        }
+
+        const workflowStatus = session.canApprove || session.role === "administrador" || isAssignedToCurrentUser(sourceThread, session)
+          ? "sent"
+          : "pending_approval";
+        const baseThread = {
+          channelId: channel?.id || null,
+          channelName: channel?.nome || sourceThread.channelName,
+          channelType: channel?.channelType || sourceThread.channelType || "turma",
+          sector: sector,
+          turma: channel?.publico || sourceThread.turma || "",
+          subject: subject
+        };
+
+        const createdThreads = await distributeMessageToTargets(baseThread, selectedTargets, {
+          text: sourceMessage.parsed.text,
+          attachments: sourceMessage.parsed.attachments || [],
+          workflowStatus: workflowStatus
+        });
+
+        state.selectedChannelId = channel?.id || "";
+        state.selectedThreadKey = createdThreads[0]?.key || state.selectedThreadKey;
+        setViewMode("thread");
+        closeForwardMessageModal();
+        refs.composerFeedback.textContent = workflowStatus === "pending_approval"
+          ? `Encaminhamento criado para ${createdThreads.length} responsavel(is) e enviado para aprovacao.`
+          : `Mensagem encaminhada para ${createdThreads.length} responsavel(is).`;
+        refs.composerFeedback.className = "feedback success";
+        await refreshAll();
+        if (createdThreads.length) {
+          refs.composerInput.focus();
+        }
       }
 
       async function handleChannelManagerSubmit(event) {
@@ -2267,40 +2746,36 @@
           throw new Error("Esse canal nao possui responsaveis vinculados a turma selecionada.");
         }
 
-        const createdThreads = [];
-        const savedMessages = await Promise.all(targets.map(function (target) {
-          const student = target.student;
-          const responsavel = target.responsavel;
-          const familyThread = {
-            key: `family:${thread.channelId || slugify(thread.channelName)}:${responsavel.id || normalizeEmail(responsavel.email)}:${slugify(thread.sector) || "secretaria"}`,
-            type: "family",
-            channelId: thread.channelId || null,
-            channelName: thread.channelName,
-            channelType: thread.channelType || "turma",
-            sector: thread.sector,
-            responsibleId: responsavel.id || null,
-            responsibleName: responsavel.nome || "",
-            responsibleEmail: responsavel.email || "",
-            studentId: student?.id || responsavel.aluno_id || null,
-            studentName: student?.nome || responsavel.aluno || "",
-            turma: student?.turma || thread.turma || "",
-            subject: thread.subject || thread.channelName
-          };
+        const createdThreads = await distributeMessageToTargets(thread, targets, {
+          text: options.text,
+          attachments: options.attachments || [],
+          workflowStatus: "sent"
+        });
+        await cleanupThreadMessages(thread.key);
+        return createdThreads;
+      }
 
-          createdThreads.push(familyThread);
+      async function distributeBatchMessage(thread, options) {
+        const targets = (thread.targetResponsaveis || []).map(function (item) {
+          const responsavel = (state.directory.responsaveis || []).find(function (candidate) {
+            return candidate.id === item.responsibleId
+              || normalizeEmail(candidate.email) === normalizeEmail(item.responsibleEmail);
+          }) || null;
+          const student = item.studentId
+            ? (state.directory.alunos || []).find(function (candidate) { return candidate.id === item.studentId; }) || null
+            : findStudentByName(state.directory, item.studentName);
 
-          return saveMessage(familyThread, {
-            text: options.text,
-            internalOnly: false,
-            attachments: options.attachments || [],
-            workflowStatus: "sent",
-            recipientType: "responsaveis",
-            recipients: [responsavel.email || responsavel.nome]
-          });
-        }));
+          return responsavel ? { responsavel: responsavel, student: student || getStudentForResponsavelRecord(responsavel) } : null;
+        }).filter(Boolean);
 
-        savedMessages.forEach(function (savedMessage) {
-          appendSavedMessage(savedMessage);
+        if (!targets.length) {
+          throw new Error("Nenhum responsavel selecionado foi encontrado para esse encaminhamento.");
+        }
+
+        const createdThreads = await distributeMessageToTargets(thread, targets, {
+          text: options.text,
+          attachments: options.attachments || [],
+          workflowStatus: options.workflowStatus || "sent"
         });
 
         await cleanupThreadMessages(thread.key);
@@ -2353,6 +2828,19 @@
         closeNewThreadModal();
       });
 
+      refs.cancelForwardMessage?.addEventListener("click", function () {
+        closeForwardMessageModal();
+      });
+
+      refs.closeForwardMessage?.addEventListener("click", function () {
+        closeForwardMessageModal();
+      });
+
+      refs.forwardMessageModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-close-forward-message]")) return;
+        closeForwardMessageModal();
+      });
+
       refs.cancelChannelManager?.addEventListener("click", function () {
         closeChannelManagerModal();
       });
@@ -2368,6 +2856,10 @@
 
       document.addEventListener("keydown", function (event) {
         if (event.key !== "Escape") return;
+        if (!refs.forwardMessageModal?.hidden) {
+          closeForwardMessageModal();
+          return;
+        }
         if (!refs.channelManagerModal?.hidden) {
           closeChannelManagerModal();
           return;
@@ -2381,6 +2873,13 @@
         handleNewThreadSubmit(event).catch(function (error) {
           refs.newThreadFeedback.textContent = error?.message || "Nao foi possivel criar a conversa.";
           refs.newThreadFeedback.className = "feedback error";
+        });
+      });
+
+      refs.forwardMessageForm?.addEventListener("submit", function (event) {
+        handleForwardMessageSubmit(event).catch(function (error) {
+          refs.forwardMessageFeedback.textContent = error?.message || "Nao foi possivel encaminhar a mensagem.";
+          refs.forwardMessageFeedback.className = "feedback error";
         });
       });
 
@@ -2401,6 +2900,18 @@
       });
 
       refs.threadBody?.addEventListener("click", function (event) {
+        const forwardButton = event.target.closest("[data-message-forward-id]");
+        if (forwardButton) {
+          const thread = getSelectedThread();
+          const message = state.parsedMessages.find(function (item) {
+            return item.id === forwardButton.dataset.messageForwardId;
+          }) || null;
+          if (thread && message) {
+            openForwardMessageModal(message, thread);
+          }
+          return;
+        }
+
         const removeButton = event.target.closest("[data-message-remove-id]");
         if (!removeButton) return;
         handleMessageRemove(removeButton.dataset.messageRemoveId).catch(function (error) {
@@ -2413,8 +2924,84 @@
         populateNewThreadOptions();
       });
 
+      refs.newThreadChannel?.addEventListener("change", function () {
+        syncNewThreadVisibility();
+      });
+
       refs.newThreadStudent?.addEventListener("change", function () {
         syncNewThreadVisibility();
+      });
+
+      refs.newThreadResponsavelSearch?.addEventListener("input", function () {
+        renderNewThreadResponsavelSelection();
+      });
+
+      refs.newThreadSelectAll?.addEventListener("click", function () {
+        const candidates = getResponsavelCandidates({
+          studentId: refs.newThreadStudent.value,
+          channelId: refs.newThreadChannel.value,
+          searchTerm: ""
+        });
+        state.newThreadSelectedResponsaveis = candidates.map(function (item) { return item.id; });
+        renderNewThreadResponsavelSelection();
+      });
+
+      refs.newThreadClearSelection?.addEventListener("click", function () {
+        state.newThreadSelectedResponsaveis = [];
+        renderNewThreadResponsavelSelection();
+      });
+
+      refs.newThreadResponsavelList?.addEventListener("change", function (event) {
+        const checkbox = event.target.closest('[data-recipient-mode="new-thread"]');
+        if (!checkbox) return;
+        if (checkbox.checked) {
+          state.newThreadSelectedResponsaveis = [...new Set(state.newThreadSelectedResponsaveis.concat(checkbox.dataset.recipientId))];
+        } else {
+          state.newThreadSelectedResponsaveis = state.newThreadSelectedResponsaveis.filter(function (id) {
+            return id !== checkbox.dataset.recipientId;
+          });
+        }
+        renderNewThreadResponsavelSelection();
+      });
+
+      refs.forwardMessageChannel?.addEventListener("change", function () {
+        renderForwardResponsavelSelection();
+      });
+
+      refs.forwardMessageStudent?.addEventListener("change", function () {
+        renderForwardResponsavelSelection();
+      });
+
+      refs.forwardMessageResponsavelSearch?.addEventListener("input", function () {
+        renderForwardResponsavelSelection();
+      });
+
+      refs.forwardMessageSelectAll?.addEventListener("click", function () {
+        const candidates = getResponsavelCandidates({
+          studentId: refs.forwardMessageStudent.value,
+          channelId: refs.forwardMessageChannel.value,
+          searchTerm: ""
+        });
+        state.forwardSelectedResponsaveis = candidates.map(function (item) { return item.id; });
+        renderForwardResponsavelSelection();
+      });
+
+      refs.forwardMessageClearSelection?.addEventListener("click", function () {
+        state.forwardSelectedResponsaveis = [];
+        renderForwardResponsavelSelection();
+      });
+
+      refs.forwardMessageResponsavelList?.addEventListener("change", function (event) {
+        const checkbox = event.target.closest('[data-recipient-mode="forward-message"]');
+        if (!checkbox) return;
+        if (checkbox.checked) {
+          state.forwardSelectedResponsaveis = [...new Set(state.forwardSelectedResponsaveis.concat(checkbox.dataset.recipientId))];
+        } else {
+          state.forwardSelectedResponsaveis = state.forwardSelectedResponsaveis.filter(function (id) {
+            return id !== checkbox.dataset.recipientId;
+          });
+        }
+        renderForwardResponsavelSelection();
       });
 
       refs.searchInput?.addEventListener("input", function () {
@@ -2520,14 +3107,16 @@
           updateThreadState(state, thread.key, { archived: !thread.local.archived });
         }
         if (action === "forward") {
-          openNewThreadModal();
-          refs.newThreadType.value = "family";
-          setSelectValueIfPresent(refs.newThreadChannel, thread.channelId || "");
-          setSelectValueIfPresent(refs.newThreadStudent, thread.studentId || "");
-          setSelectValueIfPresent(refs.newThreadResponsavel, thread.responsibleId || "");
-          setSelectValueIfPresent(refs.newThreadSector, thread.sector || "Secretaria");
-          syncNewThreadVisibility();
-          refs.newThreadSubject.value = `Encaminhamento: ${thread.subject || thread.channelName}`;
+          const forwardSource = [...(thread.visibleMessages || [])].reverse().find(function (message) {
+            return !message.parsed.internalOnly && !message.parsed.placeholder;
+          }) || thread.lastMessage || null;
+          if (!forwardSource) {
+            refs.composerFeedback.textContent = "Nenhuma mensagem disponivel para encaminhar nessa conversa.";
+            refs.composerFeedback.className = "feedback error";
+            return;
+          }
+          openForwardMessageModal(forwardSource, thread);
+          return;
         }
         if (action === "delete-thread") {
           await handleThreadRemove(thread);
@@ -2625,12 +3214,17 @@
         const note = action === "approve" ? "" : window.prompt("Adicione uma observacao para esta acao:") || "";
         const nextStatus = action === "approve" ? "sent" : action === "return" ? "returned" : "rejected";
 
-        if (action === "approve" && pendingMessage.parsed.thread?.type === "broadcast") {
-          const createdThreads = await distributeBroadcastMessage(thread, {
-            text: pendingMessage.parsed.text,
-            attachments: pendingMessage.parsed.attachments || []
-          });
-          refs.composerFeedback.textContent = `Mensagem aprovada e enviada para ${createdThreads.length} responsavel(is) da turma.`;
+        if (action === "approve" && (pendingMessage.parsed.thread?.type === "broadcast" || pendingMessage.parsed.thread?.type === "batch")) {
+          const createdThreads = pendingMessage.parsed.thread?.type === "broadcast"
+            ? await distributeBroadcastMessage(thread, {
+              text: pendingMessage.parsed.text,
+              attachments: pendingMessage.parsed.attachments || []
+            })
+            : await distributeBatchMessage(thread, {
+              text: pendingMessage.parsed.text,
+              attachments: pendingMessage.parsed.attachments || []
+            });
+          refs.composerFeedback.textContent = `Mensagem aprovada e enviada para ${createdThreads.length} responsavel(is).`;
           refs.composerFeedback.className = "feedback success";
           state.selectedThreadKey = createdThreads[0]?.key || null;
           setViewMode(createdThreads.length ? "thread" : "board");
