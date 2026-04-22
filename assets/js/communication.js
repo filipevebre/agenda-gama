@@ -904,9 +904,24 @@
     });
   }
 
+  function getResponsavelTargetsForTurma(directory, turma) {
+    return getResponsaveisForTurma(directory, turma).map(function (responsavel) {
+      const student = responsavel.aluno_id
+        ? (directory.alunos || []).find(function (item) { return item.id === responsavel.aluno_id; })
+        : findStudentByName(directory, responsavel.aluno);
+
+      return {
+        responsavel: responsavel,
+        student: student || null
+      };
+    }).filter(function (item) {
+      return Boolean(item.responsavel?.email);
+    });
+  }
+
   function getBroadcastRecipients(directory, turma, fallbackLabel) {
-    const emails = getResponsaveisForTurma(directory, turma)
-      .map(function (item) { return normalizeEmail(item.email); })
+    const emails = getResponsavelTargetsForTurma(directory, turma)
+      .map(function (item) { return normalizeEmail(item.responsavel.email); })
       .filter(Boolean);
     const uniqueEmails = [...new Set(emails)];
 
@@ -1979,6 +1994,75 @@
         if (thread.type === "broadcast" && !recipients.length) {
           refs.composerFeedback.textContent = "Esse canal nao possui responsaveis vinculados a turma selecionada.";
           refs.composerFeedback.className = "feedback error";
+          return;
+        }
+
+        if (thread.type === "broadcast" && mode !== "draft" && !internalOnly) {
+          const targets = getResponsavelTargetsForTurma(state.directory, thread.turma);
+          if (!targets.length) {
+            refs.composerFeedback.textContent = "Esse canal nao possui responsaveis vinculados a turma selecionada.";
+            refs.composerFeedback.className = "feedback error";
+            return;
+          }
+
+          const createdThreads = [];
+          await Promise.all(targets.map(function (target) {
+            const student = target.student;
+            const responsavel = target.responsavel;
+            const familyThread = {
+              key: `family:${thread.channelId || slugify(thread.channelName)}:${responsavel.id || normalizeEmail(responsavel.email)}:${slugify(thread.sector) || "secretaria"}`,
+              type: "family",
+              channelId: thread.channelId || null,
+              channelName: thread.channelName,
+              channelType: thread.channelType || "turma",
+              sector: thread.sector,
+              responsibleId: responsavel.id || null,
+              responsibleName: responsavel.nome || "",
+              responsibleEmail: responsavel.email || "",
+              studentId: student?.id || responsavel.aluno_id || null,
+              studentName: student?.nome || responsavel.aluno || "",
+              turma: student?.turma || thread.turma || "",
+              subject: thread.subject || thread.channelName
+            };
+
+            createdThreads.push(familyThread);
+
+            return saveMessage(familyThread, {
+              text: text,
+              internalOnly: false,
+              attachments: state.pendingAttachments,
+              workflowStatus: workflowStatus,
+              recipientType: "responsaveis",
+              recipients: [responsavel.email || responsavel.nome]
+            });
+          })).then(function (savedMessages) {
+            savedMessages.forEach(function (savedMessage) {
+              appendSavedMessage(savedMessage);
+            });
+          });
+
+          const broadcastMessages = state.parsedMessages.filter(function (message) {
+            return message.parsed.thread?.key === thread.key;
+          });
+          await Promise.all(broadcastMessages.map(function (message) {
+            return window.AgendaGamaDataStore.remove("messages", message.id, DEFAULT_MESSAGES);
+          }));
+          removeThreadState(thread.key);
+          removeThreadViewState(thread.key);
+
+          refs.composerInput.value = "";
+          state.pendingAttachments = [];
+          state.internalMode = false;
+          refs.internalNoteButton.classList.remove("active");
+          refs.typingIndicator.hidden = true;
+          state.selectedThreadKey = createdThreads[0]?.key || null;
+          setViewMode(createdThreads.length ? "thread" : "board");
+          refs.composerFeedback.textContent = `Mensagem enviada e conversa iniciada para ${createdThreads.length} responsavel(is) da turma.`;
+          refs.composerFeedback.className = "feedback success";
+          await refreshAll();
+          if (createdThreads.length) {
+            refs.composerInput.focus();
+          }
           return;
         }
 
