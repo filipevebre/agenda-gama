@@ -1,9 +1,20 @@
 (function () {
   const SIDEBAR_STATE_KEY = "agenda-gama-sidebar-collapsed";
   const NOTIFICATIONS_KEY = "agenda-gama-notifications";
+  const THREAD_VIEW_KEY = "agenda-gama-message-thread-view";
+  const THREAD_STATE_KEY = "agenda-gama-message-thread-state";
+  const MESSAGE_PREFIX = "AGAMA_MESSAGE::";
+  const NOTIFICATION_REFRESH_MS = 12000;
+  const VIRTUAL_CHANNELS = [
+    { id: "setor-secretaria", nome: "Secretaria", channelType: "secretaria", publico: "Atendimento geral", descricao: "Atendimento administrativo e vida escolar." },
+    { id: "setor-coordenacao", nome: "Coordenacao", channelType: "coordenacao", publico: "Pedagogico", descricao: "Orientacao pedagogica e acompanhamento escolar." },
+    { id: "setor-financeiro", nome: "Financeiro", channelType: "financeiro", publico: "Atendimento", descricao: "Mensalidades, boletos e combinados financeiros." },
+    { id: "setor-professor", nome: "Professor", channelType: "professor", publico: "Sala de aula", descricao: "Contato com professor ou equipe docente." }
+  ];
   let activeShellSession = null;
   let activeNotificationElements = null;
   let activeToastHost = null;
+  let activeNotificationTimer = null;
 
   if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";
@@ -23,6 +34,18 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  function normalizeText(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function slugify(value) {
+    return normalizeText(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
   function readNotifications() {
     try {
       const raw = localStorage.getItem(NOTIFICATIONS_KEY);
@@ -38,6 +61,15 @@
 
   function getNotificationSessionKey(session) {
     return `${session.role}:${normalizeEmail(session.email)}`;
+  }
+
+  function readJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (error) {
+      return fallback;
+    }
   }
 
   function generateNotificationId() {
@@ -227,6 +259,292 @@
 
     if (activeShellSession && getNotificationSessionKey(activeShellSession) === sessionKey) {
       toastQueue.slice(0, 2).forEach(showNotificationToast);
+    }
+  }
+
+  function parseEnvelope(content) {
+    const raw = String(content || "");
+    if (!raw.startsWith(MESSAGE_PREFIX)) {
+      return {
+        text: raw,
+        internalOnly: false,
+        attachments: [],
+        placeholder: false,
+        thread: null
+      };
+    }
+
+    try {
+      return JSON.parse(raw.slice(MESSAGE_PREFIX.length));
+    } catch (error) {
+      return {
+        text: raw,
+        internalOnly: false,
+        attachments: [],
+        placeholder: false,
+        thread: null
+      };
+    }
+  }
+
+  function findStudentByName(directory, name) {
+    return (directory.alunos || []).find((item) => normalizeText(item.nome) === normalizeText(name)) || null;
+  }
+
+  function buildMaps(directory) {
+    return {
+      studentsById: new Map((directory.alunos || []).map((item) => [item.id, item])),
+      responsaveisByEmail: new Map((directory.responsaveis || []).map((item) => [normalizeEmail(item.email), item])),
+      responsaveisByName: new Map((directory.responsaveis || []).map((item) => [normalizeText(item.nome), item]))
+    };
+  }
+
+  function inferSectorFromMessage(message, senderRecord) {
+    if (message.sender_role === "professores") return "Professor";
+    if (message.recipient_type === "interno") return "Coordenacao";
+    if (senderRecord?.setor) return senderRecord.setor;
+    return "Secretaria";
+  }
+
+  function getAllChannels(storedChannels) {
+    const merged = [...(storedChannels || [])];
+    VIRTUAL_CHANNELS.forEach((channel) => {
+      if (!merged.some((item) => item.id === channel.id)) {
+        merged.push(channel);
+      }
+    });
+    return merged;
+  }
+
+  function inferLegacyThread(message, directory, channels, maps) {
+    const channel = channels.find((item) => item.id === message.canal_id || normalizeText(item.nome) === normalizeText(message.canal_nome)) || null;
+    const senderRecord = maps.responsaveisByEmail.get(normalizeEmail(message.sender_email))
+      || maps.responsaveisByName.get(normalizeText(message.sender_name))
+      || null;
+    const targetRecord = (Array.isArray(message.recipients) ? message.recipients : [])
+      .map((token) => maps.responsaveisByEmail.get(normalizeEmail(token)) || maps.responsaveisByName.get(normalizeText(token)) || null)
+      .find(Boolean) || senderRecord;
+
+    if (message.recipient_type === "turmas") {
+      const turma = channel?.publico || message.recipients?.[0] || "Turma";
+      return {
+        key: `broadcast:${message.canal_id || slugify(message.canal_nome || turma)}`,
+        type: "broadcast",
+        channelId: channel?.id || null,
+        channelName: channel?.nome || message.canal_nome || turma,
+        channelType: "turma",
+        sector: "Secretaria",
+        turma: turma,
+        subject: message.subject || "Comunicados gerais"
+      };
+    }
+
+    const student = targetRecord?.aluno_id ? maps.studentsById.get(targetRecord.aluno_id) : findStudentByName(directory, targetRecord?.aluno || "");
+    const sector = inferSectorFromMessage(message, senderRecord);
+
+    return {
+      key: `family:${message.canal_id || slugify(message.canal_nome || sector)}:${targetRecord?.id || normalizeEmail(targetRecord?.email || message.sender_email)}:${slugify(sector) || "secretaria"}`,
+      type: "family",
+      channelId: channel?.id || null,
+      channelName: channel?.nome || message.canal_nome || sector,
+      channelType: channel?.channelType || "turma",
+      sector: sector,
+      responsibleId: targetRecord?.id || null,
+      responsibleName: targetRecord?.nome || message.sender_name,
+      responsibleEmail: targetRecord?.email || message.sender_email,
+      studentId: student?.id || targetRecord?.aluno_id || null,
+      studentName: student?.nome || targetRecord?.aluno || "",
+      turma: student?.turma || channel?.publico || "",
+      subject: message.subject || "Atendimento escolar"
+    };
+  }
+
+  function parseStoredMessage(message, directory, channels, maps) {
+    const envelope = parseEnvelope(message?.content || "");
+    return {
+      ...message,
+      workflowStatus: String(message?.status || "sent").trim().toLowerCase(),
+      parsed: {
+        text: envelope.text || "",
+        internalOnly: Boolean(envelope.internalOnly),
+        attachments: Array.isArray(envelope.attachments) ? envelope.attachments : [],
+        placeholder: Boolean(envelope.placeholder),
+        thread: envelope.thread || inferLegacyThread(message, directory, channels, maps)
+      }
+    };
+  }
+
+  function getActorContext(session, directory) {
+    const professor = (directory.professores || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizeText(item.nome) === normalizeText(session.name)) || null;
+    const funcionario = (directory.equipe || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizeText(item.nome) === normalizeText(session.name)) || null;
+    const responsavelRecords = (directory.responsaveis || []).filter((item) => normalizeEmail(item.email) === normalizeEmail(session.email));
+    const responsavelTurmas = new Set();
+    const professorTurmas = new Set();
+
+    if (professor?.turmas) {
+      String(professor.turmas).split(",").map((item) => item.trim()).filter(Boolean).forEach((item) => professorTurmas.add(item));
+    } else if (professor?.turno) {
+      (directory.turmas || []).filter((turma) => normalizeText(turma.turno) === normalizeText(professor.turno)).forEach((turma) => professorTurmas.add(turma.nome));
+    }
+
+    const funcionarioSectors = new Set();
+    if (funcionario?.setor) funcionarioSectors.add(funcionario.setor);
+    if (funcionario?.cargo) funcionarioSectors.add(funcionario.cargo);
+    if (session.role === "funcionarios" && !funcionarioSectors.size) {
+      funcionarioSectors.add("Secretaria");
+    }
+
+    responsavelRecords.forEach((item) => {
+      const student = item.aluno_id
+        ? (directory.alunos || []).find((candidate) => candidate.id === item.aluno_id)
+        : findStudentByName(directory, item.aluno);
+      if (student?.turma) {
+        responsavelTurmas.add(student.turma);
+      }
+    });
+
+    return {
+      professorTurmas,
+      funcionarioSectors,
+      responsavelTurmas
+    };
+  }
+
+  function canViewThread(thread, session, actorContext, messages) {
+    if (session.role === "administrador" || session.canApprove) return true;
+
+    if (session.role === "responsaveis") {
+      if (thread.type === "broadcast") {
+        return actorContext.responsavelTurmas.has(thread.turma);
+      }
+      return normalizeEmail(thread.responsibleEmail) === normalizeEmail(session.email);
+    }
+
+    if (session.role === "professores") {
+      return actorContext.professorTurmas.has(thread.turma)
+        || (messages || []).some((message) => normalizeEmail(message.sender_email) === normalizeEmail(session.email));
+    }
+
+    if (session.role === "funcionarios") {
+      if (!actorContext.funcionarioSectors.size) return true;
+      if (thread.type === "broadcast") return true;
+      return [...actorContext.funcionarioSectors].some((sector) => {
+        return normalizeText(thread.sector).includes(normalizeText(sector)) || normalizeText(sector).includes(normalizeText(thread.sector));
+      });
+    }
+
+    return false;
+  }
+
+  function getSeenAt(session, threadKey) {
+    const state = readJson(THREAD_VIEW_KEY, {});
+    return state[getNotificationSessionKey(session)]?.[threadKey] || "";
+  }
+
+  function getThreadTitle(thread) {
+    return thread.type === "broadcast" ? thread.channelName : (thread.responsibleName || thread.channelName);
+  }
+
+  function getThreadPreview(thread) {
+    if (!thread.lastMessage || thread.lastMessage.parsed?.placeholder) {
+      return "Conversa iniciada. Abra o chat para enviar a primeira mensagem.";
+    }
+    return thread.lastMessage.parsed?.text || "Sem mensagens registradas.";
+  }
+
+  async function buildCommunicationAlertsForSession(session) {
+    if (!window.AgendaGamaDataStore) return [];
+
+    const [turmas, alunos, responsaveis, professores, equipe, storedChannels, storedMessages] = await Promise.all([
+      window.AgendaGamaDataStore.list("turmas", []),
+      window.AgendaGamaDataStore.list("alunos", []),
+      window.AgendaGamaDataStore.list("responsaveis", []),
+      window.AgendaGamaDataStore.list("professores", []),
+      window.AgendaGamaDataStore.list("equipe", []),
+      window.AgendaGamaDataStore.list("channels", []),
+      window.AgendaGamaDataStore.list("messages", [])
+    ]);
+
+    const directory = { turmas, alunos, responsaveis, professores, equipe };
+    const channels = getAllChannels(storedChannels);
+    const maps = buildMaps(directory);
+    const actorContext = getActorContext(session, directory);
+    const threadState = readJson(THREAD_STATE_KEY, {});
+    const grouped = new Map();
+
+    storedMessages
+      .map((message) => parseStoredMessage(message, directory, channels, maps))
+      .forEach((message) => {
+        const thread = message.parsed.thread;
+        if (!thread?.key) return;
+        if (!grouped.has(thread.key)) {
+          grouped.set(thread.key, {
+            ...thread,
+            messages: [],
+            local: threadState[thread.key] || {}
+          });
+        }
+        grouped.get(thread.key).messages.push(message);
+      });
+
+    return Array.from(grouped.values()).flatMap((thread) => {
+      const sortedMessages = [...thread.messages].sort((left, right) => new Date(left.created_at || 0).getTime() - new Date(right.created_at || 0).getTime());
+      if (!canViewThread(thread, session, actorContext, sortedMessages)) return [];
+      if (thread.local.archived) return [];
+
+      const visibleMessages = sortedMessages.filter((message) => {
+        if (message.parsed.placeholder) return false;
+        if (message.parsed.internalOnly) return false;
+        if (session.role === "responsaveis" && message.workflowStatus !== "sent" && normalizeEmail(message.sender_email) !== normalizeEmail(session.email)) return false;
+        return true;
+      });
+
+      const lastMessage = visibleMessages[visibleMessages.length - 1] || sortedMessages[sortedMessages.length - 1] || null;
+      const seenAt = new Date(getSeenAt(session, thread.key) || 0).getTime();
+      const unreadCount = visibleMessages.filter((message) => {
+        return normalizeEmail(message.sender_email) !== normalizeEmail(session.email)
+          && new Date(message.created_at || 0).getTime() > seenAt;
+      }).length;
+      const pendingApprovalCount = sortedMessages.filter((message) => message.workflowStatus === "pending_approval").length;
+      const alerts = [];
+
+      if (unreadCount > 0 && lastMessage) {
+        alerts.push({
+          kind: "communication-thread",
+          dedupeKey: `thread:${thread.key}`,
+          threadKey: thread.key,
+          title: session.role === "responsaveis"
+            ? (thread.type === "broadcast" ? `Novo aviso em ${thread.channelName}` : "Nova resposta da escola")
+            : `Nova mensagem em ${getThreadTitle(thread)}`,
+          body: `${thread.studentName || thread.turma || thread.sector || "Atendimento"} • ${getThreadPreview({ ...thread, lastMessage })}`,
+          createdAt: lastMessage.created_at || new Date().toISOString(),
+          sourceStamp: lastMessage.created_at || `${thread.key}:${unreadCount}`
+        });
+      }
+
+      if (session.canApprove && pendingApprovalCount > 0) {
+        alerts.push({
+          kind: "communication-approval",
+          dedupeKey: `approval:${thread.key}`,
+          threadKey: thread.key,
+          title: "Mensagem aguardando aprovacao",
+          body: `${pendingApprovalCount} mensagem(ns) pendente(s) em ${getThreadTitle(thread)}.`,
+          createdAt: lastMessage?.created_at || new Date().toISOString(),
+          sourceStamp: `${pendingApprovalCount}:${lastMessage?.created_at || thread.key}`
+        });
+      }
+
+      return alerts;
+    });
+  }
+
+  async function refreshShellNotifications() {
+    if (!activeShellSession) return;
+    try {
+      const alerts = await buildCommunicationAlertsForSession(activeShellSession);
+      syncCommunicationNotifications(activeShellSession, alerts);
+    } catch (error) {
+      renderNotifications();
     }
   }
 
@@ -439,6 +757,7 @@
       markAll: notificationMarkAll
     };
     renderNotifications();
+    refreshShellNotifications();
 
     async function logout() {
       await window.AgendaGamaAuth.clearSession();
@@ -506,9 +825,20 @@
     window.addEventListener("storage", function (event) {
       if (event.key === NOTIFICATIONS_KEY) {
         renderNotifications();
+        return;
+      }
+
+      if (!event.key || event.key.startsWith("agenda-gama-messages") || event.key === THREAD_VIEW_KEY || event.key === THREAD_STATE_KEY) {
+        refreshShellNotifications();
       }
     });
     window.addEventListener("agenda-notifications-updated", renderNotifications);
+    window.addEventListener("agenda-message-state-changed", refreshShellNotifications);
+
+    if (activeNotificationTimer) {
+      window.clearInterval(activeNotificationTimer);
+    }
+    activeNotificationTimer = window.setInterval(refreshShellNotifications, NOTIFICATION_REFRESH_MS);
 
     document.getElementById("logout-button")?.addEventListener("click", logout);
     document.getElementById("logout-button-mobile")?.addEventListener("click", logout);
