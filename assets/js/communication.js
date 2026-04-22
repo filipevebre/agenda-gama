@@ -813,6 +813,20 @@
     return Boolean(thread && normalizeEmail(thread.local.assignedEmail) === normalizeEmail(session.email));
   }
 
+  function canDeleteMessage(message, thread, session) {
+    if (!message || !thread) return false;
+
+    const mine = normalizeEmail(message.sender_email) === normalizeEmail(session.email);
+
+    if (session.role === "administrador" || session.canApprove) return true;
+    if (session.role === "responsaveis") return mine;
+    if (session.role === "professores" || session.role === "funcionarios") {
+      return mine || isAssignedToCurrentUser(thread, session);
+    }
+
+    return false;
+  }
+
   function canReplyToThread(thread, session) {
     if (!thread) return false;
     if (isReadOnlyThread(thread, session)) return false;
@@ -1647,6 +1661,7 @@
                 <div class="thread-message-stack">
                   ${group.items.map(function (message) {
                     const mine = normalizeEmail(message.sender_email) === normalizeEmail(session.email);
+                    const canDelete = canDeleteMessage(message, thread, session);
                     const attachments = message.parsed.attachments.map(function (item) {
                       return `<a class="message-attachment" href="${escapeHtml(item.dataUrl || "#")}" download="${escapeHtml(item.name)}">${escapeHtml(item.name)} <small>${escapeHtml(formatBytes(item.size))}</small></a>`;
                     }).join("");
@@ -1661,6 +1676,7 @@
                         ${attachments ? `<div class="message-attachment-list">${attachments}</div>` : ""}
                         <div class="thread-bubble-meta">
                           ${buildStatusBadge(getWorkflowLabel(message.workflowStatus))}
+                          ${canDelete ? `<button type="button" class="thread-message-delete btn btn-secondary btn-sm" data-message-remove-id="${escapeHtml(message.id)}">Excluir</button>` : ""}
                         </div>
                       </article>
                     `;
@@ -2071,16 +2087,41 @@
         const channel = state.storedChannels.find(function (item) { return item.id === channelId; }) || null;
         if (!channel) return;
 
+        const relatedMessages = state.parsedMessages.filter(function (message) {
+          return message.canal_id === channel.id
+            || normalizeText(message.canal_nome) === normalizeText(channel.nome);
+        });
         const conversationCount = getChannelConversationCount(channel);
         const confirmText = conversationCount > 0
-          ? `Esse canal tem ${conversationCount} conversa(s) vinculada(s). Deseja excluir mesmo assim?`
+          ? `Esse canal tem ${conversationCount} conversa(s) vinculada(s) e ${relatedMessages.length} mensagem(ns). Deseja excluir tudo mesmo assim?`
           : "Deseja excluir este canal?";
 
         if (!window.confirm(confirmText)) return;
 
+        await Promise.all(relatedMessages.map(function (message) {
+          return window.AgendaGamaDataStore.remove("messages", message.id, DEFAULT_MESSAGES);
+        }));
         await window.AgendaGamaDataStore.remove("channels", channel.id, STORED_CHANNELS_SEED);
-        refs.channelManagerFeedback.textContent = "Canal excluido com sucesso.";
+        refs.channelManagerFeedback.textContent = "Canal e mensagens vinculadas excluidos com sucesso.";
         refs.channelManagerFeedback.className = "feedback success";
+        await refreshAll();
+      }
+
+      async function handleMessageRemove(messageId) {
+        const thread = getSelectedThread();
+        const message = state.parsedMessages.find(function (item) { return item.id === messageId; }) || null;
+        if (!thread || !message) return;
+        if (!canDeleteMessage(message, thread, session)) {
+          refs.composerFeedback.textContent = "Voce nao tem permissao para excluir essa mensagem.";
+          refs.composerFeedback.className = "feedback error";
+          return;
+        }
+
+        if (!window.confirm("Deseja excluir esta mensagem?")) return;
+
+        await window.AgendaGamaDataStore.remove("messages", message.id, DEFAULT_MESSAGES);
+        refs.composerFeedback.textContent = "Mensagem excluida com sucesso.";
+        refs.composerFeedback.className = "feedback success";
         await refreshAll();
       }
 
@@ -2149,6 +2190,15 @@
         handleChannelRemove(removeButton.dataset.channelRemoveId).catch(function (error) {
           refs.channelManagerFeedback.textContent = error?.message || "Nao foi possivel excluir o canal.";
           refs.channelManagerFeedback.className = "feedback error";
+        });
+      });
+
+      refs.threadBody?.addEventListener("click", function (event) {
+        const removeButton = event.target.closest("[data-message-remove-id]");
+        if (!removeButton) return;
+        handleMessageRemove(removeButton.dataset.messageRemoveId).catch(function (error) {
+          refs.composerFeedback.textContent = error?.message || "Nao foi possivel excluir a mensagem.";
+          refs.composerFeedback.className = "feedback error";
         });
       });
 
