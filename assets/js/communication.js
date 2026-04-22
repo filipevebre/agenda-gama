@@ -972,6 +972,25 @@
     writeJson(THREAD_STATE_KEY, state.threadState);
   }
 
+  function removeThreadState(threadKey) {
+    const currentState = readJson(THREAD_STATE_KEY, {});
+    if (!currentState[threadKey]) return;
+    delete currentState[threadKey];
+    writeJson(THREAD_STATE_KEY, currentState);
+  }
+
+  function removeThreadViewState(threadKey) {
+    const currentState = readJson(THREAD_VIEW_KEY, {});
+    Object.keys(currentState).forEach(function (sessionKey) {
+      if (!currentState[sessionKey] || !currentState[sessionKey][threadKey]) return;
+      delete currentState[sessionKey][threadKey];
+      if (!Object.keys(currentState[sessionKey]).length) {
+        delete currentState[sessionKey];
+      }
+    });
+    writeJson(THREAD_VIEW_KEY, currentState);
+  }
+
   function buildAttachmentList(files) {
     return Promise.all((files || []).map(function (file) {
       return new Promise(function (resolve, reject) {
@@ -1542,6 +1561,7 @@
               <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="resolve">${thread.local.resolved ? "Reabrir" : "Resolver"}</button>
               <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="archive">${thread.local.archived ? "Desarquivar" : "Arquivar"}</button>
               <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="forward">Encaminhar</button>
+              <button type="button" class="message-board-action btn btn-secondary btn-sm danger-action" data-action="delete-thread">Excluir conversa</button>
             </div>
           `;
 
@@ -2098,6 +2118,10 @@
 
         if (!window.confirm(confirmText)) return;
 
+        [...new Set(relatedMessages.map(function (message) { return message.parsed.thread?.key; }).filter(Boolean))].forEach(function (threadKey) {
+          removeThreadState(threadKey);
+          removeThreadViewState(threadKey);
+        });
         await Promise.all(relatedMessages.map(function (message) {
           return window.AgendaGamaDataStore.remove("messages", message.id, DEFAULT_MESSAGES);
         }));
@@ -2120,7 +2144,38 @@
         if (!window.confirm("Deseja excluir esta mensagem?")) return;
 
         await window.AgendaGamaDataStore.remove("messages", message.id, DEFAULT_MESSAGES);
+        if ((thread.messages || []).length <= 1) {
+          removeThreadState(thread.key);
+          removeThreadViewState(thread.key);
+          state.selectedThreadKey = null;
+          setViewMode("board");
+        }
         refs.composerFeedback.textContent = "Mensagem excluida com sucesso.";
+        refs.composerFeedback.className = "feedback success";
+        await refreshAll();
+      }
+
+      async function handleThreadRemove(thread) {
+        if (!thread) return;
+
+        const relatedMessages = state.parsedMessages.filter(function (message) {
+          return message.parsed.thread?.key === thread.key;
+        });
+
+        if (!relatedMessages.length) return;
+
+        const confirmText = `Deseja excluir esta conversa e as ${relatedMessages.length} mensagem(ns) vinculada(s)?`;
+        if (!window.confirm(confirmText)) return;
+
+        await Promise.all(relatedMessages.map(function (message) {
+          return window.AgendaGamaDataStore.remove("messages", message.id, DEFAULT_MESSAGES);
+        }));
+
+        removeThreadState(thread.key);
+        removeThreadViewState(thread.key);
+        state.selectedThreadKey = null;
+        setViewMode("board");
+        refs.composerFeedback.textContent = "Conversa excluida com sucesso.";
         refs.composerFeedback.className = "feedback success";
         await refreshAll();
       }
@@ -2321,6 +2376,10 @@
           setSelectValueIfPresent(refs.newThreadSector, thread.sector || "Secretaria");
           syncNewThreadVisibility();
           refs.newThreadSubject.value = `Encaminhamento: ${thread.subject || thread.channelName}`;
+        }
+        if (action === "delete-thread") {
+          await handleThreadRemove(thread);
+          return;
         }
 
         await refreshAll();

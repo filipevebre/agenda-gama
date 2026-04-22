@@ -1218,6 +1218,10 @@ td { color: var(--text-muted); }
   font-size: 0.75rem;
   line-height: 1;
 }
+.danger-action {
+  color: #a03a3a;
+  background: #fbecec;
+}
 .message-attachment-list {
   display: grid;
   gap: 8px;
