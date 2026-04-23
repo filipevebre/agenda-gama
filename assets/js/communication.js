@@ -919,6 +919,49 @@
     }).filter(Boolean);
   }
 
+  function getVisibleStudentPool(state, session) {
+    const students = state.directory?.alunos || [];
+
+    if (session.role === "responsaveis") {
+      return getResponsibleLinkedStudents(state);
+    }
+
+    if (session.role === "professores") {
+      return students.filter(function (student) {
+        return Boolean(student?.turma) && setHasTurma(state.actorContext.professorTurmas, student.turma);
+      });
+    }
+
+    return students;
+  }
+
+  function getStudentCandidatesForChannel(state, session, channelId) {
+    const channel = (state.channels || []).find(function (item) {
+      return item.id === channelId;
+    }) || null;
+
+    return getVisibleStudentPool(state, session).filter(function (student) {
+      if (!channel || channel.channelType !== "turma") {
+        return true;
+      }
+
+      return turmaMatches(student?.turma, channel.publico);
+    }).sort(function (left, right) {
+      return String(left.nome || "").localeCompare(String(right.nome || ""), "pt-BR");
+    });
+  }
+
+  function buildStudentOptionsMarkup(students, channel, emptyLabel) {
+    const isTurmaChannel = channel?.channelType === "turma";
+    const defaultLabel = isTurmaChannel
+      ? (students.length ? "Todos os alunos da turma" : (emptyLabel || "Nenhum aluno encontrado na turma"))
+      : "Todos os alunos";
+
+    return [`<option value="">${escapeHtml(defaultLabel)}</option>`].concat(students.map(function (student) {
+      return `<option value="${escapeHtml(student.id)}">${escapeHtml(student.nome)} - ${escapeHtml(student.turma)}</option>`;
+    })).join("");
+  }
+
   function getResponsaveisForTurma(directory, turma) {
     const normalizedTurma = normalizeTurmaLabel(turma);
     if (!normalizedTurma) return [];
@@ -1491,12 +1534,18 @@
           return `<option value="${escapeHtml(sector)}">${escapeHtml(sector)}</option>`;
         }).join("");
 
-        refs.newThreadStudent.innerHTML = ['<option value="">Todos os alunos</option>'].concat((state.directory.alunos || []).map(function (student) {
-          return `<option value="${escapeHtml(student.id)}">${escapeHtml(student.nome)} - ${escapeHtml(student.turma)}</option>`;
-        })).join("");
+        const selectedChannelId = session.role === "responsaveis"
+          ? ""
+          : (currentValues.channel || availableChannels[0]?.id || "");
+        const selectedChannel = availableChannels.find(function (channel) {
+          return channel.id === selectedChannelId;
+        }) || null;
+        const availableStudents = getStudentCandidatesForChannel(state, session, selectedChannelId);
+
+        refs.newThreadStudent.innerHTML = buildStudentOptionsMarkup(availableStudents, selectedChannel);
 
         if (session.role === "responsaveis") {
-          const linkedStudents = getResponsibleLinkedStudents(state);
+          const linkedStudents = availableStudents;
           refs.newThreadType.value = "family";
           refs.newThreadType.innerHTML = '<option value="family">Conversa com a escola</option>';
           refs.newThreadChannelField.hidden = true;
@@ -1692,14 +1741,19 @@
 
       function populateForwardMessageOptions(sourceThread, sourceMessage) {
         const availableChannels = state.channels || [];
+        const selectedChannelId = sourceThread?.channelId || availableChannels[0]?.id || "";
 
         refs.forwardMessageChannel.innerHTML = availableChannels.map(function (channel) {
           return `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.nome)}${channel.publico ? ` - ${escapeHtml(channel.publico)}` : ""}</option>`;
         }).join("");
 
-        refs.forwardMessageStudent.innerHTML = ['<option value="">Todos os alunos</option>'].concat((state.directory.alunos || []).map(function (student) {
-          return `<option value="${escapeHtml(student.id)}">${escapeHtml(student.nome)} - ${escapeHtml(student.turma)}</option>`;
-        })).join("");
+        const selectedChannel = availableChannels.find(function (channel) {
+          return channel.id === selectedChannelId;
+        }) || null;
+        refs.forwardMessageStudent.innerHTML = buildStudentOptionsMarkup(
+          getStudentCandidatesForChannel(state, session, selectedChannelId),
+          selectedChannel
+        );
 
         refs.forwardMessageSector.innerHTML = ["Secretaria", "Coordenacao", "Financeiro", "Professor"].map(function (sector) {
           return `<option value="${escapeHtml(sector)}">${escapeHtml(sector)}</option>`;
@@ -1714,6 +1768,8 @@
           <strong>${escapeHtml(sourceMessage?.sender_name || "Mensagem selecionada")}</strong>
           <p>${escapeHtml(sourceMessage?.parsed?.text || "Sem conteudo para encaminhar.")}</p>
         `;
+        refs.forwardMessagePreview.dataset.senderName = sourceMessage?.sender_name || "Mensagem selecionada";
+        refs.forwardMessagePreview.dataset.previewText = sourceMessage?.parsed?.text || "Sem conteudo para encaminhar.";
       }
 
       function renderForwardResponsavelSelection() {
@@ -2925,7 +2981,7 @@
       });
 
       refs.newThreadChannel?.addEventListener("change", function () {
-        syncNewThreadVisibility();
+        populateNewThreadOptions();
       });
 
       refs.newThreadStudent?.addEventListener("change", function () {
@@ -2965,6 +3021,17 @@
       });
 
       refs.forwardMessageChannel?.addEventListener("change", function () {
+        populateForwardMessageOptions({
+          channelId: refs.forwardMessageChannel.value,
+          studentId: refs.forwardMessageStudent.value,
+          sector: refs.forwardMessageSector.value,
+          subject: refs.forwardMessageSubject.value
+        }, {
+          sender_name: refs.forwardMessagePreview?.dataset.senderName || "Mensagem selecionada",
+          parsed: {
+            text: refs.forwardMessagePreview?.dataset.previewText || "Sem conteudo para encaminhar."
+          }
+        });
         renderForwardResponsavelSelection();
       });
 
