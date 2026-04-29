@@ -12,6 +12,7 @@
       summary: "Encontro presencial para alinhamentos pedagogicos e organizacionais do bimestre.",
       body: "A reuniao geral com as familias acontecera na quarta-feira, as 18h30, no auditorio principal. Pedimos pontualidade para apresentacao do calendario, combinados da rotina escolar e espaco para perguntas.",
       audience: "responsaveis",
+      targetTurmas: [],
       pinned: true,
       urgent: false,
       authorName: "Secretaria Escolar",
@@ -24,6 +25,7 @@
       summary: "Professores e equipe devem revisar o cronograma ajustado para maio.",
       body: "O calendario de provas do mes de maio foi atualizado com pequenos ajustes de horario em duas turmas do Ensino Fundamental. Conferir o cronograma completo antes de registrar novos avisos em agenda.",
       audience: "professores",
+      targetTurmas: ["5o Ano B"],
       pinned: false,
       urgent: true,
       authorName: "Coordenacao Pedagogica",
@@ -36,6 +38,7 @@
       summary: "Atendimento administrativo com horario reduzido para organizacao interna.",
       body: "Na sexta-feira, o atendimento interno da equipe administrativa sera encerrado as 15h para fechamento mensal. Pendencias urgentes devem ser registradas ate as 13h.",
       audience: "funcionarios",
+      targetTurmas: [],
       pinned: false,
       urgent: false,
       authorName: "Direcao",
@@ -44,32 +47,22 @@
     }
   ];
 
-  function readNotices() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(NOTICE_SEED));
-      return [...NOTICE_SEED];
-    }
-
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [...NOTICE_SEED];
-    } catch (error) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(NOTICE_SEED));
-      return [...NOTICE_SEED];
-    }
+  function normalizeText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
   }
 
-  function writeNotices(items) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  function normalizeTurmaLabel(value) {
+    return normalizeText(value)
+      .replace(/\u00aa/g, "a")
+      .replace(/\u00ba/g, "o");
   }
 
-  function generateId() {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-
-    return `notice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  function turmaMatches(left, right) {
+    return normalizeTurmaLabel(left) === normalizeTurmaLabel(right);
   }
 
   function escapeHtml(value) {
@@ -81,12 +74,52 @@
       .replace(/'/g, "&#39;");
   }
 
-  function normalizeText(value) {
-    return String(value || "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
+  function generateId() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+
+    return `notice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  function normalizeNotice(item) {
+    return {
+      ...item,
+      id: item.id || generateId(),
+      audience: item.audience || "all",
+      targetTurmas: Array.isArray(item.targetTurmas)
+        ? item.targetTurmas.filter(Boolean)
+        : item.targetTurmas
+          ? [item.targetTurmas].filter(Boolean)
+          : [],
+      pinned: Boolean(item.pinned),
+      urgent: Boolean(item.urgent),
+      createdAt: item.createdAt || new Date().toISOString()
+    };
+  }
+
+  function readNotices() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const seeded = NOTICE_SEED.map(normalizeNotice);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+      return seeded;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      const normalized = Array.isArray(parsed) ? parsed.map(normalizeNotice) : NOTICE_SEED.map(normalizeNotice);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      return normalized;
+    } catch (error) {
+      const fallback = NOTICE_SEED.map(normalizeNotice);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback));
+      return fallback;
+    }
+  }
+
+  function writeNotices(items) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(normalizeNotice)));
   }
 
   function canManage(session) {
@@ -104,13 +137,113 @@
     return labels[audience] || "Toda a escola";
   }
 
-  function isVisibleToSession(notice, session) {
+  function formatDate(value) {
+    try {
+      return DATE_FORMATTER.format(new Date(value));
+    } catch (error) {
+      return value || "";
+    }
+  }
+
+  function buildSessionContext(session, directory) {
+    const alunos = directory.alunos || [];
+    const responsaveis = directory.responsaveis || [];
+    const professores = directory.professores || [];
+
+    const professor = professores.find(function (item) {
+      return normalizeText(item.email) === normalizeText(session?.email) || normalizeText(item.nome) === normalizeText(session?.name);
+    }) || null;
+
+    const responsavelRecords = responsaveis.filter(function (item) {
+      return normalizeText(item.email) === normalizeText(session?.email);
+    });
+
+    const responsavelTurmas = new Set();
+    responsavelRecords.forEach(function (record) {
+      const aluno = record.aluno_id
+        ? alunos.find(function (item) { return item.id === record.aluno_id; }) || null
+        : alunos.find(function (item) { return normalizeText(item.nome) === normalizeText(record.aluno); }) || null;
+      if (aluno?.turma) {
+        responsavelTurmas.add(aluno.turma);
+      }
+    });
+
+    const professorTurmas = new Set();
+    if (professor?.turmas) {
+      String(professor.turmas)
+        .split(",")
+        .map(function (item) { return item.trim(); })
+        .filter(Boolean)
+        .forEach(function (item) {
+          professorTurmas.add(item);
+        });
+    } else if (professor?.turno) {
+      (directory.turmas || []).forEach(function (turma) {
+        if (normalizeText(turma.turno) === normalizeText(professor.turno)) {
+          professorTurmas.add(turma.nome);
+        }
+      });
+    }
+
+    return {
+      responsavelTurmas: responsavelTurmas,
+      professorTurmas: professorTurmas
+    };
+  }
+
+  function getVisibleTurmasForSession(session, context, directory) {
+    if (session?.role === "administrador" || session?.role === "funcionarios") {
+      return directory.turmas || [];
+    }
+
+    if (session?.role === "professores") {
+      return (directory.turmas || []).filter(function (turma) {
+        return Array.from(context.professorTurmas).some(function (name) {
+          return turmaMatches(name, turma.nome);
+        });
+      });
+    }
+
+    if (session?.role === "responsaveis") {
+      return (directory.turmas || []).filter(function (turma) {
+        return Array.from(context.responsavelTurmas).some(function (name) {
+          return turmaMatches(name, turma.nome);
+        });
+      });
+    }
+
+    return directory.turmas || [];
+  }
+
+  function noticeMatchesAudience(notice, session) {
     if (!notice) return false;
     if (session?.role === "administrador" || session?.role === "funcionarios") return true;
     if (notice.audience === "all") return true;
     if (session?.role === "responsaveis") return notice.audience === "responsaveis";
     if (session?.role === "professores") return notice.audience === "professores";
     return false;
+  }
+
+  function noticeMatchesTurmas(notice, session, context) {
+    const targetTurmas = Array.isArray(notice?.targetTurmas) ? notice.targetTurmas.filter(Boolean) : [];
+    if (!targetTurmas.length) return true;
+    if (session?.role === "administrador" || session?.role === "funcionarios") return true;
+
+    const sessionTurmas = session?.role === "professores"
+      ? Array.from(context.professorTurmas)
+      : session?.role === "responsaveis"
+        ? Array.from(context.responsavelTurmas)
+        : [];
+
+    return targetTurmas.some(function (targetTurma) {
+      return sessionTurmas.some(function (sessionTurma) {
+        return turmaMatches(targetTurma, sessionTurma);
+      });
+    });
+  }
+
+  function isVisibleToSession(notice, session, context) {
+    return noticeMatchesAudience(notice, session) && noticeMatchesTurmas(notice, session, context);
   }
 
   function sortNotices(items) {
@@ -127,9 +260,9 @@
     });
   }
 
-  function filterNotices(items, state, session) {
+  function filterNotices(items, state, session, context) {
     return sortNotices(items).filter(function (notice) {
-      if (!isVisibleToSession(notice, session)) {
+      if (!isVisibleToSession(notice, session, context)) {
         return false;
       }
 
@@ -152,25 +285,46 @@
         }
       }
 
+      if (state.turmaFilter !== "all") {
+        const targetTurmas = Array.isArray(notice.targetTurmas) ? notice.targetTurmas : [];
+        if (!targetTurmas.some(function (turma) { return turmaMatches(turma, state.turmaFilter); })) {
+          return false;
+        }
+      }
+
       const query = normalizeText(state.searchTerm);
       if (!query) {
         return true;
       }
 
-      const haystack = [notice.title, notice.summary, notice.body, notice.authorName, getAudienceLabel(notice.audience)]
-        .map(normalizeText)
-        .join(" ");
+      const haystack = [
+        notice.title,
+        notice.summary,
+        notice.body,
+        notice.authorName,
+        getAudienceLabel(notice.audience),
+        ...(notice.targetTurmas || [])
+      ].map(normalizeText).join(" ");
 
       return haystack.includes(query);
     });
   }
 
-  function formatDate(value) {
-    try {
-      return DATE_FORMATTER.format(new Date(value));
-    } catch (error) {
-      return value || "";
+  function buildTurmaSummary(targetTurmas) {
+    const list = (targetTurmas || []).filter(Boolean);
+    if (!list.length) {
+      return "Todas as turmas";
     }
+
+    if (list.length === 1) {
+      return list[0];
+    }
+
+    if (list.length === 2) {
+      return `${list[0]} e ${list[1]}`;
+    }
+
+    return `${list[0]}, ${list[1]} e mais ${list.length - 2}`;
   }
 
   function renderStats(items, refs) {
@@ -197,7 +351,7 @@
             </div>
           </div>
           <p>${escapeHtml(notice.summary)}</p>
-          <small>${escapeHtml(getAudienceLabel(notice.audience))} - ${escapeHtml(formatDate(notice.createdAt))}</small>
+          <small>${escapeHtml(getAudienceLabel(notice.audience))} - ${escapeHtml(buildTurmaSummary(notice.targetTurmas))}</small>
         </article>
       `;
     }).join("");
@@ -211,6 +365,8 @@
       </div>
     ` : "";
 
+    const targetTurmas = Array.isArray(notice.targetTurmas) ? notice.targetTurmas : [];
+
     return `
       <article class="notice-card ${notice.pinned ? "pinned" : ""} ${notice.urgent ? "urgent" : ""}">
         <div class="card-head">
@@ -220,6 +376,7 @@
           </div>
           <div class="inline-tags">
             <span class="tag">${escapeHtml(getAudienceLabel(notice.audience))}</span>
+            <span class="tag notice-tag-turma">${escapeHtml(buildTurmaSummary(targetTurmas))}</span>
             ${notice.pinned ? '<span class="tag">Fixado</span>' : ""}
             ${notice.urgent ? '<span class="tag notice-tag-urgent">Urgente</span>' : ""}
           </div>
@@ -232,8 +389,24 @@
     `;
   }
 
+  async function loadDirectory() {
+    const [turmas, alunos, responsaveis, professores] = await Promise.all([
+      window.AgendaGamaDataStore.list("turmas", []),
+      window.AgendaGamaDataStore.list("alunos", []),
+      window.AgendaGamaDataStore.list("responsaveis", []),
+      window.AgendaGamaDataStore.list("professores", [])
+    ]);
+
+    return {
+      turmas: turmas || [],
+      alunos: alunos || [],
+      responsaveis: responsaveis || [],
+      professores: professores || []
+    };
+  }
+
   function mountComunicados() {
-    function init(session) {
+    async function init(session) {
       const refs = {
         openEditor: document.getElementById("notice-open-editor"),
         editorPanel: document.getElementById("notice-editor-panel"),
@@ -248,9 +421,15 @@
         body: document.getElementById("notice-body"),
         pinned: document.getElementById("notice-pinned"),
         urgent: document.getElementById("notice-urgent"),
+        turmaTargetList: document.getElementById("notice-turma-target-list"),
+        turmaTargetSummary: document.getElementById("notice-turma-target-summary"),
+        turmaTargetEmpty: document.getElementById("notice-turma-target-empty"),
+        turmaTargetSelectAll: document.getElementById("notice-turma-select-all"),
+        turmaTargetClear: document.getElementById("notice-turma-clear"),
         search: document.getElementById("notice-search"),
         audienceFilter: document.getElementById("notice-audience-filter"),
         priorityFilter: document.getElementById("notice-priority-filter"),
+        turmaFilter: document.getElementById("notice-turma-filter"),
         list: document.getElementById("notice-list"),
         empty: document.getElementById("notice-empty"),
         highlightList: document.getElementById("notice-highlight-list"),
@@ -263,17 +442,48 @@
 
       if (!refs.list) return;
 
+      const directory = await loadDirectory();
+      const context = buildSessionContext(session, directory);
+
       const state = {
         notices: readNotices(),
         editingId: null,
         searchTerm: "",
         audienceFilter: "all",
-        priorityFilter: "all"
+        priorityFilter: "all",
+        turmaFilter: "all",
+        selectedTargetTurmas: []
       };
 
-      if (!canManage(session)) {
-        refs.openEditor?.setAttribute("hidden", "hidden");
-        refs.editorPanel.hidden = true;
+      function populateTurmaFilterOptions() {
+        const visibleTurmas = getVisibleTurmasForSession(session, context, directory);
+        refs.turmaFilter.innerHTML = ['<option value="all">Todas as turmas</option>'].concat(visibleTurmas.map(function (turma) {
+          return `<option value="${escapeHtml(turma.nome)}">${escapeHtml(turma.nome)}</option>`;
+        })).join("");
+      }
+
+      function renderTurmaTargetSelection() {
+        const allTurmas = directory.turmas || [];
+        refs.turmaTargetEmpty.hidden = allTurmas.length > 0;
+        refs.turmaTargetList.innerHTML = allTurmas.map(function (turma) {
+          const checked = state.selectedTargetTurmas.some(function (selected) {
+            return turmaMatches(selected, turma.nome);
+          });
+
+          return `
+            <label class="student-selection-item notice-turma-item">
+              <input type="checkbox" data-notice-turma-value="${escapeHtml(turma.nome)}" ${checked ? "checked" : ""}>
+              <div>
+                <strong>${escapeHtml(turma.nome)}</strong>
+                <p>${escapeHtml(turma.turno || "Turno nao informado")} - ${escapeHtml(turma.ano || "Ano letivo")}</p>
+              </div>
+            </label>
+          `;
+        }).join("");
+
+        refs.turmaTargetSummary.textContent = state.selectedTargetTurmas.length
+          ? `Comunicado visivel para: ${buildTurmaSummary(state.selectedTargetTurmas)}.`
+          : "Sem selecao de turma: o comunicado aparece para todos os vinculos do publico escolhido.";
       }
 
       function resetFeedback() {
@@ -283,9 +493,11 @@
 
       function closeEditor() {
         state.editingId = null;
+        state.selectedTargetTurmas = [];
         refs.form?.reset();
         refs.editorTitle.textContent = "Novo comunicado";
         resetFeedback();
+        renderTurmaTargetSelection();
         if (canManage(session)) {
           refs.editorPanel.hidden = true;
           refs.guidePanel.hidden = false;
@@ -298,6 +510,7 @@
         refs.guidePanel.hidden = true;
         resetFeedback();
         state.editingId = notice?.id || null;
+        state.selectedTargetTurmas = Array.isArray(notice?.targetTurmas) ? [...notice.targetTurmas] : [];
         refs.editorTitle.textContent = notice ? "Editar comunicado" : "Novo comunicado";
         refs.title.value = notice?.title || "";
         refs.audience.value = notice?.audience || "all";
@@ -305,13 +518,14 @@
         refs.body.value = notice?.body || "";
         refs.pinned.checked = Boolean(notice?.pinned);
         refs.urgent.checked = Boolean(notice?.urgent);
+        renderTurmaTargetSelection();
         window.requestAnimationFrame(function () {
           refs.title?.focus();
         });
       }
 
       function render() {
-        const filtered = filterNotices(state.notices, state, session);
+        const filtered = filterNotices(state.notices, state, session, context);
         refs.empty.hidden = filtered.length > 0;
         refs.list.innerHTML = filtered.map(function (notice) {
           return buildNoticeCard(notice, session);
@@ -321,9 +535,18 @@
         renderHighlights(filterNotices(state.notices, {
           searchTerm: "",
           audienceFilter: "all",
-          priorityFilter: "all"
-        }, session), refs);
+          priorityFilter: "all",
+          turmaFilter: "all"
+        }, session, context), refs);
       }
+
+      if (!canManage(session)) {
+        refs.openEditor?.setAttribute("hidden", "hidden");
+        refs.editorPanel.hidden = true;
+      }
+
+      populateTurmaFilterOptions();
+      renderTurmaTargetSelection();
 
       refs.openEditor?.addEventListener("click", function () {
         openEditor(null);
@@ -333,15 +556,41 @@
         closeEditor();
       });
 
+      refs.turmaTargetSelectAll?.addEventListener("click", function () {
+        state.selectedTargetTurmas = (directory.turmas || []).map(function (turma) { return turma.nome; });
+        renderTurmaTargetSelection();
+      });
+
+      refs.turmaTargetClear?.addEventListener("click", function () {
+        state.selectedTargetTurmas = [];
+        renderTurmaTargetSelection();
+      });
+
+      refs.turmaTargetList?.addEventListener("change", function (event) {
+        const checkbox = event.target.closest("[data-notice-turma-value]");
+        if (!checkbox) return;
+
+        const turmaName = checkbox.dataset.noticeTurmaValue;
+        if (checkbox.checked) {
+          state.selectedTargetTurmas = [...new Set(state.selectedTargetTurmas.concat(turmaName))];
+        } else {
+          state.selectedTargetTurmas = state.selectedTargetTurmas.filter(function (item) {
+            return !turmaMatches(item, turmaName);
+          });
+        }
+        renderTurmaTargetSelection();
+      });
+
       refs.form?.addEventListener("submit", function (event) {
         event.preventDefault();
 
-        const nextNotice = {
+        const nextNotice = normalizeNotice({
           id: state.editingId || generateId(),
           title: String(refs.title.value || "").trim(),
           audience: String(refs.audience.value || "all"),
           summary: String(refs.summary.value || "").trim(),
           body: String(refs.body.value || "").trim(),
+          targetTurmas: [...state.selectedTargetTurmas],
           pinned: Boolean(refs.pinned.checked),
           urgent: Boolean(refs.urgent.checked),
           authorName: session.name,
@@ -350,7 +599,7 @@
             ? (state.notices.find(function (item) { return item.id === state.editingId; })?.createdAt || new Date().toISOString())
             : new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        };
+        });
 
         if (!nextNotice.title || !nextNotice.summary || !nextNotice.body) {
           refs.feedback.textContent = "Preencha titulo, resumo e conteudo para continuar.";
@@ -404,6 +653,11 @@
 
       refs.priorityFilter?.addEventListener("change", function () {
         state.priorityFilter = refs.priorityFilter.value;
+        render();
+      });
+
+      refs.turmaFilter?.addEventListener("change", function () {
+        state.turmaFilter = refs.turmaFilter.value;
         render();
       });
 

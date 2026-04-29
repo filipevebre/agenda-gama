@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-1">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-2">
 </head>
 <body data-page="comunicados" data-roles="all">
   <div id="app-shell"></div>
@@ -75,6 +75,12 @@
               <option value="recent">Mais recentes</option>
             </select>
           </label>
+          <label class="field">
+            <span>Turma</span>
+            <select id="notice-turma-filter">
+              <option value="all">Todas as turmas</option>
+            </select>
+          </label>
         </div>
 
         <div id="notice-list" class="cards-list notice-list"></div>
@@ -127,6 +133,22 @@
               <textarea id="notice-body" name="body" rows="7" placeholder="Escreva o comunicado completo aqui." required></textarea>
             </label>
 
+            <div class="stack-sm notice-target-block">
+              <div class="student-selection-toolbar">
+                <div>
+                  <strong>Turmas que vao receber</strong>
+                  <p class="muted">Selecione uma turma especifica ou varias turmas. Se nao selecionar nenhuma, o comunicado vale para todos os vinculos do publico escolhido.</p>
+                </div>
+                <div class="toolbar">
+                  <button id="notice-turma-select-all" type="button" class="btn btn-secondary btn-sm">Selecionar todas</button>
+                  <button id="notice-turma-clear" type="button" class="btn btn-secondary btn-sm">Limpar</button>
+                </div>
+              </div>
+              <div id="notice-turma-target-list" class="student-selection-list notice-turma-selection"></div>
+              <p id="notice-turma-target-empty" class="empty-state" hidden>Nenhuma turma cadastrada no momento.</p>
+              <p id="notice-turma-target-summary" class="muted"></p>
+            </div>
+
             <div class="notice-editor-options">
               <label class="checkbox-pill">
                 <input id="notice-pinned" name="pinned" type="checkbox">
@@ -169,7 +191,7 @@
   <script src="../assets/js/auth.js?v=20260416-4"></script>
   <script src="../assets/js/data-store.js?v=20260415-4"></script>
   <script src="../assets/js/app.js?v=20260429-1"></script>
-  <script src="../assets/js/comunicados.js?v=20260429-1"></script>
+  <script src="../assets/js/comunicados.js?v=20260429-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaComunicados.mountComunicados();
