@@ -413,6 +413,7 @@
       actions = `
         <div class="notice-card-actions">
           <button type="button" class="btn btn-secondary btn-sm" data-notice-edit-id="${escapeHtml(notice.id)}">Editar</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-notice-archive-id="${escapeHtml(notice.id)}">Arquivar</button>
           <button type="button" class="btn btn-secondary btn-sm" data-notice-remove-id="${escapeHtml(notice.id)}">Excluir</button>
         </div>
       `;
@@ -711,6 +712,24 @@
         if (editButton) {
           const notice = state.notices.find(function (item) { return item.id === editButton.dataset.noticeEditId; }) || null;
           openEditor(notice);
+          return;
+        }
+
+        const archiveButton = event.target.closest("[data-notice-archive-id]");
+        if (archiveButton) {
+          const noticeIndex = state.notices.findIndex(function (item) { return item.id === archiveButton.dataset.noticeArchiveId; });
+          if (noticeIndex >= 0) {
+            state.notices[noticeIndex] = normalizeNotice({
+              ...state.notices[noticeIndex],
+              archiveDate: getTodayDateKey(),
+              updatedAt: new Date().toISOString()
+            });
+            writeNotices(state.notices);
+            if (state.editingId === archiveButton.dataset.noticeArchiveId) {
+              closeEditor();
+            }
+            render();
+          }
           return;
         }
 
