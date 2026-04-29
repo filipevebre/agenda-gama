@@ -642,6 +642,10 @@
         }).join("");
         applyFocusedNotice();
 
+        if (PAGE_MODE === "active" && typeof window.AgendaGamaApp?.markNoticesSeen === "function") {
+          window.AgendaGamaApp.markNoticesSeen(session, filtered);
+        }
+
         renderStats(filtered, refs);
         renderHighlights(filterNotices(state.notices, {
           searchTerm: "",

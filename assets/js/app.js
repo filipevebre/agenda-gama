@@ -2,6 +2,7 @@
   const SIDEBAR_STATE_KEY = "agenda-gama-sidebar-collapsed";
   const NOTIFICATIONS_KEY = "agenda-gama-notifications";
   const NOTICE_STORAGE_KEY = "agenda-gama-notices";
+  const NOTICE_VIEW_KEY = "agenda-gama-notice-view";
   const THREAD_VIEW_KEY = "agenda-gama-message-thread-view";
   const THREAD_STATE_KEY = "agenda-gama-message-thread-state";
   const MESSAGE_PREFIX = "AGAMA_MESSAGE::";
@@ -202,6 +203,45 @@
     return `${baseHref}?notice=${encodeURIComponent(noticeId)}`;
   }
 
+  function getNoticeSourceStamp(notice) {
+    return String(notice?.updatedAt || notice?.createdAt || notice?.id || "");
+  }
+
+  function dispatchNoticeViewUpdated() {
+    window.dispatchEvent(new CustomEvent("agenda-notice-view-updated"));
+  }
+
+  function getNoticeSeenMap(session) {
+    if (!session) return {};
+    const state = readJson(NOTICE_VIEW_KEY, {});
+    return state[getNotificationSessionKey(session)] || {};
+  }
+
+  function markNoticesSeen(session, notices) {
+    if (!session || !Array.isArray(notices) || !notices.length) return;
+
+    const sessionKey = getNotificationSessionKey(session);
+    const state = readJson(NOTICE_VIEW_KEY, {});
+    const sessionState = {
+      ...(state[sessionKey] || {})
+    };
+    let changed = false;
+
+    notices.forEach(function (notice) {
+      if (!notice?.id) return;
+      const sourceStamp = getNoticeSourceStamp(notice);
+      if (sessionState[notice.id] === sourceStamp) return;
+      sessionState[notice.id] = sourceStamp;
+      changed = true;
+    });
+
+    if (!changed) return;
+
+    state[sessionKey] = sessionState;
+    localStorage.setItem(NOTICE_VIEW_KEY, JSON.stringify(state));
+    dispatchNoticeViewUpdated();
+  }
+
   function readNotifications() {
     try {
       const raw = localStorage.getItem(NOTIFICATIONS_KEY);
@@ -382,7 +422,11 @@
 
     try {
       const notices = await listVisibleNoticesForSession(activeShellSession);
-      const featuredNotice = notices[0] || null;
+      const seenMap = getNoticeSeenMap(activeShellSession);
+      const unseenNotices = notices.filter(function (notice) {
+        return seenMap[notice.id] !== getNoticeSourceStamp(notice);
+      });
+      const featuredNotice = unseenNotices[0] || null;
 
       if (!featuredNotice) {
         activeNoticeMarqueeElements.root.hidden = true;
@@ -396,7 +440,9 @@
       activeNoticeMarqueeElements.root.dataset.href = getComunicadosHref(featuredNotice.id);
       activeNoticeMarqueeElements.kicker.textContent = featuredNotice.urgent ? "Comunicado urgente novo" : "Comunicado novo";
       activeNoticeMarqueeElements.title.textContent = featuredNotice.title;
-      activeNoticeMarqueeElements.meta.textContent = `${getNoticeAudienceLabel(featuredNotice.audience)} • ${buildNoticeTurmaSummary(featuredNotice.targetTurmas)}`;
+      activeNoticeMarqueeElements.meta.textContent = unseenNotices.length > 1
+        ? `${unseenNotices.length} comunicados pendentes - ${buildNoticeTurmaSummary(featuredNotice.targetTurmas)}`
+        : `${getNoticeAudienceLabel(featuredNotice.audience)} - ${buildNoticeTurmaSummary(featuredNotice.targetTurmas)}`;
     } catch (error) {
       activeNoticeMarqueeElements.root.hidden = true;
       activeNoticeMarqueeElements.root.classList.remove("is-urgent");
@@ -1150,6 +1196,12 @@
     noticeMarquee?.addEventListener("click", function () {
       const href = noticeMarquee.dataset.href;
       if (!href) return;
+      const notices = readNotices();
+      const noticeId = new URL(href, window.location.href).searchParams.get("notice");
+      const matchedNotice = notices.find(function (item) { return item.id === noticeId; }) || null;
+      if (matchedNotice) {
+        markNoticesSeen(activeShellSession, [matchedNotice]);
+      }
       window.location.href = href;
     });
 
@@ -1186,12 +1238,18 @@
         return;
       }
 
+      if (event.key === NOTICE_VIEW_KEY) {
+        refreshShellNoticeMarquee();
+        return;
+      }
+
       if (!event.key || event.key.startsWith("agenda-gama-messages") || event.key === THREAD_VIEW_KEY || event.key === THREAD_STATE_KEY) {
         refreshShellNotifications();
       }
     });
     window.addEventListener("agenda-notifications-updated", renderNotifications);
     window.addEventListener("agenda-notices-updated", refreshShellNoticeMarquee);
+    window.addEventListener("agenda-notice-view-updated", refreshShellNoticeMarquee);
     window.addEventListener("agenda-message-state-changed", refreshShellNotifications);
 
     if (activeNotificationTimer) {
@@ -1210,6 +1268,7 @@
 
   window.AgendaGamaApp = {
     mountShell,
-    syncCommunicationNotifications
+    syncCommunicationNotifications,
+    markNoticesSeen
   };
 })();
