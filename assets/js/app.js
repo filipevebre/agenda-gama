@@ -563,6 +563,7 @@
         section: "Geral",
         items: [
           { label: "Painel", href: dashboardHref, icon: "PA", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
+          { label: "Comunicados", href: inOrganization ? "../comunicados.html" : "comunicados.html", icon: "CM", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Comunicacao", href: inOrganization ? "../comunicacao.html" : "comunicacao.html", icon: "CO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] }
         ]
       },

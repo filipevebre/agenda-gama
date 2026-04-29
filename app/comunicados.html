@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Comunicados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-1">
+</head>
+<body data-page="comunicados" data-roles="all">
+  <div id="app-shell"></div>
+
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">Comunicados</span>
+        <h1>Comunicados gerais da escola</h1>
+        <p>Centralize avisos importantes, orientacoes administrativas e lembretes gerais para toda a comunidade escolar em uma unica pagina.</p>
+      </div>
+      <div class="page-actions">
+        <button id="notice-open-editor" type="button" class="btn btn-primary">Novo comunicado</button>
+      </div>
+    </section>
+
+    <section class="status-grid notice-status-grid">
+      <article class="status-card">
+        <span>Total visivel</span>
+        <strong id="notice-stat-total">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Fixados</span>
+        <strong id="notice-stat-pinned">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Urgentes</span>
+        <strong id="notice-stat-urgent">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Publicados hoje</span>
+        <strong id="notice-stat-today">0</strong>
+      </article>
+    </section>
+
+    <section class="grid grid-2 notices-layout">
+      <article class="panel notices-board">
+        <div class="section-heading">
+          <div>
+            <h2>Mural da escola</h2>
+            <p>Acompanhe os comunicados mais recentes e os avisos destacados pela gestao.</p>
+          </div>
+        </div>
+
+        <div class="toolbar notice-toolbar">
+          <label class="field search-field">
+            <span>Buscar</span>
+            <input id="notice-search" type="search" placeholder="Buscar por titulo, assunto ou texto">
+          </label>
+          <label class="field">
+            <span>Publico</span>
+            <select id="notice-audience-filter">
+              <option value="all">Todos</option>
+              <option value="responsaveis">Responsaveis</option>
+              <option value="professores">Professores</option>
+              <option value="funcionarios">Equipe interna</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Prioridade</span>
+            <select id="notice-priority-filter">
+              <option value="all">Todas</option>
+              <option value="pinned">Fixados</option>
+              <option value="urgent">Urgentes</option>
+              <option value="recent">Mais recentes</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="notice-list" class="cards-list notice-list"></div>
+        <p id="notice-empty" class="empty-state" hidden>Nenhum comunicado encontrado com os filtros atuais.</p>
+      </article>
+
+      <aside class="stack-sm notice-side-column">
+        <article class="panel">
+          <div class="section-heading">
+            <div>
+              <h2>Destaques</h2>
+              <p>Resumo rapido dos comunicados fixados e urgentes.</p>
+            </div>
+          </div>
+          <div id="notice-highlight-list" class="stack-sm"></div>
+          <p id="notice-highlight-empty" class="empty-state" hidden>Nenhum destaque no momento.</p>
+        </article>
+
+        <article id="notice-editor-panel" class="panel notice-editor-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2 id="notice-editor-title">Novo comunicado</h2>
+              <p>Publique avisos gerais com clareza para o publico certo.</p>
+            </div>
+          </div>
+
+          <form id="notice-form" class="stack-sm">
+            <label class="field">
+              <span>Titulo</span>
+              <input id="notice-title" name="title" type="text" maxlength="120" placeholder="Ex.: Reuniao de pais da proxima semana" required>
+            </label>
+
+            <label class="field">
+              <span>Publico</span>
+              <select id="notice-audience" name="audience">
+                <option value="all">Toda a escola</option>
+                <option value="responsaveis">Responsaveis</option>
+                <option value="professores">Professores</option>
+                <option value="funcionarios">Equipe interna</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Resumo curto</span>
+              <input id="notice-summary" name="summary" type="text" maxlength="160" placeholder="Linha de apoio que aparece no topo do comunicado" required>
+            </label>
+
+            <label class="field">
+              <span>Conteudo</span>
+              <textarea id="notice-body" name="body" rows="7" placeholder="Escreva o comunicado completo aqui." required></textarea>
+            </label>
+
+            <div class="notice-editor-options">
+              <label class="checkbox-pill">
+                <input id="notice-pinned" name="pinned" type="checkbox">
+                <span>Fixar no topo</span>
+              </label>
+              <label class="checkbox-pill">
+                <input id="notice-urgent" name="urgent" type="checkbox">
+                <span>Marcar como urgente</span>
+              </label>
+            </div>
+
+            <div class="action-row">
+              <button type="submit" class="btn btn-primary">Salvar comunicado</button>
+              <button id="notice-cancel" type="button" class="btn btn-secondary">Cancelar</button>
+            </div>
+
+            <p id="notice-form-feedback" class="feedback" role="status" aria-live="polite"></p>
+          </form>
+        </article>
+
+        <article id="notice-guide-panel" class="panel">
+          <div class="section-heading">
+            <div>
+              <h2>Como funciona</h2>
+              <p>Os comunicados gerais ficam organizados por prioridade e publico.</p>
+            </div>
+          </div>
+          <ul class="feature-list">
+            <li>Responsaveis veem avisos destinados a familias e a escola toda.</li>
+            <li>Professores acompanham orientacoes gerais e avisos pedagogicos.</li>
+            <li>Administracao e equipe podem publicar, editar e excluir comunicados.</li>
+          </ul>
+        </article>
+      </aside>
+    </section>
+  </template>
+
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260416-4"></script>
+  <script src="../assets/js/auth.js?v=20260416-4"></script>
+  <script src="../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../assets/js/app.js?v=20260429-1"></script>
+  <script src="../assets/js/comunicados.js?v=20260429-1"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaComunicados.mountComunicados();
+  </script>
+</body>
+</html>
