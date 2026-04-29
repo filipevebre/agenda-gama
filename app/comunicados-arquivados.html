@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Comunicados arquivados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-3">
+</head>
+<body data-page="comunicados-arquivados" data-roles="all">
+  <div id="app-shell"></div>
+
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">Arquivados</span>
+        <h1>Comunicados arquivados</h1>
+        <p>Consulte avisos antigos que ja sairam do mural principal para manter a tela de comunicados limpa e organizada.</p>
+      </div>
+      <div class="page-actions">
+        <a href="comunicados.html" class="btn btn-secondary notice-page-link">
+          <span class="notice-page-link-icon">AT</span>
+          <span>Comunicados ativos</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="status-grid notice-status-grid">
+      <article class="status-card">
+        <span>Total arquivado</span>
+        <strong id="notice-stat-total">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Urgentes arquivados</span>
+        <strong id="notice-stat-pinned">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Com turma definida</span>
+        <strong id="notice-stat-urgent">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Arquivados hoje</span>
+        <strong id="notice-stat-today">0</strong>
+      </article>
+    </section>
+
+    <section class="grid grid-2 notices-layout">
+      <article class="panel notices-board">
+        <div class="section-heading">
+          <div>
+            <h2>Historico arquivado</h2>
+            <p>Veja os comunicados que ja passaram da data de arquivamento configurada.</p>
+          </div>
+        </div>
+
+        <div class="toolbar notice-toolbar">
+          <label class="field search-field">
+            <span>Buscar</span>
+            <input id="notice-search" type="search" placeholder="Buscar por titulo, assunto ou texto">
+          </label>
+          <label class="field">
+            <span>Publico</span>
+            <select id="notice-audience-filter">
+              <option value="all">Todos</option>
+              <option value="responsaveis">Responsaveis</option>
+              <option value="professores">Professores</option>
+              <option value="funcionarios">Equipe interna</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Prioridade</span>
+            <select id="notice-priority-filter">
+              <option value="all">Todas</option>
+              <option value="pinned">Fixados</option>
+              <option value="urgent">Urgentes</option>
+              <option value="recent">Mais recentes</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Turma</span>
+            <select id="notice-turma-filter">
+              <option value="all">Todas as turmas</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="notice-list" class="cards-list notice-list"></div>
+        <p id="notice-empty" class="empty-state" hidden>Nenhum comunicado arquivado encontrado com os filtros atuais.</p>
+      </article>
+
+      <aside class="stack-sm notice-side-column">
+        <article class="panel">
+          <div class="section-heading">
+            <div>
+              <h2>Destaques arquivados</h2>
+              <p>Resumo rapido dos itens que ainda merecem consulta historica.</p>
+            </div>
+          </div>
+          <div id="notice-highlight-list" class="stack-sm"></div>
+          <p id="notice-highlight-empty" class="empty-state" hidden>Nenhum comunicado arquivado em destaque.</p>
+        </article>
+
+        <article id="notice-guide-panel" class="panel">
+          <div class="section-heading">
+            <div>
+              <h2>Como funciona</h2>
+              <p>Os comunicados sao arquivados automaticamente quando chega a data definida no cadastro.</p>
+            </div>
+          </div>
+          <ul class="feature-list">
+            <li>Os comunicados arquivados saem do mural principal para liberar espaco.</li>
+            <li>Administracao e equipe podem restaurar um comunicado arquivado se precisarem reativar a exibicao.</li>
+            <li>Os filtros continuam respeitando o publico e as turmas vinculadas.</li>
+          </ul>
+        </article>
+      </aside>
+    </section>
+  </template>
+
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260416-4"></script>
+  <script src="../assets/js/auth.js?v=20260416-4"></script>
+  <script src="../assets/js/data-store.js?v=20260415-4"></script>
+  <script src="../assets/js/app.js?v=20260429-1"></script>
+  <script src="../assets/js/comunicados.js?v=20260429-3"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaComunicados.mountComunicados();
+  </script>
+</body>
+</html>

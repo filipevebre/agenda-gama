@@ -441,9 +441,30 @@ td { color: var(--text-muted); }
   gap: 8px;
   margin-top: 16px;
 }
+.notice-page-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.notice-page-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: rgba(103, 183, 255, 0.16);
+  color: #0f5ea8;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
 .notice-tag-turma {
   background: rgba(103, 183, 255, 0.16);
   color: #0f5ea8;
+}
+.notice-tag-archive {
+  background: rgba(25, 50, 77, 0.12);
+  color: var(--title);
 }
 .notice-tag-urgent {
   background: rgba(214, 161, 40, 0.18);

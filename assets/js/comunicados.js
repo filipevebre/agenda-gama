@@ -4,6 +4,7 @@
     dateStyle: "medium",
     timeStyle: "short"
   });
+  const PAGE_MODE = document.body?.dataset.page === "comunicados-arquivados" ? "archived" : "active";
 
   const NOTICE_SEED = [
     {
@@ -13,6 +14,7 @@
       body: "A reuniao geral com as familias acontecera na quarta-feira, as 18h30, no auditorio principal. Pedimos pontualidade para apresentacao do calendario, combinados da rotina escolar e espaco para perguntas.",
       audience: "responsaveis",
       targetTurmas: [],
+      archiveDate: "",
       pinned: true,
       urgent: false,
       authorName: "Secretaria Escolar",
@@ -26,6 +28,7 @@
       body: "O calendario de provas do mes de maio foi atualizado com pequenos ajustes de horario em duas turmas do Ensino Fundamental. Conferir o cronograma completo antes de registrar novos avisos em agenda.",
       audience: "professores",
       targetTurmas: ["5o Ano B"],
+      archiveDate: "2026-05-15",
       pinned: false,
       urgent: true,
       authorName: "Coordenacao Pedagogica",
@@ -39,6 +42,7 @@
       body: "Na sexta-feira, o atendimento interno da equipe administrativa sera encerrado as 15h para fechamento mensal. Pendencias urgentes devem ser registradas ate as 13h.",
       audience: "funcionarios",
       targetTurmas: [],
+      archiveDate: "2026-04-29",
       pinned: false,
       urgent: false,
       authorName: "Direcao",
@@ -82,6 +86,33 @@
     return `notice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
+  function getTodayDateKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function normalizeArchiveDate(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${match[1]}-${match[2]}-${match[3]}` : "";
+  }
+
+  function formatArchiveDate(value) {
+    const normalized = normalizeArchiveDate(value);
+    if (!normalized) return "";
+    return formatDate(`${normalized}T00:00:00`);
+  }
+
+  function isNoticeArchived(notice) {
+    const archiveDate = normalizeArchiveDate(notice?.archiveDate);
+    if (!archiveDate) return false;
+    return archiveDate <= getTodayDateKey();
+  }
+
   function normalizeNotice(item) {
     return {
       ...item,
@@ -92,6 +123,7 @@
         : item.targetTurmas
           ? [item.targetTurmas].filter(Boolean)
           : [],
+      archiveDate: normalizeArchiveDate(item.archiveDate),
       pinned: Boolean(item.pinned),
       urgent: Boolean(item.urgent),
       createdAt: item.createdAt || new Date().toISOString()
@@ -266,6 +298,14 @@
         return false;
       }
 
+      if (PAGE_MODE === "active" && isNoticeArchived(notice)) {
+        return false;
+      }
+
+      if (PAGE_MODE === "archived" && !isNoticeArchived(notice)) {
+        return false;
+      }
+
       if (state.audienceFilter !== "all" && notice.audience !== state.audienceFilter) {
         return false;
       }
@@ -303,7 +343,8 @@
         notice.body,
         notice.authorName,
         getAudienceLabel(notice.audience),
-        ...(notice.targetTurmas || [])
+        ...(notice.targetTurmas || []),
+        notice.archiveDate
       ].map(normalizeText).join(" ");
 
       return haystack.includes(query);
@@ -328,12 +369,21 @@
   }
 
   function renderStats(items, refs) {
-    const todayKey = new Date().toDateString();
+    const todayKey = getTodayDateKey();
     refs.statTotal.textContent = String(items.length);
+    if (PAGE_MODE === "archived") {
+      refs.statPinned.textContent = String(items.filter(function (item) { return item.urgent; }).length);
+      refs.statUrgent.textContent = String(items.filter(function (item) { return (item.targetTurmas || []).length > 0; }).length);
+      refs.statToday.textContent = String(items.filter(function (item) {
+        return normalizeArchiveDate(item.archiveDate) === todayKey;
+      }).length);
+      return;
+    }
+
     refs.statPinned.textContent = String(items.filter(function (item) { return item.pinned; }).length);
     refs.statUrgent.textContent = String(items.filter(function (item) { return item.urgent; }).length);
     refs.statToday.textContent = String(items.filter(function (item) {
-      return new Date(item.createdAt || 0).toDateString() === todayKey;
+      return new Date(item.createdAt || 0).toDateString() === new Date().toDateString();
     }).length);
   }
 
@@ -358,14 +408,29 @@
   }
 
   function buildNoticeCard(notice, session) {
-    const actions = canManage(session) ? `
-      <div class="notice-card-actions">
-        <button type="button" class="btn btn-secondary btn-sm" data-notice-edit-id="${escapeHtml(notice.id)}">Editar</button>
-        <button type="button" class="btn btn-secondary btn-sm" data-notice-remove-id="${escapeHtml(notice.id)}">Excluir</button>
-      </div>
-    ` : "";
+    let actions = "";
+    if (canManage(session) && PAGE_MODE === "active") {
+      actions = `
+        <div class="notice-card-actions">
+          <button type="button" class="btn btn-secondary btn-sm" data-notice-edit-id="${escapeHtml(notice.id)}">Editar</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-notice-remove-id="${escapeHtml(notice.id)}">Excluir</button>
+        </div>
+      `;
+    }
+
+    if (canManage(session) && PAGE_MODE === "archived") {
+      actions = `
+        <div class="notice-card-actions">
+          <button type="button" class="btn btn-secondary btn-sm" data-notice-restore-id="${escapeHtml(notice.id)}">Restaurar</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-notice-remove-id="${escapeHtml(notice.id)}">Excluir</button>
+        </div>
+      `;
+    }
 
     const targetTurmas = Array.isArray(notice.targetTurmas) ? notice.targetTurmas : [];
+    const archiveLabel = normalizeArchiveDate(notice.archiveDate)
+      ? (PAGE_MODE === "archived" ? "Arquivado em" : "Arquivar em")
+      : "";
 
     return `
       <article class="notice-card ${notice.pinned ? "pinned" : ""} ${notice.urgent ? "urgent" : ""}">
@@ -377,6 +442,7 @@
           <div class="inline-tags">
             <span class="tag">${escapeHtml(getAudienceLabel(notice.audience))}</span>
             <span class="tag notice-tag-turma">${escapeHtml(buildTurmaSummary(targetTurmas))}</span>
+            ${archiveLabel ? `<span class="tag notice-tag-archive">${escapeHtml(`${archiveLabel} ${formatArchiveDate(notice.archiveDate)}`)}</span>` : ""}
             ${notice.pinned ? '<span class="tag">Fixado</span>' : ""}
             ${notice.urgent ? '<span class="tag notice-tag-urgent">Urgente</span>' : ""}
           </div>
@@ -419,6 +485,7 @@
         audience: document.getElementById("notice-audience"),
         summary: document.getElementById("notice-summary"),
         body: document.getElementById("notice-body"),
+        archiveDate: document.getElementById("notice-archive-date"),
         pinned: document.getElementById("notice-pinned"),
         urgent: document.getElementById("notice-urgent"),
         turmaTargetList: document.getElementById("notice-turma-target-list"),
@@ -463,6 +530,10 @@
       }
 
       function renderTurmaTargetSelection() {
+        if (!refs.turmaTargetList || !refs.turmaTargetEmpty || !refs.turmaTargetSummary) {
+          return;
+        }
+
         const allTurmas = directory.turmas || [];
         refs.turmaTargetEmpty.hidden = allTurmas.length > 0;
         refs.turmaTargetList.innerHTML = allTurmas.map(function (turma) {
@@ -487,6 +558,7 @@
       }
 
       function resetFeedback() {
+        if (!refs.feedback) return;
         refs.feedback.textContent = "";
         refs.feedback.className = "feedback";
       }
@@ -495,17 +567,21 @@
         state.editingId = null;
         state.selectedTargetTurmas = [];
         refs.form?.reset();
-        refs.editorTitle.textContent = "Novo comunicado";
+        if (refs.editorTitle) {
+          refs.editorTitle.textContent = "Novo comunicado";
+        }
         resetFeedback();
         renderTurmaTargetSelection();
-        if (canManage(session)) {
+        if (canManage(session) && refs.editorPanel && refs.guidePanel) {
           refs.editorPanel.hidden = true;
           refs.guidePanel.hidden = false;
         }
       }
 
       function openEditor(notice) {
-        if (!canManage(session)) return;
+        if (!canManage(session) || PAGE_MODE === "archived") return;
+        if (!refs.editorPanel || !refs.guidePanel) return;
+
         refs.editorPanel.hidden = false;
         refs.guidePanel.hidden = true;
         resetFeedback();
@@ -516,6 +592,9 @@
         refs.audience.value = notice?.audience || "all";
         refs.summary.value = notice?.summary || "";
         refs.body.value = notice?.body || "";
+        if (refs.archiveDate) {
+          refs.archiveDate.value = normalizeArchiveDate(notice?.archiveDate);
+        }
         refs.pinned.checked = Boolean(notice?.pinned);
         refs.urgent.checked = Boolean(notice?.urgent);
         renderTurmaTargetSelection();
@@ -540,9 +619,11 @@
         }, session, context), refs);
       }
 
-      if (!canManage(session)) {
+      if (!canManage(session) || PAGE_MODE === "archived") {
         refs.openEditor?.setAttribute("hidden", "hidden");
-        refs.editorPanel.hidden = true;
+        if (refs.editorPanel) {
+          refs.editorPanel.hidden = true;
+        }
       }
 
       populateTurmaFilterOptions();
@@ -591,6 +672,7 @@
           summary: String(refs.summary.value || "").trim(),
           body: String(refs.body.value || "").trim(),
           targetTurmas: [...state.selectedTargetTurmas],
+          archiveDate: refs.archiveDate?.value || "",
           pinned: Boolean(refs.pinned.checked),
           urgent: Boolean(refs.urgent.checked),
           authorName: session.name,
@@ -619,7 +701,9 @@
         refs.feedback.textContent = state.editingId ? "Comunicado atualizado com sucesso." : "Comunicado publicado com sucesso.";
         refs.feedback.className = "feedback success";
         state.editingId = nextNotice.id;
-        refs.editorTitle.textContent = "Editar comunicado";
+        if (refs.editorTitle) {
+          refs.editorTitle.textContent = "Editar comunicado";
+        }
       });
 
       refs.list?.addEventListener("click", function (event) {
@@ -627,6 +711,20 @@
         if (editButton) {
           const notice = state.notices.find(function (item) { return item.id === editButton.dataset.noticeEditId; }) || null;
           openEditor(notice);
+          return;
+        }
+
+        const restoreButton = event.target.closest("[data-notice-restore-id]");
+        if (restoreButton) {
+          const noticeIndex = state.notices.findIndex(function (item) { return item.id === restoreButton.dataset.noticeRestoreId; });
+          if (noticeIndex >= 0) {
+            state.notices[noticeIndex] = normalizeNotice({
+              ...state.notices[noticeIndex],
+              archiveDate: ""
+            });
+            writeNotices(state.notices);
+            render();
+          }
           return;
         }
 

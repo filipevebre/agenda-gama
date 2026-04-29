@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-2">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-3">
 </head>
 <body data-page="comunicados" data-roles="all">
   <div id="app-shell"></div>
@@ -20,6 +20,10 @@
         <p>Centralize avisos importantes, orientacoes administrativas e lembretes gerais para toda a comunidade escolar em uma unica pagina.</p>
       </div>
       <div class="page-actions">
+        <a href="comunicados-arquivados.html" class="btn btn-secondary notice-page-link">
+          <span class="notice-page-link-icon">AR</span>
+          <span>Arquivados</span>
+        </a>
         <button id="notice-open-editor" type="button" class="btn btn-primary">Novo comunicado</button>
       </div>
     </section>
@@ -133,6 +137,11 @@
               <textarea id="notice-body" name="body" rows="7" placeholder="Escreva o comunicado completo aqui." required></textarea>
             </label>
 
+            <label class="field">
+              <span>Arquivar a partir de</span>
+              <input id="notice-archive-date" name="archiveDate" type="date">
+            </label>
+
             <div class="stack-sm notice-target-block">
               <div class="student-selection-toolbar">
                 <div>
@@ -191,7 +200,7 @@
   <script src="../assets/js/auth.js?v=20260416-4"></script>
   <script src="../assets/js/data-store.js?v=20260415-4"></script>
   <script src="../assets/js/app.js?v=20260429-1"></script>
-  <script src="../assets/js/comunicados.js?v=20260429-2"></script>
+  <script src="../assets/js/comunicados.js?v=20260429-3"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaComunicados.mountComunicados();
