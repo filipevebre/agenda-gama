@@ -154,6 +154,10 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(normalizeNotice)));
   }
 
+  function dispatchNoticesUpdated() {
+    window.dispatchEvent(new CustomEvent("agenda-notices-updated"));
+  }
+
   function canManage(session) {
     return session?.role === "administrador" || session?.role === "funcionarios";
   }
@@ -434,7 +438,7 @@
       : "";
 
     return `
-      <article class="notice-card ${notice.pinned ? "pinned" : ""} ${notice.urgent ? "urgent" : ""}">
+      <article class="notice-card ${notice.pinned ? "pinned" : ""} ${notice.urgent ? "urgent" : ""}" data-notice-card-id="${escapeHtml(notice.id)}">
         <div class="card-head">
           <div>
             <h3 class="card-title">${escapeHtml(notice.title)}</h3>
@@ -520,8 +524,34 @@
         audienceFilter: "all",
         priorityFilter: "all",
         turmaFilter: "all",
-        selectedTargetTurmas: []
+        selectedTargetTurmas: [],
+        focusedNoticeId: new URLSearchParams(window.location.search).get("notice") || ""
       };
+
+      function applyFocusedNotice() {
+        if (!state.focusedNoticeId || !refs.list) return;
+        const card = Array.from(refs.list.querySelectorAll("[data-notice-card-id]")).find(function (item) {
+          return item.dataset.noticeCardId === state.focusedNoticeId;
+        }) || null;
+
+        if (!card) return;
+
+        card.classList.add("is-focused");
+        window.requestAnimationFrame(function () {
+          card.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        window.setTimeout(function () {
+          card.classList.remove("is-focused");
+        }, 2600);
+
+        if (window.history?.replaceState) {
+          const nextUrl = new URL(window.location.href);
+          nextUrl.searchParams.delete("notice");
+          window.history.replaceState({}, "", nextUrl.toString());
+        }
+
+        state.focusedNoticeId = "";
+      }
 
       function populateTurmaFilterOptions() {
         const visibleTurmas = getVisibleTurmasForSession(session, context, directory);
@@ -610,6 +640,7 @@
         refs.list.innerHTML = filtered.map(function (notice) {
           return buildNoticeCard(notice, session);
         }).join("");
+        applyFocusedNotice();
 
         renderStats(filtered, refs);
         renderHighlights(filterNotices(state.notices, {
@@ -698,6 +729,7 @@
         }
 
         writeNotices(state.notices);
+        dispatchNoticesUpdated();
         render();
         refs.feedback.textContent = state.editingId ? "Comunicado atualizado com sucesso." : "Comunicado publicado com sucesso.";
         refs.feedback.className = "feedback success";
@@ -725,6 +757,7 @@
               updatedAt: new Date().toISOString()
             });
             writeNotices(state.notices);
+            dispatchNoticesUpdated();
             if (state.editingId === archiveButton.dataset.noticeArchiveId) {
               closeEditor();
             }
@@ -742,6 +775,7 @@
               archiveDate: ""
             });
             writeNotices(state.notices);
+            dispatchNoticesUpdated();
             render();
           }
           return;
@@ -752,6 +786,7 @@
 
         state.notices = state.notices.filter(function (item) { return item.id !== removeButton.dataset.noticeRemoveId; });
         writeNotices(state.notices);
+        dispatchNoticesUpdated();
         if (state.editingId === removeButton.dataset.noticeRemoveId) {
           closeEditor();
         }

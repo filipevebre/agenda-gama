@@ -1,10 +1,55 @@
 (function () {
   const SIDEBAR_STATE_KEY = "agenda-gama-sidebar-collapsed";
   const NOTIFICATIONS_KEY = "agenda-gama-notifications";
+  const NOTICE_STORAGE_KEY = "agenda-gama-notices";
   const THREAD_VIEW_KEY = "agenda-gama-message-thread-view";
   const THREAD_STATE_KEY = "agenda-gama-message-thread-state";
   const MESSAGE_PREFIX = "AGAMA_MESSAGE::";
   const NOTIFICATION_REFRESH_MS = 12000;
+  const NOTICE_SEED = [
+    {
+      id: "notice-seed-1",
+      title: "Reuniao geral com familias na proxima semana",
+      summary: "Encontro presencial para alinhamentos pedagogicos e organizacionais do bimestre.",
+      body: "A reuniao geral com as familias acontecera na quarta-feira, as 18h30, no auditorio principal. Pedimos pontualidade para apresentacao do calendario, combinados da rotina escolar e espaco para perguntas.",
+      audience: "responsaveis",
+      targetTurmas: [],
+      archiveDate: "",
+      pinned: true,
+      urgent: false,
+      authorName: "Secretaria Escolar",
+      authorRole: "funcionarios",
+      createdAt: "2026-04-27T13:00:00.000Z"
+    },
+    {
+      id: "notice-seed-2",
+      title: "Atualizacao do calendario de provas",
+      summary: "Professores e equipe devem revisar o cronograma ajustado para maio.",
+      body: "O calendario de provas do mes de maio foi atualizado com pequenos ajustes de horario em duas turmas do Ensino Fundamental. Conferir o cronograma completo antes de registrar novos avisos em agenda.",
+      audience: "professores",
+      targetTurmas: ["5o Ano B"],
+      archiveDate: "2026-05-15",
+      pinned: false,
+      urgent: true,
+      authorName: "Coordenacao Pedagogica",
+      authorRole: "funcionarios",
+      createdAt: "2026-04-28T09:15:00.000Z"
+    },
+    {
+      id: "notice-seed-3",
+      title: "Expediente interno na sexta-feira",
+      summary: "Atendimento administrativo com horario reduzido para organizacao interna.",
+      body: "Na sexta-feira, o atendimento interno da equipe administrativa sera encerrado as 15h para fechamento mensal. Pendencias urgentes devem ser registradas ate as 13h.",
+      audience: "funcionarios",
+      targetTurmas: [],
+      archiveDate: "2026-04-29",
+      pinned: false,
+      urgent: false,
+      authorName: "Direcao",
+      authorRole: "administrador",
+      createdAt: "2026-04-29T08:00:00.000Z"
+    }
+  ];
   const VIRTUAL_CHANNELS = [
     { id: "setor-secretaria", nome: "Secretaria", channelType: "secretaria", publico: "Atendimento geral", descricao: "Atendimento administrativo e vida escolar." },
     { id: "setor-coordenacao", nome: "Coordenacao", channelType: "coordenacao", publico: "Pedagogico", descricao: "Orientacao pedagogica e acompanhamento escolar." },
@@ -13,6 +58,7 @@
   ];
   let activeShellSession = null;
   let activeNotificationElements = null;
+  let activeNoticeMarqueeElements = null;
   let activeToastHost = null;
   let activeNotificationTimer = null;
 
@@ -38,12 +84,122 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  function normalizeComparableText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
   function slugify(value) {
     return normalizeText(value)
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
+  }
+
+  function normalizeTurmaLabel(value) {
+    return normalizeComparableText(value)
+      .replace(/\u00aa/g, "a")
+      .replace(/\u00ba/g, "o");
+  }
+
+  function turmaMatches(left, right) {
+    return normalizeTurmaLabel(left) === normalizeTurmaLabel(right);
+  }
+
+  function getTodayDateKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function normalizeArchiveDate(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${match[1]}-${match[2]}-${match[3]}` : "";
+  }
+
+  function isNoticeArchived(notice) {
+    const archiveDate = normalizeArchiveDate(notice?.archiveDate);
+    if (!archiveDate) return false;
+    return archiveDate <= getTodayDateKey();
+  }
+
+  function normalizeNoticeRecord(item) {
+    return {
+      ...item,
+      id: item.id || `notice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      audience: item.audience || "all",
+      targetTurmas: Array.isArray(item.targetTurmas)
+        ? item.targetTurmas.filter(Boolean)
+        : item.targetTurmas
+          ? [item.targetTurmas].filter(Boolean)
+          : [],
+      archiveDate: normalizeArchiveDate(item.archiveDate),
+      pinned: Boolean(item.pinned),
+      urgent: Boolean(item.urgent),
+      createdAt: item.createdAt || new Date().toISOString()
+    };
+  }
+
+  function readNotices() {
+    const raw = localStorage.getItem(NOTICE_STORAGE_KEY);
+    if (!raw) {
+      const seeded = NOTICE_SEED.map(normalizeNoticeRecord);
+      localStorage.setItem(NOTICE_STORAGE_KEY, JSON.stringify(seeded));
+      return seeded;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      const normalized = Array.isArray(parsed) ? parsed.map(normalizeNoticeRecord) : NOTICE_SEED.map(normalizeNoticeRecord);
+      localStorage.setItem(NOTICE_STORAGE_KEY, JSON.stringify(normalized));
+      return normalized;
+    } catch (error) {
+      const fallback = NOTICE_SEED.map(normalizeNoticeRecord);
+      localStorage.setItem(NOTICE_STORAGE_KEY, JSON.stringify(fallback));
+      return fallback;
+    }
+  }
+
+  function getNoticeAudienceLabel(audience) {
+    const labels = {
+      all: "Toda a escola",
+      responsaveis: "Responsaveis",
+      professores: "Professores",
+      funcionarios: "Equipe interna"
+    };
+
+    return labels[audience] || "Toda a escola";
+  }
+
+  function buildNoticeTurmaSummary(targetTurmas) {
+    const list = (targetTurmas || []).filter(Boolean);
+    if (!list.length) {
+      return "Todas as turmas";
+    }
+
+    if (list.length === 1) {
+      return list[0];
+    }
+
+    if (list.length === 2) {
+      return `${list[0]} e ${list[1]}`;
+    }
+
+    return `${list[0]}, ${list[1]} e mais ${list.length - 2}`;
+  }
+
+  function getComunicadosHref(noticeId) {
+    const baseHref = isOrganizationPage() ? "../comunicados.html" : "comunicados.html";
+    if (!noticeId) return baseHref;
+    return `${baseHref}?notice=${encodeURIComponent(noticeId)}`;
   }
 
   function readNotifications() {
@@ -94,6 +250,158 @@
     const baseHref = isOrganizationPage() ? "../comunicacao.html" : "comunicacao.html";
     if (!threadKey) return baseHref;
     return `${baseHref}?thread=${encodeURIComponent(threadKey)}`;
+  }
+
+  async function loadNoticeDirectory() {
+    if (!window.AgendaGamaDataStore?.list) {
+      return {
+        turmas: [],
+        alunos: [],
+        responsaveis: [],
+        professores: []
+      };
+    }
+
+    const [turmas, alunos, responsaveis, professores] = await Promise.all([
+      window.AgendaGamaDataStore.list("turmas", []),
+      window.AgendaGamaDataStore.list("alunos", []),
+      window.AgendaGamaDataStore.list("responsaveis", []),
+      window.AgendaGamaDataStore.list("professores", [])
+    ]);
+
+    return {
+      turmas: turmas || [],
+      alunos: alunos || [],
+      responsaveis: responsaveis || [],
+      professores: professores || []
+    };
+  }
+
+  function buildNoticeSessionContext(session, directory) {
+    const alunos = directory.alunos || [];
+    const responsaveis = directory.responsaveis || [];
+    const professores = directory.professores || [];
+
+    const professor = professores.find(function (item) {
+      return normalizeComparableText(item.email) === normalizeComparableText(session?.email)
+        || normalizeComparableText(item.nome) === normalizeComparableText(session?.name);
+    }) || null;
+
+    const responsavelRecords = responsaveis.filter(function (item) {
+      return normalizeComparableText(item.email) === normalizeComparableText(session?.email);
+    });
+
+    const responsavelTurmas = new Set();
+    responsavelRecords.forEach(function (record) {
+      const aluno = record.aluno_id
+        ? alunos.find(function (item) { return item.id === record.aluno_id; }) || null
+        : alunos.find(function (item) { return normalizeComparableText(item.nome) === normalizeComparableText(record.aluno); }) || null;
+      if (aluno?.turma) {
+        responsavelTurmas.add(aluno.turma);
+      }
+    });
+
+    const professorTurmas = new Set();
+    if (professor?.turmas) {
+      String(professor.turmas || "")
+        .split(",")
+        .map(function (item) { return item.trim(); })
+        .filter(Boolean)
+        .forEach(function (turma) {
+          professorTurmas.add(turma);
+        });
+    } else if (professor?.turno) {
+      (directory.turmas || []).forEach(function (turma) {
+        if (normalizeComparableText(turma.turno) === normalizeComparableText(professor.turno)) {
+          professorTurmas.add(turma.nome);
+        }
+      });
+    }
+
+    return {
+      responsavelTurmas: responsavelTurmas,
+      professorTurmas: professorTurmas
+    };
+  }
+
+  function noticeMatchesAudience(notice, session) {
+    if (!notice) return false;
+    if (session?.role === "administrador" || session?.role === "funcionarios") return true;
+    if (notice.audience === "all") return true;
+    if (session?.role === "responsaveis") return notice.audience === "responsaveis";
+    if (session?.role === "professores") return notice.audience === "professores";
+    return false;
+  }
+
+  function noticeMatchesTurmas(notice, session, context) {
+    const targetTurmas = Array.isArray(notice?.targetTurmas) ? notice.targetTurmas.filter(Boolean) : [];
+    if (!targetTurmas.length) return true;
+    if (session?.role === "administrador" || session?.role === "funcionarios") return true;
+
+    const sessionTurmas = session?.role === "professores"
+      ? Array.from(context.professorTurmas)
+      : session?.role === "responsaveis"
+        ? Array.from(context.responsavelTurmas)
+        : [];
+
+    return targetTurmas.some(function (targetTurma) {
+      return sessionTurmas.some(function (sessionTurma) {
+        return turmaMatches(targetTurma, sessionTurma);
+      });
+    });
+  }
+
+  function sortNotices(items) {
+    return [...items].sort(function (left, right) {
+      if (Boolean(left.urgent) !== Boolean(right.urgent)) {
+        return left.urgent ? -1 : 1;
+      }
+
+      if (Boolean(left.pinned) !== Boolean(right.pinned)) {
+        return left.pinned ? -1 : 1;
+      }
+
+      return new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime();
+    });
+  }
+
+  async function listVisibleNoticesForSession(session) {
+    const directory = await loadNoticeDirectory();
+    const context = buildNoticeSessionContext(session, directory);
+    return sortNotices(readNotices()).filter(function (notice) {
+      if (isNoticeArchived(notice)) {
+        return false;
+      }
+
+      return noticeMatchesAudience(notice, session) && noticeMatchesTurmas(notice, session, context);
+    });
+  }
+
+  async function refreshShellNoticeMarquee() {
+    if (!activeShellSession || !activeNoticeMarqueeElements?.root) return;
+
+    try {
+      const notices = await listVisibleNoticesForSession(activeShellSession);
+      const featuredNotice = notices[0] || null;
+
+      if (!featuredNotice) {
+        activeNoticeMarqueeElements.root.hidden = true;
+        activeNoticeMarqueeElements.root.classList.remove("is-urgent");
+        activeNoticeMarqueeElements.root.removeAttribute("data-href");
+        return;
+      }
+
+      activeNoticeMarqueeElements.root.hidden = false;
+      activeNoticeMarqueeElements.root.classList.toggle("is-urgent", Boolean(featuredNotice.urgent));
+      activeNoticeMarqueeElements.root.dataset.href = getComunicadosHref(featuredNotice.id);
+      activeNoticeMarqueeElements.kicker.textContent = featuredNotice.urgent ? "Comunicado urgente novo" : "Comunicado novo";
+      activeNoticeMarqueeElements.title.textContent = featuredNotice.title;
+      activeNoticeMarqueeElements.meta.textContent = `${getNoticeAudienceLabel(featuredNotice.audience)} • ${buildNoticeTurmaSummary(featuredNotice.targetTurmas)}`;
+    } catch (error) {
+      activeNoticeMarqueeElements.root.hidden = true;
+      activeNoticeMarqueeElements.root.classList.remove("is-urgent");
+      activeNoticeMarqueeElements.root.removeAttribute("data-href");
+    }
   }
 
   function listSessionNotifications(session) {
@@ -701,6 +1009,15 @@
               <button id="logout-button-mobile" class="btn btn-secondary">Sair</button>
             </div>
           </div>
+          <button id="notice-marquee" class="notice-marquee" type="button" hidden>
+            <span class="notice-marquee-badge">CM</span>
+            <span class="notice-marquee-copy">
+              <small id="notice-marquee-kicker">Comunicado novo</small>
+              <strong id="notice-marquee-title">Abra o mural para ver o comunicado mais recente.</strong>
+              <span id="notice-marquee-meta">Clique para abrir o comunicado.</span>
+            </span>
+            <span class="notice-marquee-cta">Abrir</span>
+          </button>
         </div>
       </main>
     `;
@@ -751,6 +1068,10 @@
     const notificationBadge = document.getElementById("notification-badge");
     const notificationEmpty = document.getElementById("notification-empty");
     const notificationMarkAll = document.getElementById("notification-mark-all");
+    const noticeMarquee = document.getElementById("notice-marquee");
+    const noticeMarqueeKicker = document.getElementById("notice-marquee-kicker");
+    const noticeMarqueeTitle = document.getElementById("notice-marquee-title");
+    const noticeMarqueeMeta = document.getElementById("notice-marquee-meta");
     activeNotificationElements = {
       toggle: notificationToggle,
       panel: notificationPanel,
@@ -759,8 +1080,15 @@
       empty: notificationEmpty,
       markAll: notificationMarkAll
     };
+    activeNoticeMarqueeElements = {
+      root: noticeMarquee,
+      kicker: noticeMarqueeKicker,
+      title: noticeMarqueeTitle,
+      meta: noticeMarqueeMeta
+    };
     renderNotifications();
     refreshShellNotifications();
+    refreshShellNoticeMarquee();
 
     async function logout() {
       await window.AgendaGamaAuth.clearSession();
@@ -819,6 +1147,12 @@
       markAllNotificationsRead();
     });
 
+    noticeMarquee?.addEventListener("click", function () {
+      const href = noticeMarquee.dataset.href;
+      if (!href) return;
+      window.location.href = href;
+    });
+
     notificationPanel?.addEventListener("click", function (event) {
       const closeButton = event.target.closest("[data-notification-close]");
       if (closeButton) {
@@ -847,17 +1181,26 @@
         return;
       }
 
+      if (event.key === NOTICE_STORAGE_KEY) {
+        refreshShellNoticeMarquee();
+        return;
+      }
+
       if (!event.key || event.key.startsWith("agenda-gama-messages") || event.key === THREAD_VIEW_KEY || event.key === THREAD_STATE_KEY) {
         refreshShellNotifications();
       }
     });
     window.addEventListener("agenda-notifications-updated", renderNotifications);
+    window.addEventListener("agenda-notices-updated", refreshShellNoticeMarquee);
     window.addEventListener("agenda-message-state-changed", refreshShellNotifications);
 
     if (activeNotificationTimer) {
       window.clearInterval(activeNotificationTimer);
     }
-    activeNotificationTimer = window.setInterval(refreshShellNotifications, NOTIFICATION_REFRESH_MS);
+    activeNotificationTimer = window.setInterval(function () {
+      refreshShellNotifications();
+      refreshShellNoticeMarquee();
+    }, NOTIFICATION_REFRESH_MS);
 
     document.getElementById("logout-button")?.addEventListener("click", logout);
     document.getElementById("logout-button-mobile")?.addEventListener("click", logout);
