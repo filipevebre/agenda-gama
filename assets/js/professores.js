@@ -4,16 +4,18 @@
   const PROFESSORES_SEED = [
     {
       id: "prof-demo-1",
-      nome: "Helena Souza",
+      nome: "Prof. Helena Souza",
       disciplinas: "Matematica, Historia",
+      turmas: "1o Ano A, 5o Ano B",
       turno: "Manha",
-      email: "helena@agendagama.com",
+      email: "professor@gama.edu.br",
       access_status: "Acesso ativo"
     },
     {
       id: "prof-demo-2",
       nome: "Ricardo Lima",
       disciplinas: "Portugues",
+      turmas: "5o Ano B",
       turno: "Tarde",
       email: "ricardo@agendagama.com",
       access_status: "Convite enviado"
@@ -64,6 +66,12 @@
     return [
       { key: "nome" },
       { key: "disciplinas" },
+      {
+        key: "turmas",
+        render: function (value) {
+          return value || "-";
+        }
+      },
       { key: "turno", type: "tag" },
       { key: "email" },
       {
@@ -75,41 +83,53 @@
     ];
   }
 
-  function getSelectedDisciplinas() {
-    const select = document.getElementById("professores-disciplinas");
+  function getSelectedValues(selectId) {
+    const select = document.getElementById(selectId);
     if (!select) return [];
-    return Array.from(select.selectedOptions).map((option) => option.value);
+    return Array.from(select.selectedOptions).map(function (option) {
+      return option.value;
+    }).filter(Boolean);
+  }
+
+  function setSelectedValues(selectId, values) {
+    const expected = Array.isArray(values) ? values : [];
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    Array.from(select.options).forEach(function (option) {
+      option.selected = expected.includes(option.value);
+    });
   }
 
   function getFormData(form) {
     const formData = new FormData(form);
     return {
-      nome: String(formData.get("nome") || ""),
-      disciplinas: getSelectedDisciplinas().join(", "),
-      turno: String(formData.get("turno") || ""),
+      nome: String(formData.get("nome") || "").trim(),
+      disciplinas: getSelectedValues("professores-disciplinas").join(", "),
+      turmas: getSelectedValues("professores-turmas").join(", "),
+      turno: String(formData.get("turno") || "").trim(),
       email: String(formData.get("email") || "").trim().toLowerCase()
     };
+  }
+
+  function splitList(value) {
+    return String(value || "")
+      .split(",")
+      .map(function (item) { return item.trim(); })
+      .filter(Boolean);
   }
 
   function populateForm(form, item) {
     form.elements.namedItem("nome").value = item.nome || "";
     form.elements.namedItem("turno").value = item.turno || "";
     form.elements.namedItem("email").value = item.email || "";
-    const selecionadas = String(item.disciplinas || "")
-      .split(",")
-      .map((disciplina) => disciplina.trim())
-      .filter(Boolean);
-
-    Array.from(document.getElementById("professores-disciplinas").options).forEach((option) => {
-      option.selected = selecionadas.includes(option.value);
-    });
+    setSelectedValues("professores-disciplinas", splitList(item.disciplinas));
+    setSelectedValues("professores-turmas", splitList(item.turmas));
   }
 
   function afterSubmit() {
-    const select = document.getElementById("professores-disciplinas");
-    if (select) {
-      select.selectedIndex = -1;
-    }
+    setSelectedValues("professores-disciplinas", []);
+    setSelectedValues("professores-turmas", []);
   }
 
   function ensureShellContent(callback) {
@@ -126,21 +146,33 @@
 
   async function carregarDisciplinas() {
     const select = document.getElementById("professores-disciplinas");
-    if (!select) {
-      window.addEventListener("agenda-shell-ready", function handleReady() {
-        window.removeEventListener("agenda-shell-ready", handleReady);
-        carregarDisciplinas();
-      });
-      return;
-    }
+    if (!select) return;
 
     const disciplinas = await window.AgendaGamaDataStore.list("disciplinas");
 
     select.innerHTML = disciplinas.length
-      ? disciplinas.map((disciplina) => `<option value="${disciplina.nome}">${disciplina.nome}</option>`).join("")
+      ? disciplinas.map(function (disciplina) {
+        return `<option value="${escapeHtml(disciplina.nome)}">${escapeHtml(disciplina.nome)}</option>`;
+      }).join("")
       : '<option value="" disabled>Nenhuma disciplina cadastrada</option>';
 
     select.size = Math.min(Math.max(disciplinas.length, 3), 6);
+  }
+
+  async function carregarTurmas() {
+    const select = document.getElementById("professores-turmas");
+    if (!select) return;
+
+    const turmas = await window.AgendaGamaDataStore.list("turmas");
+
+    select.innerHTML = turmas.length
+      ? turmas.map(function (turma) {
+        const label = turma.turno ? `${turma.nome} - ${turma.turno}` : turma.nome;
+        return `<option value="${escapeHtml(turma.nome)}">${escapeHtml(label)}</option>`;
+      }).join("")
+      : '<option value="" disabled>Nenhuma turma cadastrada</option>';
+
+    select.size = Math.min(Math.max(turmas.length, 4), 8);
   }
 
   function mountNoticeBanner() {
@@ -201,8 +233,8 @@
   }
 
   function mountCadastroPage() {
-    ensureShellContent(function () {
-      carregarDisciplinas();
+    ensureShellContent(async function () {
+      await Promise.all([carregarDisciplinas(), carregarTurmas()]);
 
       window.AgendaGamaForms.mountCrud({
         storageKey: "professores",

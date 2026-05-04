@@ -13,6 +13,8 @@
       authorName: "Prof. Helena Souza",
       authorEmail: "professor@gama.edu.br",
       authorRole: "professores",
+      targetMode: "students",
+      recipientCount: 1,
       entryDate: "2026-05-04",
       createdAt: "2026-05-04T13:20:00.000Z",
       updatedAt: "2026-05-04T13:20:00.000Z"
@@ -30,6 +32,8 @@
       authorName: "Prof. Helena Souza",
       authorEmail: "professor@gama.edu.br",
       authorRole: "professores",
+      targetMode: "students",
+      recipientCount: 1,
       entryDate: "2026-05-03",
       createdAt: "2026-05-03T15:10:00.000Z",
       updatedAt: "2026-05-03T15:10:00.000Z"
@@ -73,6 +77,10 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  function normalizePersonName(value) {
+    return normalizeText(value).replace(/^(prof|profa|professor|professora)\.?\s+/, "");
+  }
+
   function generateId() {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
       return crypto.randomUUID();
@@ -112,6 +120,21 @@
     return CATEGORY_LABELS[value] || "Registro";
   }
 
+  function getSelectedValues(select) {
+    if (!select) return [];
+    return Array.from(select.selectedOptions || []).map(function (option) {
+      return option.value;
+    }).filter(Boolean);
+  }
+
+  function setSelectedValues(select, values) {
+    if (!select) return;
+    const expected = new Set(Array.isArray(values) ? values : []);
+    Array.from(select.options || []).forEach(function (option) {
+      option.selected = expected.has(option.value);
+    });
+  }
+
   function sortEntries(items) {
     return [...items].sort(function (left, right) {
       const leftTime = new Date(`${left.entryDate || "1970-01-01"}T00:00:00`).getTime();
@@ -124,6 +147,12 @@
   }
 
   function sortStudents(items) {
+    return [...items].sort(function (left, right) {
+      return String(left?.nome || "").localeCompare(String(right?.nome || ""), "pt-BR");
+    });
+  }
+
+  function sortTurmas(items) {
     return [...items].sort(function (left, right) {
       return String(left?.nome || "").localeCompare(String(right?.nome || ""), "pt-BR");
     });
@@ -161,7 +190,8 @@
 
   function buildActorContext(session, directory) {
     const professor = (directory.professores || []).find(function (item) {
-      return normalizeEmail(item.email) === normalizeEmail(session?.email) || normalizeText(item.nome) === normalizeText(session?.name);
+      return normalizeEmail(item.email) === normalizeEmail(session?.email)
+        || normalizePersonName(item.nome) === normalizePersonName(session?.name);
     }) || null;
     const responsavelRecords = (directory.responsaveis || []).filter(function (item) {
       return normalizeEmail(item.email) === normalizeEmail(session?.email);
@@ -226,6 +256,27 @@
     return [];
   }
 
+  function getAccessibleTurmas(accessibleStudents, directory) {
+    const turmaMap = new Map();
+
+    accessibleStudents.forEach(function (student) {
+      if (!student.turma) return;
+
+      if (!turmaMap.has(student.turma)) {
+        const matchedTurma = (directory.turmas || []).find(function (item) {
+          return normalizeText(item.nome) === normalizeText(student.turma);
+        }) || null;
+
+        turmaMap.set(student.turma, {
+          nome: student.turma,
+          turno: student.turno || matchedTurma?.turno || ""
+        });
+      }
+    });
+
+    return sortTurmas(Array.from(turmaMap.values()));
+  }
+
   function canCreateEntries(session) {
     return ["administrador", "funcionarios", "professores"].includes(session?.role);
   }
@@ -252,10 +303,17 @@
   }
 
   function buildStudentOptions(students) {
-    return ['<option value="">Selecione o aluno</option>'].concat(students.map(function (student) {
+    return students.map(function (student) {
       const label = `${student.nome} - ${student.turma || "Sem turma"}`;
       return `<option value="${escapeHtml(student.id)}">${escapeHtml(label)}</option>`;
-    })).join("");
+    }).join("");
+  }
+
+  function buildTurmaOptions(turmas) {
+    return turmas.map(function (turma) {
+      const label = turma.turno ? `${turma.nome} - ${turma.turno}` : turma.nome;
+      return `<option value="${escapeHtml(turma.nome)}">${escapeHtml(label)}</option>`;
+    }).join("");
   }
 
   function readFileAsDataUrl(file) {
@@ -360,6 +418,7 @@
           <span class="tag">${escapeHtml(buildCategoryLabel(entry.category))}</span>
           <span class="tag notice-tag-turma">${escapeHtml(entry.turma || "Sem turma")}</span>
           ${entry.photos?.length ? `<span class="tag">Fotos ${entry.photos.length}</span>` : ""}
+          ${entry.batchId ? `<span class="tag">Envio em lote</span>` : ""}
         </div>
         <p class="diary-card-body">${escapeHtml(entry.body)}</p>
         ${buildPhotoGrid(entry.photos)}
@@ -381,7 +440,12 @@
       const refs = {
         form: document.getElementById("diario-form"),
         feedback: document.getElementById("diario-feedback"),
-        student: document.getElementById("diario-student"),
+        targetMode: document.getElementById("diario-target-mode"),
+        studentsField: document.getElementById("diario-students-field"),
+        turmasField: document.getElementById("diario-turmas-field"),
+        studentTargets: document.getElementById("diario-students-target"),
+        turmaTargets: document.getElementById("diario-turmas-target"),
+        targetSummary: document.getElementById("diario-target-summary"),
         category: document.getElementById("diario-category"),
         entryDate: document.getElementById("diario-date"),
         title: document.getElementById("diario-title"),
@@ -409,6 +473,7 @@
       const directory = await loadDirectory();
       const actorContext = buildActorContext(session, directory);
       const accessibleStudents = getAccessibleStudents(session, actorContext, directory);
+      const accessibleTurmas = getAccessibleTurmas(accessibleStudents, directory);
       const responsavelNamesMap = getResponsavelNamesByStudent(directory);
 
       const state = {
@@ -426,17 +491,73 @@
         refs.feedback.className = type ? `feedback ${type}` : "feedback";
       }
 
+      function getResolvedTargetStudents() {
+        if (state.editingId || refs.targetMode.value === "students") {
+          const selectedIds = new Set(getSelectedValues(refs.studentTargets));
+          return accessibleStudents.filter(function (student) {
+            return selectedIds.has(student.id);
+          });
+        }
+
+        const selectedTurmas = new Set(getSelectedValues(refs.turmaTargets));
+        return accessibleStudents.filter(function (student) {
+          return selectedTurmas.has(student.turma);
+        });
+      }
+
+      function renderTargetSummary() {
+        if (!refs.targetSummary) return;
+
+        const selectedStudents = getResolvedTargetStudents();
+        const selectedTurmas = getSelectedValues(refs.turmaTargets);
+
+        if (state.editingId) {
+          refs.targetSummary.textContent = selectedStudents.length
+            ? `Edicao individual para ${selectedStudents[0].nome}.`
+            : "Esse registro esta sem um aluno valido no momento.";
+          return;
+        }
+
+        if (refs.targetMode.value === "students") {
+          refs.targetSummary.textContent = selectedStudents.length
+            ? `${selectedStudents.length} aluno(s) receberao este registro.`
+            : "Selecione um ou mais alunos para enviar o diario.";
+          return;
+        }
+
+        refs.targetSummary.textContent = selectedTurmas.length
+          ? `${selectedTurmas.length} turma(s) selecionada(s), alcancando ${selectedStudents.length} aluno(s).`
+          : "Selecione uma ou mais turmas para enviar o diario completo.";
+      }
+
+      function syncTargetFields() {
+        const studentMode = state.editingId || refs.targetMode.value === "students";
+        refs.studentsField.hidden = !studentMode;
+        refs.turmasField.hidden = studentMode;
+        refs.targetMode.disabled = Boolean(state.editingId);
+        refs.studentTargets.required = studentMode;
+        refs.turmaTargets.required = !studentMode;
+        refs.turmaTargets.disabled = studentMode;
+        renderTargetSummary();
+      }
+
       function resetForm(options) {
         const keepFeedback = Boolean(options?.keepFeedback);
         state.editingId = null;
         state.pendingPhotos = [];
         refs.form.reset();
         refs.entryDate.value = getTodayKey();
-        refs.student.value = "";
+        refs.targetMode.value = "students";
         refs.category.value = "rotina";
+        setSelectedValues(refs.studentTargets, []);
+        setSelectedValues(refs.turmaTargets, []);
         refs.cancel.hidden = true;
         refs.editorTitle.textContent = canCreateEntries(session) ? "Novo registro do dia" : "Registros do dia";
+        if (refs.editorDescription) {
+          refs.editorDescription.textContent = "Envie um registro para um aluno especifico, varios alunos ou uma turma inteira.";
+        }
         renderUploadPreview();
+        syncTargetFields();
         if (!keepFeedback) {
           setFeedback("", "");
         }
@@ -508,8 +629,8 @@
               <p class="muted">Os registros enviados aqui ficam visiveis no diario do responsavel vinculado ao aluno selecionado.</p>
               <ul class="feature-list">
                 <li>Selecione apenas alunos das turmas que voce pode atender.</li>
-                <li>Fotos ficam anexadas junto com o registro do dia.</li>
-                <li>Administracao pode revisar e organizar os registros quando necessario.</li>
+                <li>Voce pode enviar o mesmo diario para varios alunos de uma vez.</li>
+                <li>Tambem e possivel selecionar uma ou mais turmas inteiras para distribuir o registro.</li>
               </ul>
             </div>
           `;
@@ -537,12 +658,15 @@
         renderStats(visibleEntries);
       }
 
-      function populateStudentOptions() {
-        const optionsMarkup = buildStudentOptions(accessibleStudents);
-        refs.student.innerHTML = optionsMarkup;
+      function populateTargetOptions() {
+        refs.studentTargets.innerHTML = buildStudentOptions(accessibleStudents);
+        refs.turmaTargets.innerHTML = buildTurmaOptions(accessibleTurmas);
         refs.filterStudent.innerHTML = ['<option value="all">Todos os alunos</option>'].concat(accessibleStudents.map(function (student) {
           return `<option value="${escapeHtml(student.id)}">${escapeHtml(`${student.nome} - ${student.turma || "Sem turma"}`)}</option>`;
         })).join("");
+
+        refs.studentTargets.size = Math.min(Math.max(accessibleStudents.length, 4), 8);
+        refs.turmaTargets.size = Math.min(Math.max(accessibleTurmas.length, 3), 6);
       }
 
       function openEditor(entry) {
@@ -550,7 +674,14 @@
 
         state.editingId = entry?.id || null;
         refs.editorTitle.textContent = entry ? "Editar registro do dia" : "Novo registro do dia";
-        refs.student.value = entry?.studentId || "";
+        if (refs.editorDescription) {
+          refs.editorDescription.textContent = entry
+            ? "A edicao continua vinculada apenas ao aluno desse registro."
+            : "Envie um registro para um aluno especifico, varios alunos ou uma turma inteira.";
+        }
+        refs.targetMode.value = "students";
+        setSelectedValues(refs.studentTargets, entry?.studentId ? [entry.studentId] : []);
+        setSelectedValues(refs.turmaTargets, []);
         refs.category.value = entry?.category || "rotina";
         refs.entryDate.value = entry?.entryDate || getTodayKey();
         refs.title.value = entry?.title || "";
@@ -558,6 +689,7 @@
         state.pendingPhotos = Array.isArray(entry?.photos) ? entry.photos.map(function (photo) { return ({ ...photo }); }) : [];
         refs.cancel.hidden = !entry;
         renderUploadPreview();
+        syncTargetFields();
         setFeedback("", "");
         window.requestAnimationFrame(function () {
           refs.body.focus();
@@ -623,51 +755,77 @@
       refs.form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
-        const selectedStudent = accessibleStudents.find(function (student) {
-          return student.id === refs.student.value;
-        }) || null;
-
-        if (!selectedStudent) {
-          setFeedback("Selecione um aluno valido para enviar o registro do dia.", "error");
+        const targetStudents = getResolvedTargetStudents();
+        if (!targetStudents.length) {
+          setFeedback("Selecione pelo menos um aluno ou uma turma com alunos para enviar o diario.", "error");
           return;
         }
 
-        const nextEntry = {
-          id: state.editingId || generateId(),
-          studentId: selectedStudent.id,
-          studentName: selectedStudent.nome,
-          turma: selectedStudent.turma || "",
-          turno: selectedStudent.turno || "",
-          category: refs.category.value || "rotina",
-          title: String(refs.title.value || "").trim(),
-          body: String(refs.body.value || "").trim(),
-          photos: state.pendingPhotos.map(function (photo) { return ({ ...photo }); }),
-          authorName: session.name,
-          authorEmail: normalizeEmail(session.email),
-          authorRole: session.role,
-          entryDate: refs.entryDate.value || getTodayKey(),
-          createdAt: state.editingId
-            ? (state.entries.find(function (item) { return item.id === state.editingId; })?.createdAt || new Date().toISOString())
-            : new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+        if (state.editingId && targetStudents.length !== 1) {
+          setFeedback("Na edicao, mantenha apenas um aluno selecionado para esse registro.", "error");
+          return;
+        }
 
-        if (!nextEntry.title || !nextEntry.body) {
+        const title = String(refs.title.value || "").trim();
+        const body = String(refs.body.value || "").trim();
+        if (!title || !body) {
           setFeedback("Preencha o titulo e a mensagem do diario antes de enviar.", "error");
           return;
         }
 
-        const savedEntry = await window.AgendaGamaDataStore.save("diario", nextEntry, DIARIO_SEED);
-        const currentIndex = state.entries.findIndex(function (item) { return item.id === savedEntry.id; });
-        if (currentIndex >= 0) {
-          state.entries[currentIndex] = savedEntry;
-        } else {
-          state.entries.unshift(savedEntry);
+        const timestamp = new Date().toISOString();
+        const selectedTurmas = refs.targetMode.value === "turmas"
+          ? getSelectedValues(refs.turmaTargets)
+          : Array.from(new Set(targetStudents.map(function (student) { return student.turma; }).filter(Boolean)));
+        const editingEntry = state.editingId
+          ? state.entries.find(function (item) { return item.id === state.editingId; }) || null
+          : null;
+        const batchId = state.editingId
+          ? (editingEntry?.batchId || null)
+          : (targetStudents.length > 1 ? generateId() : null);
+
+        const payloadEntries = targetStudents.map(function (student, index) {
+          return {
+            id: index === 0 && editingEntry ? editingEntry.id : generateId(),
+            batchId: batchId,
+            studentId: student.id,
+            studentName: student.nome,
+            turma: student.turma || "",
+            turno: student.turno || "",
+            category: refs.category.value || "rotina",
+            title: title,
+            body: body,
+            photos: state.pendingPhotos.map(function (photo) { return ({ ...photo }); }),
+            authorName: session.name,
+            authorEmail: normalizeEmail(session.email),
+            authorRole: session.role,
+            targetMode: state.editingId ? "students" : refs.targetMode.value,
+            recipientCount: targetStudents.length,
+            targetTurmas: selectedTurmas,
+            entryDate: refs.entryDate.value || getTodayKey(),
+            createdAt: index === 0 && editingEntry
+              ? (editingEntry.createdAt || timestamp)
+              : timestamp,
+            updatedAt: timestamp
+          };
+        });
+
+        const savedEntries = [];
+        for (const entry of payloadEntries) {
+          savedEntries.push(await window.AgendaGamaDataStore.save("diario", entry, DIARIO_SEED));
         }
+
+        const savedIds = new Set(savedEntries.map(function (entry) { return entry.id; }));
+        state.entries = sortEntries(savedEntries.concat(state.entries.filter(function (entry) {
+          return !savedIds.has(entry.id);
+        })));
 
         const successMessage = state.editingId
           ? "Registro atualizado com sucesso."
-          : "Registro enviado para a familia com sucesso.";
+          : refs.targetMode.value === "turmas"
+            ? `Registro enviado para ${targetStudents.length} aluno(s) das turmas selecionadas.`
+            : `Registro enviado para ${targetStudents.length} aluno(s) com sucesso.`;
+
         resetForm({ keepFeedback: true });
         setFeedback(successMessage, "success");
         render();
@@ -675,6 +833,18 @@
 
       refs.cancel.addEventListener("click", function () {
         resetForm();
+      });
+
+      refs.targetMode.addEventListener("change", function () {
+        syncTargetFields();
+      });
+
+      refs.studentTargets.addEventListener("change", function () {
+        renderTargetSummary();
+      });
+
+      refs.turmaTargets.addEventListener("change", function () {
+        renderTargetSummary();
       });
 
       refs.search.addEventListener("input", function () {
@@ -700,11 +870,12 @@
         });
       });
 
-      populateStudentOptions();
+      populateTargetOptions();
       renderAccessPanel();
       renderUploadPreview();
       refs.entryDate.value = getTodayKey();
       refs.category.value = "rotina";
+      syncTargetFields();
 
       if (!canCreateEntries(session) && refs.editorPanel) {
         refs.editorPanel.classList.add("diary-editor-readonly");

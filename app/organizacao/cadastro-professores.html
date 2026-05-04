@@ -7,16 +7,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260422-5">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260504-2">
 </head>
 <body data-page="professores" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">Organização</span>
+        <span class="pill">Organizacao</span>
         <h1>Cadastro de professores</h1>
-        <p>Cadastre ou edite professores em uma página exclusiva de formulário.</p>
+        <p>Cadastre ou edite professores em uma pagina exclusiva de formulario.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -28,16 +28,51 @@
     </section>
     <section>
       <article class="panel">
-        <div class="section-heading"><div><h2>Novo professor</h2><p>Cadastre vínculo docente com uma ou mais disciplinas e e-mail institucional.</p></div></div>
+        <div class="section-heading">
+          <div>
+            <h2>Novo professor</h2>
+            <p>Cadastre o professor com disciplinas, turmas vinculadas e e-mail de acesso.</p>
+          </div>
+        </div>
         <form id="professores-form" class="form-grid">
-          <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: Helena Souza" required></label>
-          <label class="field"><span>Disciplinas</span><select id="professores-disciplinas" name="disciplinas" multiple required></select></label>
-          <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
-          <label class="field"><span>E-mail</span><input name="email" type="email" placeholder="professor@escola.com" required></label>
-          <p class="muted full">Segure `Ctrl` ou `Cmd` para selecionar mais de uma disciplina.</p>
+          <label class="field">
+            <span>Nome completo</span>
+            <input name="nome" placeholder="Ex.: Helena Souza" required>
+          </label>
+
+          <label class="field">
+            <span>Turno principal</span>
+            <select name="turno" required>
+              <option value="">Selecione</option>
+              <option>Manha</option>
+              <option>Tarde</option>
+              <option>Noite</option>
+              <option>Integral</option>
+            </select>
+          </label>
+
+          <label class="field full multi-select-field">
+            <span>Disciplinas</span>
+            <select id="professores-disciplinas" name="disciplinas" multiple required></select>
+          </label>
+
+          <label class="field full multi-select-field">
+            <span>Turmas vinculadas</span>
+            <select id="professores-turmas" name="turmas" multiple required></select>
+          </label>
+
+          <label class="field full">
+            <span>E-mail</span>
+            <input name="email" type="email" placeholder="professor@escola.com" required>
+          </label>
+
+          <p class="muted full">Segure `Ctrl` ou `Cmd` para selecionar mais de uma disciplina ou turma.</p>
+
           <div class="hint-box full">
+            <p>As turmas escolhidas definem quais alunos esse professor pode acompanhar no diario e em outros modulos.</p>
             <p>Ao salvar, o sistema cria o perfil do professor e envia um convite por e-mail para definir a senha no primeiro acesso.</p>
           </div>
+
           <button type="submit" class="btn btn-primary full">Salvar professor</button>
           <div id="professor-access-feedback" class="feedback full" aria-live="polite"></div>
         </form>
@@ -50,11 +85,10 @@
   <script src="../../assets/js/app.js?v=20260422-5"></script>
   <script src="../../assets/js/data-store.js?v=20260416-5"></script>
   <script src="../../assets/js/forms.js?v=20260416-5"></script>
-  <script src="../../assets/js/professores.js?v=20260416-5"></script>
+  <script src="../../assets/js/professores.js?v=20260504-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaProfessores.mountCadastroPage();
   </script>
 </body>
 </html>
-

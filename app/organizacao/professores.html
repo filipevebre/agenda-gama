@@ -7,16 +7,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260422-5">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260504-2">
 </head>
 <body data-page="professores" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">Organização</span>
+        <span class="pill">Organizacao</span>
         <h1>Professores cadastrados</h1>
-        <p>Visualize e gerencie os docentes, suas disciplinas e turnos de atuação.</p>
+        <p>Visualize e gerencie os docentes, suas disciplinas, turmas vinculadas e turnos de atuacao.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -30,9 +30,21 @@
     <section>
       <article class="table-card">
         <h3>Professores cadastrados</h3>
-        <p>Veja rapidamente quem leciona, em qual turno atua e como esta o acesso ao app.</p>
+        <p>Veja rapidamente quem leciona, em quais turmas atua e como esta o acesso ao app.</p>
         <div class="table-wrapper">
-          <table><thead><tr><th>Professor</th><th>Disciplinas</th><th>Turno</th><th>E-mail</th><th>Acesso</th></tr></thead><tbody id="professores-table-body"></tbody></table>
+          <table>
+            <thead>
+              <tr>
+                <th>Professor</th>
+                <th>Disciplinas</th>
+                <th>Turmas</th>
+                <th>Turno</th>
+                <th>E-mail</th>
+                <th>Acesso</th>
+              </tr>
+            </thead>
+            <tbody id="professores-table-body"></tbody>
+          </table>
         </div>
         <p id="professores-empty" class="empty-state" hidden>Nenhum professor cadastrado ainda.</p>
       </article>
@@ -44,11 +56,10 @@
   <script src="../../assets/js/app.js?v=20260422-5"></script>
   <script src="../../assets/js/data-store.js?v=20260416-5"></script>
   <script src="../../assets/js/forms.js?v=20260416-5"></script>
-  <script src="../../assets/js/professores.js?v=20260416-5"></script>
+  <script src="../../assets/js/professores.js?v=20260504-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaProfessores.mountListPage();
   </script>
 </body>
 </html>
-

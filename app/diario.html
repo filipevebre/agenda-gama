@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-4">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260504-2">
 </head>
 <body data-page="diario" data-roles="administrador,funcionarios,professores,responsaveis">
   <div id="app-shell"></div>
@@ -41,15 +41,31 @@
           <div class="section-heading">
             <div>
               <h2 id="diario-editor-title">Novo registro do dia</h2>
-              <p id="diario-editor-description">O registro enviado aqui fica visivel para os responsaveis vinculados ao aluno escolhido.</p>
+              <p id="diario-editor-description">Envie um registro para um aluno especifico, varios alunos ou uma turma inteira.</p>
             </div>
           </div>
 
           <form id="diario-form" class="stack-sm">
             <label class="field">
-              <span>Aluno</span>
-              <select id="diario-student" name="studentId" required></select>
+              <span>Destino do envio</span>
+              <select id="diario-target-mode" name="targetMode">
+                <option value="students">Alunos especificos</option>
+                <option value="turmas">Turma inteira</option>
+              </select>
             </label>
+
+            <label id="diario-students-field" class="field multi-select-field">
+              <span>Alunos</span>
+              <select id="diario-students-target" name="studentIds" multiple required></select>
+            </label>
+
+            <label id="diario-turmas-field" class="field multi-select-field" hidden>
+              <span>Turmas</span>
+              <select id="diario-turmas-target" name="turmaNames" multiple></select>
+            </label>
+
+            <p class="muted">Segure `Ctrl` ou `Cmd` para selecionar mais de um aluno ou mais de uma turma.</p>
+            <div id="diario-target-summary" class="diary-target-summary" aria-live="polite"></div>
 
             <label class="field">
               <span>Categoria</span>
@@ -149,7 +165,7 @@
   <script src="../assets/js/auth.js?v=20260416-7"></script>
   <script src="../assets/js/data-store.js?v=20260504-1"></script>
   <script src="../assets/js/app.js?v=20260429-2"></script>
-  <script src="../assets/js/diario.js?v=20260504-1"></script>
+  <script src="../assets/js/diario.js?v=20260504-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDiario.mountDiario();

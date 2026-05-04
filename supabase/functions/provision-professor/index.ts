@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const normalizedEmail = normalizeEmail(record?.email)
     const configuredSiteUrl = String(siteUrl || Deno.env.get("SITE_URL") || "").trim().replace(/\/$/, "")
 
-    if (!record?.nome || !record?.disciplinas || !record?.turno || !normalizedEmail) {
+    if (!record?.nome || !record?.disciplinas || !record?.turmas || !record?.turno || !normalizedEmail) {
       return new Response(JSON.stringify({ error: "Dados obrigatorios ausentes." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -159,6 +159,7 @@ Deno.serve(async (req) => {
       auth_user_id: authUserId,
       nome: record.nome,
       disciplinas: record.disciplinas,
+      turmas: record.turmas,
       turno: record.turno,
       email: normalizedEmail,
       access_status: accessStatus
