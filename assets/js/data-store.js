@@ -6,9 +6,11 @@
     professores: "professores",
     alunos: "alunos",
     responsaveis: "responsaveis",
+    diario: "student_diary_entries",
     channels: "communication_channels",
     messages: "communication_messages"
   };
+  const LOCAL_ONLY_KEYS = new Set(["diario"]);
 
   function getStorageKey(key) {
     return `agenda-gama-${key}`;
@@ -62,7 +64,7 @@
   }
 
   async function list(key, seedData) {
-    if (await useRemote()) {
+    if (!LOCAL_ONLY_KEYS.has(key) && await useRemote()) {
       return await window.AgendaGamaSupabase.fetchTable(getTableName(key));
     }
 
@@ -72,7 +74,7 @@
   async function getById(key, id, seedData) {
     if (!id) return null;
 
-    if (await useRemote()) {
+    if (!LOCAL_ONLY_KEYS.has(key) && await useRemote()) {
       return await window.AgendaGamaSupabase.fetchById(getTableName(key), id);
     }
 
@@ -80,7 +82,7 @@
   }
 
   async function save(key, item, seedData) {
-    if (await useRemote()) {
+    if (!LOCAL_ONLY_KEYS.has(key) && await useRemote()) {
       return await window.AgendaGamaSupabase.saveRow(getTableName(key), item);
     }
 
@@ -99,7 +101,7 @@
   }
 
   async function remove(key, id, seedData) {
-    if (await useRemote()) {
+    if (!LOCAL_ONLY_KEYS.has(key) && await useRemote()) {
       await window.AgendaGamaSupabase.deleteRow(getTableName(key), id);
       return;
     }

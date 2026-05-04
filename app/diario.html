@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Gama | Diario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260429-4">
+</head>
+<body data-page="diario" data-roles="administrador,funcionarios,professores,responsaveis">
+  <div id="app-shell"></div>
+
+  <template id="page-template">
+    <section class="page-hero">
+      <div>
+        <span class="pill">Diario</span>
+        <h1>Diario da crianca</h1>
+        <p>Registre informacoes do dia para a familia, com observacoes da rotina, participacao e fotos do aluno.</p>
+      </div>
+      <div class="page-actions">
+        <article class="info-card">
+          <span>Registros visiveis</span>
+          <strong id="diario-stat-total">0</strong>
+        </article>
+        <article class="info-card">
+          <span>Registros de hoje</span>
+          <strong id="diario-stat-today">0</strong>
+        </article>
+        <article class="info-card">
+          <span>Alunos disponiveis</span>
+          <strong id="diario-stat-students">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="grid grid-2 diary-layout">
+      <aside class="stack-sm diary-side-column">
+        <article id="diario-editor-panel" class="panel diary-editor-panel">
+          <div class="section-heading">
+            <div>
+              <h2 id="diario-editor-title">Novo registro do dia</h2>
+              <p id="diario-editor-description">O registro enviado aqui fica visivel para os responsaveis vinculados ao aluno escolhido.</p>
+            </div>
+          </div>
+
+          <form id="diario-form" class="stack-sm">
+            <label class="field">
+              <span>Aluno</span>
+              <select id="diario-student" name="studentId" required></select>
+            </label>
+
+            <label class="field">
+              <span>Categoria</span>
+              <select id="diario-category" name="category">
+                <option value="rotina">Rotina</option>
+                <option value="alimentacao">Alimentacao</option>
+                <option value="atividade">Atividade</option>
+                <option value="comportamento">Comportamento</option>
+                <option value="saude">Saude</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Data do registro</span>
+              <input id="diario-date" name="entryDate" type="date" required>
+            </label>
+
+            <label class="field">
+              <span>Titulo</span>
+              <input id="diario-title" name="title" type="text" maxlength="100" placeholder="Ex.: Como foi o dia hoje" required>
+            </label>
+
+            <label class="field">
+              <span>Mensagem</span>
+              <textarea id="diario-body" name="body" rows="7" placeholder="Escreva aqui o resumo do dia da crianca." required></textarea>
+            </label>
+
+            <div class="stack-sm diary-upload-block">
+              <label class="field">
+                <span>Fotos do dia</span>
+                <input id="diario-photos" type="file" accept="image/*" multiple>
+              </label>
+              <p id="diario-upload-hint" class="muted">Voce pode anexar ate 4 fotos por registro.</p>
+              <div id="diario-upload-list" class="diary-upload-list" hidden></div>
+            </div>
+
+            <div class="action-row">
+              <button type="submit" class="btn btn-primary">Enviar para a familia</button>
+              <button id="diario-cancel" type="button" class="btn btn-secondary" hidden>Cancelar edicao</button>
+            </div>
+
+            <p id="diario-feedback" class="feedback" role="status" aria-live="polite"></p>
+          </form>
+        </article>
+
+        <article class="panel">
+          <div class="section-heading">
+            <div>
+              <h2>Como funciona</h2>
+              <p>Use o diario para compartilhar informacoes do dia de forma clara e organizada.</p>
+            </div>
+          </div>
+          <div id="diario-access-panel" class="stack-sm"></div>
+        </article>
+      </aside>
+
+      <article class="panel diary-board-panel">
+        <div class="section-heading">
+          <div>
+            <h2>Registros enviados</h2>
+            <p>Filtre por aluno, categoria ou texto para localizar rapidamente o historico.</p>
+          </div>
+        </div>
+
+        <div class="toolbar diary-filter-toolbar">
+          <label class="field search-field">
+            <span>Buscar</span>
+            <input id="diario-search" type="search" placeholder="Buscar por aluno, titulo ou mensagem">
+          </label>
+          <label class="field">
+            <span>Aluno</span>
+            <select id="diario-filter-student">
+              <option value="all">Todos os alunos</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Categoria</span>
+            <select id="diario-filter-category">
+              <option value="all">Todas</option>
+              <option value="rotina">Rotina</option>
+              <option value="alimentacao">Alimentacao</option>
+              <option value="atividade">Atividade</option>
+              <option value="comportamento">Comportamento</option>
+              <option value="saude">Saude</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="diario-list" class="cards-list diary-list"></div>
+        <p id="diario-empty" class="empty-state" hidden>Nenhum registro encontrado para os filtros atuais.</p>
+      </article>
+    </section>
+  </template>
+
+  <script src="../assets/js/config.js?v=20260416-7"></script>
+  <script src="../assets/js/supabase.js?v=20260416-7"></script>
+  <script src="../assets/js/auth.js?v=20260416-7"></script>
+  <script src="../assets/js/data-store.js?v=20260504-1"></script>
+  <script src="../assets/js/app.js?v=20260429-2"></script>
+  <script src="../assets/js/diario.js?v=20260504-1"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaDiario.mountDiario();
+  </script>
+</body>
+</html>
