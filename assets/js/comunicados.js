@@ -213,12 +213,6 @@
         .forEach(function (item) {
           professorTurmas.add(item);
         });
-    } else if (professor?.turno) {
-      (directory.turmas || []).forEach(function (turma) {
-        if (normalizeText(turma.turno) === normalizeText(professor.turno)) {
-          professorTurmas.add(turma.nome);
-        }
-      });
     }
 
     return {

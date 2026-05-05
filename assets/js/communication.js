@@ -544,12 +544,6 @@
       String(professor.turmas).split(",").map(function (item) { return item.trim(); }).filter(Boolean).forEach(function (item) {
         professorTurmas.add(item);
       });
-    } else if (professor?.turno) {
-      (directory.turmas || []).filter(function (turma) {
-        return normalizeText(turma.turno) === normalizeText(professor.turno);
-      }).forEach(function (turma) {
-        professorTurmas.add(turma.nome);
-      });
     }
 
     const funcionarioSectors = new Set();

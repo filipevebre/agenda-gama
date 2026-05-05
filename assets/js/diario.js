@@ -206,12 +206,6 @@
         .forEach(function (turma) {
           professorTurmas.add(turma);
         });
-    } else if (professor?.turno) {
-      (directory.turmas || []).forEach(function (turma) {
-        if (normalizeText(turma.turno) === normalizeText(professor.turno)) {
-          professorTurmas.add(turma.nome);
-        }
-      });
     }
 
     const linkedStudentIds = new Set();

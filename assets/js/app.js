@@ -350,12 +350,6 @@
         .forEach(function (turma) {
           professorTurmas.add(turma);
         });
-    } else if (professor?.turno) {
-      (directory.turmas || []).forEach(function (turma) {
-        if (normalizeComparableText(turma.turno) === normalizeComparableText(professor.turno)) {
-          professorTurmas.add(turma.nome);
-        }
-      });
     }
 
     return {
@@ -735,11 +729,9 @@
     const responsavelTurmas = new Set();
     const professorTurmas = new Set();
 
-    if (professor?.turmas) {
-      String(professor.turmas).split(",").map((item) => item.trim()).filter(Boolean).forEach((item) => professorTurmas.add(item));
-    } else if (professor?.turno) {
-      (directory.turmas || []).filter((turma) => normalizeText(turma.turno) === normalizeText(professor.turno)).forEach((turma) => professorTurmas.add(turma.nome));
-    }
+      if (professor?.turmas) {
+        String(professor.turmas).split(",").map((item) => item.trim()).filter(Boolean).forEach((item) => professorTurmas.add(item));
+      }
 
     const funcionarioSectors = new Set();
     if (funcionario?.setor) funcionarioSectors.add(funcionario.setor);
