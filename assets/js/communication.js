@@ -309,6 +309,14 @@
       .replace(/^-+|-+$/g, "");
   }
 
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
+  }
+
+  function getPersistedChannelId(channelId) {
+    return isUuid(channelId) ? String(channelId).trim() : null;
+  }
+
   function escapeHtml(value) {
     return String(value || "")
       .replace(/&/g, "&amp;")
@@ -1157,7 +1165,7 @@
 
   function buildSystemNote(thread, text, senderName, senderEmail, senderRole) {
     return {
-      canal_id: thread.channelId || null,
+      canal_id: getPersistedChannelId(thread.channelId),
       canal_nome: thread.channelName,
       sender_name: senderName,
       sender_email: senderEmail,
@@ -2263,7 +2271,7 @@
 
       async function saveMessage(thread, options) {
         const message = {
-          canal_id: thread.channelId || null,
+          canal_id: getPersistedChannelId(thread.channelId),
           canal_nome: thread.channelName,
           sender_name: session.name,
           sender_email: session.email,
