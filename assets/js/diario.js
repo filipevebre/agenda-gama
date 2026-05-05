@@ -442,6 +442,8 @@
         feedback: document.getElementById("diario-feedback"),
         targetMode: document.getElementById("diario-target-mode"),
         studentsField: document.getElementById("diario-students-field"),
+        studentTurmaFilter: document.getElementById("diario-student-turma-filter"),
+        studentTargetsField: document.getElementById("diario-students-target-field"),
         turmasField: document.getElementById("diario-turmas-field"),
         studentTargets: document.getElementById("diario-students-target"),
         turmaTargets: document.getElementById("diario-turmas-target"),
@@ -482,6 +484,7 @@
         searchTerm: "",
         selectedStudentId: "all",
         selectedCategory: "all",
+        selectedStudentTurma: "all",
         pendingPhotos: []
       };
 
@@ -491,10 +494,20 @@
         refs.feedback.className = type ? `feedback ${type}` : "feedback";
       }
 
+      function getStudentChoices() {
+        if (state.selectedStudentTurma === "all") {
+          return accessibleStudents;
+        }
+
+        return accessibleStudents.filter(function (student) {
+          return normalizeText(student.turma) === normalizeText(state.selectedStudentTurma);
+        });
+      }
+
       function getResolvedTargetStudents() {
         if (state.editingId || refs.targetMode.value === "students") {
           const selectedIds = new Set(getSelectedValues(refs.studentTargets));
-          return accessibleStudents.filter(function (student) {
+          return getStudentChoices().filter(function (student) {
             return selectedIds.has(student.id);
           });
         }
@@ -519,9 +532,14 @@
         }
 
         if (refs.targetMode.value === "students") {
+          const turmaPrefix = state.selectedStudentTurma !== "all"
+            ? `Turma ${state.selectedStudentTurma}: `
+            : "";
           refs.targetSummary.textContent = selectedStudents.length
-            ? `${selectedStudents.length} aluno(s) receberao este registro.`
-            : "Selecione um ou mais alunos para enviar o diario.";
+            ? `${turmaPrefix}${selectedStudents.length} aluno(s) receberao este registro.`
+            : turmaPrefix
+              ? `Turma ${state.selectedStudentTurma} selecionada. Escolha um ou mais alunos.`
+              : "Selecione uma turma e um ou mais alunos para enviar o diario.";
           return;
         }
 
@@ -533,6 +551,7 @@
       function syncTargetFields() {
         const studentMode = state.editingId || refs.targetMode.value === "students";
         refs.studentsField.hidden = !studentMode;
+        refs.studentTargetsField.hidden = !studentMode;
         refs.turmasField.hidden = studentMode;
         refs.targetMode.disabled = Boolean(state.editingId);
         refs.studentTargets.required = studentMode;
@@ -549,6 +568,11 @@
         refs.entryDate.value = getTodayKey();
         refs.targetMode.value = "students";
         refs.category.value = "rotina";
+        state.selectedStudentTurma = "all";
+        if (refs.studentTurmaFilter) {
+          refs.studentTurmaFilter.value = "all";
+        }
+        renderStudentTargetOptions([]);
         setSelectedValues(refs.studentTargets, []);
         setSelectedValues(refs.turmaTargets, []);
         refs.cancel.hidden = true;
@@ -658,14 +682,33 @@
         renderStats(visibleEntries);
       }
 
+      function renderStudentTargetOptions(selectedValues) {
+        const choices = getStudentChoices();
+        const nextSelectedValues = Array.isArray(selectedValues)
+          ? selectedValues
+          : getSelectedValues(refs.studentTargets);
+
+        refs.studentTargets.innerHTML = buildStudentOptions(choices);
+        setSelectedValues(refs.studentTargets, nextSelectedValues.filter(function (value) {
+          return choices.some(function (student) {
+            return student.id === value;
+          });
+        }));
+        refs.studentTargets.size = Math.min(Math.max(choices.length, 4), 8);
+        refs.studentTargets.disabled = choices.length === 0;
+      }
+
       function populateTargetOptions() {
-        refs.studentTargets.innerHTML = buildStudentOptions(accessibleStudents);
+        refs.studentTurmaFilter.innerHTML = ['<option value="all">Todas as turmas</option>'].concat(accessibleTurmas.map(function (turma) {
+          const label = turma.turno ? `${turma.nome} - ${turma.turno}` : turma.nome;
+          return `<option value="${escapeHtml(turma.nome)}">${escapeHtml(label)}</option>`;
+        })).join("");
         refs.turmaTargets.innerHTML = buildTurmaOptions(accessibleTurmas);
         refs.filterStudent.innerHTML = ['<option value="all">Todos os alunos</option>'].concat(accessibleStudents.map(function (student) {
           return `<option value="${escapeHtml(student.id)}">${escapeHtml(`${student.nome} - ${student.turma || "Sem turma"}`)}</option>`;
         })).join("");
 
-        refs.studentTargets.size = Math.min(Math.max(accessibleStudents.length, 4), 8);
+        renderStudentTargetOptions([]);
         refs.turmaTargets.size = Math.min(Math.max(accessibleTurmas.length, 3), 6);
       }
 
@@ -680,7 +723,11 @@
             : "Envie um registro para um aluno especifico, varios alunos ou uma turma inteira.";
         }
         refs.targetMode.value = "students";
-        setSelectedValues(refs.studentTargets, entry?.studentId ? [entry.studentId] : []);
+        state.selectedStudentTurma = entry?.turma || "all";
+        if (refs.studentTurmaFilter) {
+          refs.studentTurmaFilter.value = state.selectedStudentTurma;
+        }
+        renderStudentTargetOptions(entry?.studentId ? [entry.studentId] : []);
         setSelectedValues(refs.turmaTargets, []);
         refs.category.value = entry?.category || "rotina";
         refs.entryDate.value = entry?.entryDate || getTodayKey();
@@ -839,6 +886,12 @@
         syncTargetFields();
       });
 
+      refs.studentTurmaFilter.addEventListener("change", function () {
+        state.selectedStudentTurma = refs.studentTurmaFilter.value;
+        renderStudentTargetOptions([]);
+        renderTargetSummary();
+      });
+
       refs.studentTargets.addEventListener("change", function () {
         renderTargetSummary();
       });
@@ -875,6 +928,7 @@
       renderUploadPreview();
       refs.entryDate.value = getTodayKey();
       refs.category.value = "rotina";
+      refs.studentTurmaFilter.value = "all";
       syncTargetFields();
 
       if (!canCreateEntries(session) && refs.editorPanel) {

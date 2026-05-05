@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260504-2">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260505-1">
 </head>
 <body data-page="diario" data-roles="administrador,funcionarios,professores,responsaveis">
   <div id="app-shell"></div>
@@ -55,6 +55,13 @@
             </label>
 
             <label id="diario-students-field" class="field multi-select-field">
+              <span>Filtrar alunos por turma</span>
+              <select id="diario-student-turma-filter" name="studentTurmaFilter">
+                <option value="all">Todas as turmas</option>
+              </select>
+            </label>
+
+            <label id="diario-students-target-field" class="field multi-select-field">
               <span>Alunos</span>
               <select id="diario-students-target" name="studentIds" multiple required></select>
             </label>
@@ -165,7 +172,7 @@
   <script src="../assets/js/auth.js?v=20260416-7"></script>
   <script src="../assets/js/data-store.js?v=20260504-1"></script>
   <script src="../assets/js/app.js?v=20260429-2"></script>
-  <script src="../assets/js/diario.js?v=20260504-2"></script>
+  <script src="../assets/js/diario.js?v=20260505-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDiario.mountDiario();
