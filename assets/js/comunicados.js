@@ -65,6 +65,10 @@
       .replace(/\u00ba/g, "o");
   }
 
+  function normalizePersonName(value) {
+    return normalizeText(value).replace(/^(prof|profa|professor|professora)\.?\s+/, "");
+  }
+
   function turmaMatches(left, right) {
     return normalizeTurmaLabel(left) === normalizeTurmaLabel(right);
   }
@@ -187,7 +191,8 @@
     const professores = directory.professores || [];
 
     const professor = professores.find(function (item) {
-      return normalizeText(item.email) === normalizeText(session?.email) || normalizeText(item.nome) === normalizeText(session?.name);
+      return normalizeText(item.email) === normalizeText(session?.email)
+        || normalizePersonName(item.nome) === normalizePersonName(session?.name);
     }) || null;
 
     const responsavelRecords = responsaveis.filter(function (item) {
@@ -208,7 +213,7 @@
     if (professor?.turmas) {
       String(professor.turmas)
         .split(",")
-        .map(function (item) { return item.trim(); })
+        .map(function (item) { return item.split(" - ")[0].trim(); })
         .filter(Boolean)
         .forEach(function (item) {
           professorTurmas.add(item);

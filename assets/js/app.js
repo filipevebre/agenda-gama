@@ -81,6 +81,10 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  function normalizePersonName(value) {
+    return normalizeComparableText(value).replace(/^(prof|profa|professor|professora)\.?\s+/, "");
+  }
+
   function normalizeText(value) {
     return String(value || "").trim().toLowerCase();
   }
@@ -322,10 +326,10 @@
     const responsaveis = directory.responsaveis || [];
     const professores = directory.professores || [];
 
-    const professor = professores.find(function (item) {
-      return normalizeComparableText(item.email) === normalizeComparableText(session?.email)
-        || normalizeComparableText(item.nome) === normalizeComparableText(session?.name);
-    }) || null;
+      const professor = professores.find(function (item) {
+        return normalizeComparableText(item.email) === normalizeComparableText(session?.email)
+          || normalizePersonName(item.nome) === normalizePersonName(session?.name);
+      }) || null;
 
     const responsavelRecords = responsaveis.filter(function (item) {
       return normalizeComparableText(item.email) === normalizeComparableText(session?.email);
@@ -345,7 +349,7 @@
     if (professor?.turmas) {
       String(professor.turmas || "")
         .split(",")
-        .map(function (item) { return item.trim(); })
+        .map(function (item) { return item.split(" - ")[0].trim(); })
         .filter(Boolean)
         .forEach(function (turma) {
           professorTurmas.add(turma);
@@ -723,14 +727,14 @@
   }
 
   function getActorContext(session, directory) {
-    const professor = (directory.professores || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizeText(item.nome) === normalizeText(session.name)) || null;
-    const funcionario = (directory.equipe || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizeText(item.nome) === normalizeText(session.name)) || null;
+    const professor = (directory.professores || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizePersonName(item.nome) === normalizePersonName(session.name)) || null;
+    const funcionario = (directory.equipe || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizePersonName(item.nome) === normalizePersonName(session.name)) || null;
     const responsavelRecords = (directory.responsaveis || []).filter((item) => normalizeEmail(item.email) === normalizeEmail(session.email));
     const responsavelTurmas = new Set();
     const professorTurmas = new Set();
 
       if (professor?.turmas) {
-        String(professor.turmas).split(",").map((item) => item.trim()).filter(Boolean).forEach((item) => professorTurmas.add(item));
+        String(professor.turmas).split(",").map((item) => item.split(" - ")[0].trim()).filter(Boolean).forEach((item) => professorTurmas.add(item));
       }
 
     const funcionarioSectors = new Set();
@@ -766,10 +770,10 @@
       return normalizeEmail(thread.responsibleEmail) === normalizeEmail(session.email);
     }
 
-    if (session.role === "professores") {
-      return actorContext.professorTurmas.has(thread.turma)
-        || (messages || []).some((message) => normalizeEmail(message.sender_email) === normalizeEmail(session.email));
-    }
+      if (session.role === "professores") {
+        return [...actorContext.professorTurmas].some((turma) => turmaMatches(turma, thread.turma))
+          || (messages || []).some((message) => normalizeEmail(message.sender_email) === normalizeEmail(session.email));
+      }
 
     if (session.role === "funcionarios") {
       if (!actorContext.funcionarioSectors.size) return true;

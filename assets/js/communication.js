@@ -268,6 +268,15 @@
     return normalizeText(value);
   }
 
+  function normalizePersonName(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/^(prof|profa|professor|professora)\.?\s+/, "");
+  }
+
   function normalizeTurmaLabel(value) {
     return String(value || "")
       .trim()
@@ -529,10 +538,12 @@
 
   function getActorContext(session, directory) {
     const professor = (directory.professores || []).find(function (item) {
-      return normalizeEmail(item.email) === normalizeEmail(session.email) || normalizeText(item.nome) === normalizeText(session.name);
+      return normalizeEmail(item.email) === normalizeEmail(session.email)
+        || normalizePersonName(item.nome) === normalizePersonName(session.name);
     }) || null;
     const funcionario = (directory.equipe || []).find(function (item) {
-      return normalizeEmail(item.email) === normalizeEmail(session.email) || normalizeText(item.nome) === normalizeText(session.name);
+      return normalizeEmail(item.email) === normalizeEmail(session.email)
+        || normalizePersonName(item.nome) === normalizePersonName(session.name);
     }) || null;
     const responsavelRecords = (directory.responsaveis || []).filter(function (item) {
       return normalizeEmail(item.email) === normalizeEmail(session.email);
@@ -541,7 +552,7 @@
 
     const professorTurmas = new Set();
     if (professor?.turmas) {
-      String(professor.turmas).split(",").map(function (item) { return item.trim(); }).filter(Boolean).forEach(function (item) {
+      String(professor.turmas).split(",").map(function (item) { return item.split(" - ")[0].trim(); }).filter(Boolean).forEach(function (item) {
         professorTurmas.add(item);
       });
     }
