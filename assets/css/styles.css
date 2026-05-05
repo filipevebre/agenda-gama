@@ -694,6 +694,11 @@ td { color: var(--text-muted); }
   padding-top: 12px;
   padding-bottom: 12px;
 }
+#diario-students-field select {
+  min-height: auto;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
 .diary-target-summary {
   margin: 0;
   padding: 12px 14px;
@@ -750,6 +755,9 @@ td { color: var(--text-muted); }
   }
   .multi-select-field select {
     min-height: 118px;
+  }
+  #diario-students-field select {
+    min-height: auto;
   }
   .diary-photo-grid {
     grid-template-columns: 1fr;
