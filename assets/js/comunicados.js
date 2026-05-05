@@ -191,7 +191,8 @@
     const professores = directory.professores || [];
 
     const professor = professores.find(function (item) {
-      return normalizeText(item.email) === normalizeText(session?.email)
+      return String(item.auth_user_id || "") === String(session?.userId || "")
+        || normalizeText(item.email) === normalizeText(session?.email)
         || normalizePersonName(item.nome) === normalizePersonName(session?.name);
     }) || null;
 

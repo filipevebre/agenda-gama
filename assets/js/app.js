@@ -327,7 +327,8 @@
     const professores = directory.professores || [];
 
       const professor = professores.find(function (item) {
-        return normalizeComparableText(item.email) === normalizeComparableText(session?.email)
+        return String(item.auth_user_id || "") === String(session?.userId || "")
+          || normalizeComparableText(item.email) === normalizeComparableText(session?.email)
           || normalizePersonName(item.nome) === normalizePersonName(session?.name);
       }) || null;
 
@@ -726,9 +727,9 @@
     };
   }
 
-  function getActorContext(session, directory) {
-    const professor = (directory.professores || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizePersonName(item.nome) === normalizePersonName(session.name)) || null;
-    const funcionario = (directory.equipe || []).find((item) => normalizeEmail(item.email) === normalizeEmail(session.email) || normalizePersonName(item.nome) === normalizePersonName(session.name)) || null;
+    function getActorContext(session, directory) {
+    const professor = (directory.professores || []).find((item) => String(item.auth_user_id || "") === String(session.userId || "") || normalizeEmail(item.email) === normalizeEmail(session.email) || normalizePersonName(item.nome) === normalizePersonName(session.name)) || null;
+    const funcionario = (directory.equipe || []).find((item) => String(item.auth_user_id || "") === String(session.userId || "") || normalizeEmail(item.email) === normalizeEmail(session.email) || normalizePersonName(item.nome) === normalizePersonName(session.name)) || null;
     const responsavelRecords = (directory.responsaveis || []).filter((item) => normalizeEmail(item.email) === normalizeEmail(session.email));
     const responsavelTurmas = new Set();
     const professorTurmas = new Set();

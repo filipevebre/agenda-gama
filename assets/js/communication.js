@@ -538,11 +538,13 @@
 
   function getActorContext(session, directory) {
     const professor = (directory.professores || []).find(function (item) {
-      return normalizeEmail(item.email) === normalizeEmail(session.email)
+      return String(item.auth_user_id || "") === String(session.userId || "")
+        || normalizeEmail(item.email) === normalizeEmail(session.email)
         || normalizePersonName(item.nome) === normalizePersonName(session.name);
     }) || null;
     const funcionario = (directory.equipe || []).find(function (item) {
-      return normalizeEmail(item.email) === normalizeEmail(session.email)
+      return String(item.auth_user_id || "") === String(session.userId || "")
+        || normalizeEmail(item.email) === normalizeEmail(session.email)
         || normalizePersonName(item.nome) === normalizePersonName(session.name);
     }) || null;
     const responsavelRecords = (directory.responsaveis || []).filter(function (item) {
