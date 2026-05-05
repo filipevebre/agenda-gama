@@ -296,6 +296,15 @@
     return `${baseHref}?thread=${encodeURIComponent(threadKey)}`;
   }
 
+  async function safeList(key, seedData) {
+    try {
+      return await window.AgendaGamaDataStore.list(key, seedData);
+    } catch (error) {
+      console.warn(`[Agenda Gama] Nao foi possivel carregar ${key} para o shell.`, error);
+      return [];
+    }
+  }
+
   async function loadNoticeDirectory() {
     if (!window.AgendaGamaDataStore?.list) {
       return {
@@ -307,10 +316,10 @@
     }
 
     const [turmas, alunos, responsaveis, professores] = await Promise.all([
-      window.AgendaGamaDataStore.list("turmas", []),
-      window.AgendaGamaDataStore.list("alunos", []),
-      window.AgendaGamaDataStore.list("responsaveis", []),
-      window.AgendaGamaDataStore.list("professores", [])
+      safeList("turmas", []),
+      safeList("alunos", []),
+      safeList("responsaveis", []),
+      safeList("professores", [])
     ]);
 
     return {
@@ -807,13 +816,13 @@
     if (!window.AgendaGamaDataStore) return [];
 
     const [turmas, alunos, responsaveis, professores, equipe, storedChannels, storedMessages] = await Promise.all([
-      window.AgendaGamaDataStore.list("turmas", []),
-      window.AgendaGamaDataStore.list("alunos", []),
-      window.AgendaGamaDataStore.list("responsaveis", []),
-      window.AgendaGamaDataStore.list("professores", []),
-      window.AgendaGamaDataStore.list("equipe", []),
-      window.AgendaGamaDataStore.list("channels", []),
-      window.AgendaGamaDataStore.list("messages", [])
+      safeList("turmas", []),
+      safeList("alunos", []),
+      safeList("responsaveis", []),
+      safeList("professores", []),
+      safeList("equipe", []),
+      safeList("channels", []),
+      safeList("messages", [])
     ]);
 
     const directory = { turmas, alunos, responsaveis, professores, equipe };

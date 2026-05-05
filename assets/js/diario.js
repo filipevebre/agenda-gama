@@ -180,13 +180,22 @@
     });
   }
 
+  async function safeList(key, seedData) {
+    try {
+      return await window.AgendaGamaDataStore.list(key, seedData);
+    } catch (error) {
+      console.warn(`[Agenda Gama] Nao foi possivel carregar ${key} para o diario.`, error);
+      return [];
+    }
+  }
+
   async function loadDirectory() {
     const [turmas, alunos, responsaveis, professores, equipe] = await Promise.all([
-      window.AgendaGamaDataStore.list("turmas", []),
-      window.AgendaGamaDataStore.list("alunos", []),
-      window.AgendaGamaDataStore.list("responsaveis", []),
-      window.AgendaGamaDataStore.list("professores", []),
-      window.AgendaGamaDataStore.list("equipe", [])
+      safeList("turmas", []),
+      safeList("alunos", []),
+      safeList("responsaveis", []),
+      safeList("professores", []),
+      safeList("equipe", [])
     ]);
 
     return {

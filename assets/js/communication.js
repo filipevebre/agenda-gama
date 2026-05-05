@@ -387,6 +387,15 @@
     });
   }
 
+  async function safeList(key, seedData) {
+    try {
+      return await window.AgendaGamaDataStore.list(key, seedData);
+    } catch (error) {
+      console.warn(`[Agenda Gama] Nao foi possivel carregar ${key} para a comunicacao.`, error);
+      return [];
+    }
+  }
+
   function ensureStatus(status) {
     const legacy = {
       "rascunho": "draft",
@@ -1339,13 +1348,13 @@
 
       async function loadData() {
         const [turmas, alunos, responsaveis, professores, equipe, storedChannels, storedMessages] = await Promise.all([
-          window.AgendaGamaDataStore.list("turmas", DEFAULT_DIRECTORY.turmas),
-          window.AgendaGamaDataStore.list("alunos", DEFAULT_DIRECTORY.alunos),
-          window.AgendaGamaDataStore.list("responsaveis", DEFAULT_DIRECTORY.responsaveis),
-          window.AgendaGamaDataStore.list("professores", DEFAULT_DIRECTORY.professores),
-          window.AgendaGamaDataStore.list("equipe", DEFAULT_DIRECTORY.equipe),
-          window.AgendaGamaDataStore.list("channels", STORED_CHANNELS_SEED),
-          window.AgendaGamaDataStore.list("messages", DEFAULT_MESSAGES)
+          safeList("turmas", DEFAULT_DIRECTORY.turmas),
+          safeList("alunos", DEFAULT_DIRECTORY.alunos),
+          safeList("responsaveis", DEFAULT_DIRECTORY.responsaveis),
+          safeList("professores", DEFAULT_DIRECTORY.professores),
+          safeList("equipe", DEFAULT_DIRECTORY.equipe),
+          safeList("channels", STORED_CHANNELS_SEED),
+          safeList("messages", DEFAULT_MESSAGES)
         ]);
 
         state.directory = { turmas: turmas, alunos: alunos, responsaveis: responsaveis, professores: professores, equipe: equipe };
