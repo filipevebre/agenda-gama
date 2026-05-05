@@ -7,7 +7,7 @@
       nome: "Prof. Helena Souza",
       disciplinas: "Matematica, Historia",
       turmas: "1o Ano A, 5o Ano B",
-      turno: "Manha",
+      turno: "Manhã",
       email: "professor@gama.edu.br",
       access_status: "Acesso ativo"
     },
@@ -101,13 +101,23 @@
     });
   }
 
+  function normalizeTurno(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (!normalized) return "";
+    if (normalized === "manha" || normalized === "manhã") return "Manhã";
+    if (normalized === "tarde") return "Tarde";
+    if (normalized === "noite") return "Noite";
+    if (normalized === "integral") return "Integral";
+    return String(value || "").trim();
+  }
+
   function getFormData(form) {
     const formData = new FormData(form);
     return {
       nome: String(formData.get("nome") || "").trim(),
       disciplinas: getSelectedValues("professores-disciplinas").join(", "),
       turmas: getSelectedValues("professores-turmas").join(", "),
-      turno: String(formData.get("turno") || "").trim(),
+      turno: normalizeTurno(formData.get("turno")),
       email: String(formData.get("email") || "").trim().toLowerCase()
     };
   }
@@ -121,7 +131,7 @@
 
   function populateForm(form, item) {
     form.elements.namedItem("nome").value = item.nome || "";
-    form.elements.namedItem("turno").value = item.turno || "";
+    form.elements.namedItem("turno").value = normalizeTurno(item.turno || "");
     form.elements.namedItem("email").value = item.email || "";
     setSelectedValues("professores-disciplinas", splitList(item.disciplinas));
     setSelectedValues("professores-turmas", splitList(item.turmas));
