@@ -342,7 +342,9 @@
       }) || null;
 
     const responsavelRecords = responsaveis.filter(function (item) {
-      return normalizeComparableText(item.email) === normalizeComparableText(session?.email);
+      return String(item.auth_user_id || "") === String(session?.userId || "")
+        || normalizeComparableText(item.email) === normalizeComparableText(session?.email)
+        || normalizePersonName(item.nome) === normalizePersonName(session?.name);
     });
 
     const responsavelTurmas = new Set();

@@ -214,7 +214,9 @@
         || normalizePersonName(item.nome) === normalizePersonName(session?.name);
     }) || null;
     const responsavelRecords = (directory.responsaveis || []).filter(function (item) {
-      return normalizeEmail(item.email) === normalizeEmail(session?.email);
+      return String(item.auth_user_id || "") === String(session?.userId || "")
+        || normalizeEmail(item.email) === normalizeEmail(session?.email)
+        || normalizePersonName(item.nome) === normalizePersonName(session?.name);
     });
 
     const professorTurmas = new Set();
