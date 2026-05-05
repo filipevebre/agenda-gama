@@ -73,6 +73,16 @@
       .trim();
   }
 
+  function normalizeTurmaLabel(value) {
+    return normalizeText(value)
+      .replace(/\u00aa/g, "a")
+      .replace(/\u00ba/g, "o");
+  }
+
+  function turmaMatches(left, right) {
+    return normalizeTurmaLabel(left) === normalizeTurmaLabel(right);
+  }
+
   function normalizeEmail(value) {
     return String(value || "").trim().toLowerCase();
   }
@@ -201,7 +211,7 @@
     if (professor?.turmas) {
       String(professor.turmas || "")
         .split(",")
-        .map(function (item) { return item.trim(); })
+        .map(function (item) { return item.split(" - ")[0].trim(); })
         .filter(Boolean)
         .forEach(function (turma) {
           professorTurmas.add(turma);
@@ -237,7 +247,9 @@
 
     if (session.role === "professores") {
       return sortStudents((directory.alunos || []).filter(function (student) {
-        return actorContext.professorTurmas.has(student.turma);
+        return Array.from(actorContext.professorTurmas).some(function (turma) {
+          return turmaMatches(turma, student.turma);
+        });
       }));
     }
 
@@ -258,7 +270,7 @@
 
       if (!turmaMap.has(student.turma)) {
         const matchedTurma = (directory.turmas || []).find(function (item) {
-          return normalizeText(item.nome) === normalizeText(student.turma);
+          return turmaMatches(item.nome, student.turma);
         }) || null;
 
         turmaMap.set(student.turma, {
@@ -494,7 +506,7 @@
         }
 
         return accessibleStudents.filter(function (student) {
-          return normalizeText(student.turma) === normalizeText(state.selectedStudentTurma);
+          return turmaMatches(student.turma, state.selectedStudentTurma);
         });
       }
 
@@ -508,7 +520,9 @@
 
         const selectedTurmas = new Set(getSelectedValues(refs.turmaTargets));
         return accessibleStudents.filter(function (student) {
-          return selectedTurmas.has(student.turma);
+          return Array.from(selectedTurmas).some(function (turma) {
+            return turmaMatches(turma, student.turma);
+          });
         });
       }
 
