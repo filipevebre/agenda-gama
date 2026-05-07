@@ -664,6 +664,19 @@
         refs.students.textContent = String(accessibleStudents.length);
       }
 
+      function markAccessibleEntriesSeen() {
+        if (session.role !== "responsaveis" || !window.AgendaGamaApp?.markDiaryEntriesSeen) {
+          return;
+        }
+
+        const accessibleIds = new Set(accessibleStudents.map(function (student) { return student.id; }));
+        const accessibleEntries = sortEntries(state.entries).filter(function (entry) {
+          return accessibleIds.has(entry.studentId);
+        });
+
+        window.AgendaGamaApp.markDiaryEntriesSeen(session, accessibleEntries);
+      }
+
       function renderAccessPanel() {
         if (!refs.accessPanel) return;
 
@@ -700,6 +713,7 @@
           return buildDiaryCard(entry, session, responsavelNamesMap);
         }).join("");
         renderStats(visibleEntries);
+        markAccessibleEntriesSeen();
       }
 
       function renderStudentTargetOptions(selectedValues) {

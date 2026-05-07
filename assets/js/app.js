@@ -3,6 +3,8 @@
   const NOTIFICATIONS_KEY = "agenda-gama-notifications";
   const NOTICE_STORAGE_KEY = "agenda-gama-notices";
   const NOTICE_VIEW_KEY = "agenda-gama-notice-view";
+  const DIARY_STORAGE_KEY = "agenda-gama-diario";
+  const DIARY_VIEW_KEY = "agenda-gama-diary-view";
   const THREAD_VIEW_KEY = "agenda-gama-message-thread-view";
   const THREAD_STATE_KEY = "agenda-gama-message-thread-state";
   const MESSAGE_PREFIX = "AGAMA_MESSAGE::";
@@ -246,6 +248,45 @@
     dispatchNoticeViewUpdated();
   }
 
+  function dispatchDiaryViewUpdated() {
+    window.dispatchEvent(new CustomEvent("agenda-diary-view-updated"));
+  }
+
+  function getDiarySeenMap(session) {
+    if (!session) return {};
+    const state = readJson(DIARY_VIEW_KEY, {});
+    return state[getNotificationSessionKey(session)] || {};
+  }
+
+  function getDiaryEntrySourceStamp(entry) {
+    return String(entry?.updatedAt || entry?.createdAt || entry?.id || "");
+  }
+
+  function markDiaryEntriesSeen(session, entries) {
+    if (!session || !Array.isArray(entries) || !entries.length) return;
+
+    const sessionKey = getNotificationSessionKey(session);
+    const state = readJson(DIARY_VIEW_KEY, {});
+    const sessionState = {
+      ...(state[sessionKey] || {})
+    };
+    let changed = false;
+
+    entries.forEach(function (entry) {
+      if (!entry?.id) return;
+      const sourceStamp = getDiaryEntrySourceStamp(entry);
+      if (sessionState[entry.id] === sourceStamp) return;
+      sessionState[entry.id] = sourceStamp;
+      changed = true;
+    });
+
+    if (!changed) return;
+
+    state[sessionKey] = sessionState;
+    localStorage.setItem(DIARY_VIEW_KEY, JSON.stringify(state));
+    dispatchDiaryViewUpdated();
+  }
+
   function readNotifications() {
     try {
       const raw = localStorage.getItem(NOTIFICATIONS_KEY);
@@ -294,6 +335,12 @@
     const baseHref = isOrganizationPage() ? "../comunicacao.html" : "comunicacao.html";
     if (!threadKey) return baseHref;
     return `${baseHref}?thread=${encodeURIComponent(threadKey)}`;
+  }
+
+  function getDiaryHref(entryId) {
+    const baseHref = isOrganizationPage() ? "../diario.html" : "diario.html";
+    if (!entryId) return baseHref;
+    return `${baseHref}?entry=${encodeURIComponent(entryId)}`;
   }
 
   async function safeList(key, seedData) {
@@ -348,10 +395,14 @@
     });
 
     const responsavelTurmas = new Set();
+    const linkedStudentIds = new Set();
     responsavelRecords.forEach(function (record) {
       const aluno = record.aluno_id
         ? alunos.find(function (item) { return item.id === record.aluno_id; }) || null
         : alunos.find(function (item) { return normalizeComparableText(item.nome) === normalizeComparableText(record.aluno); }) || null;
+      if (aluno?.id) {
+        linkedStudentIds.add(aluno.id);
+      }
       if (aluno?.turma) {
         responsavelTurmas.add(aluno.turma);
       }
@@ -369,6 +420,8 @@
     }
 
     return {
+      responsavelRecords: responsavelRecords,
+      linkedStudentIds: linkedStudentIds,
       responsavelTurmas: responsavelTurmas,
       professorTurmas: professorTurmas
     };
@@ -513,9 +566,14 @@
     markAll.disabled = unreadCount === 0;
 
     list.innerHTML = notifications.map((item) => {
+      const icon = item.kind === "communication-approval"
+        ? "AP"
+        : String(item.kind || "").startsWith("diary-")
+          ? "DR"
+          : "MS";
       return `
         <button type="button" class="notification-item ${item.readAt ? "" : "is-unread"}" data-notification-id="${item.id}" data-notification-href="${item.href || ""}">
-          <span class="notification-item-icon">${item.kind === "communication-approval" ? "AP" : "MS"}</span>
+          <span class="notification-item-icon">${icon}</span>
           <span class="notification-item-copy">
             <strong>${item.title}</strong>
             <span>${item.body}</span>
@@ -580,6 +638,74 @@
           sessionKey: sessionKey,
           dedupeKey: alert.dedupeKey,
           kind: alert.kind || "communication-thread",
+          title: alert.title,
+          body: alert.body,
+          href: href,
+          createdAt: alert.createdAt || new Date().toISOString(),
+          sourceStamp: String(alert.sourceStamp || alert.createdAt || ""),
+          readAt: null
+        };
+        preservedSessionNotifications.push(created);
+        toastQueue.push(created);
+        return;
+      }
+
+      const sourceStamp = String(alert.sourceStamp || alert.createdAt || "");
+      const isUpdated = existing.sourceStamp !== sourceStamp;
+      const nextNotification = {
+        ...existing,
+        kind: alert.kind || existing.kind,
+        title: alert.title,
+        body: alert.body,
+        href: href,
+        createdAt: alert.createdAt || existing.createdAt,
+        sourceStamp: sourceStamp,
+        readAt: isUpdated ? null : existing.readAt
+      };
+
+      const targetIndex = preservedSessionNotifications.findIndex((item) => item.id === existing.id);
+      if (targetIndex >= 0) {
+        preservedSessionNotifications[targetIndex] = nextNotification;
+      } else {
+        preservedSessionNotifications.push(nextNotification);
+      }
+
+      if (isUpdated) {
+        toastQueue.push(nextNotification);
+      }
+    });
+
+    const nextNotifications = otherNotifications.concat(preservedSessionNotifications);
+    writeNotifications(nextNotifications);
+    dispatchNotificationsUpdated();
+
+    if (activeShellSession && getNotificationSessionKey(activeShellSession) === sessionKey) {
+      toastQueue.slice(0, 2).forEach(showNotificationToast);
+    }
+  }
+
+  function syncDiaryNotifications(session, alerts) {
+    if (!session) return;
+
+    const sessionKey = getNotificationSessionKey(session);
+    const previousNotifications = readNotifications();
+    const currentSessionNotifications = previousNotifications.filter((item) => item.sessionKey === sessionKey);
+    const otherNotifications = previousNotifications.filter((item) => item.sessionKey !== sessionKey);
+    const activeAlerts = (alerts || []).filter(Boolean);
+    const activeKeys = new Set(activeAlerts.map((item) => item.dedupeKey));
+    const preservedSessionNotifications = currentSessionNotifications.filter((item) => !String(item.kind || "").startsWith("diary-") || activeKeys.has(item.dedupeKey));
+    const toastQueue = [];
+
+    activeAlerts.forEach((alert) => {
+      const existing = currentSessionNotifications.find((item) => item.dedupeKey === alert.dedupeKey) || null;
+      const href = alert.href || getDiaryHref(alert.entryId);
+
+      if (!existing) {
+        const created = {
+          id: generateNotificationId(),
+          sessionKey: sessionKey,
+          dedupeKey: alert.dedupeKey,
+          kind: alert.kind || "diary-entry",
           title: alert.title,
           body: alert.body,
           href: href,
@@ -900,11 +1026,48 @@
     });
   }
 
+  async function buildDiaryAlertsForSession(session) {
+    if (!window.AgendaGamaDataStore || session?.role !== "responsaveis") return [];
+
+    const [directory, entries] = await Promise.all([
+      loadNoticeDirectory(),
+      safeList("diario", [])
+    ]);
+
+    const context = buildNoticeSessionContext(session, directory);
+    const linkedStudentIds = context.linkedStudentIds || new Set();
+    if (!linkedStudentIds.size) return [];
+
+    return [...(entries || [])]
+      .filter(function (entry) {
+        return Boolean(entry?.id) && linkedStudentIds.has(entry.studentId);
+      })
+      .sort(function (left, right) {
+        return new Date(right.updatedAt || right.createdAt || 0).getTime() - new Date(left.updatedAt || left.createdAt || 0).getTime();
+      })
+      .map(function (entry) {
+        return {
+          kind: "diary-entry",
+          dedupeKey: `diary:${entry.id}`,
+          entryId: entry.id,
+          href: getDiaryHref(entry.id),
+          title: `Novo registro no diario de ${entry.studentName || "seu aluno"}`,
+          body: [entry.turma || "", entry.title || entry.category || "Novo registro disponivel"].filter(Boolean).join(" - "),
+          createdAt: entry.updatedAt || entry.createdAt || new Date().toISOString(),
+          sourceStamp: getDiaryEntrySourceStamp(entry)
+        };
+      });
+  }
+
   async function refreshShellNotifications() {
     if (!activeShellSession) return;
     try {
-      const alerts = await buildCommunicationAlertsForSession(activeShellSession);
-      syncCommunicationNotifications(activeShellSession, alerts);
+      const [communicationAlerts, diaryAlerts] = await Promise.all([
+        buildCommunicationAlertsForSession(activeShellSession),
+        buildDiaryAlertsForSession(activeShellSession)
+      ]);
+      syncCommunicationNotifications(activeShellSession, communicationAlerts);
+      syncDiaryNotifications(activeShellSession, diaryAlerts);
     } catch (error) {
       renderNotifications();
     }
@@ -1252,6 +1415,16 @@
         return;
       }
 
+      if (event.key === DIARY_VIEW_KEY) {
+        renderNotifications();
+        return;
+      }
+
+      if (event.key === DIARY_STORAGE_KEY) {
+        refreshShellNotifications();
+        return;
+      }
+
       if (!event.key || event.key.startsWith("agenda-gama-messages") || event.key === THREAD_VIEW_KEY || event.key === THREAD_STATE_KEY) {
         refreshShellNotifications();
       }
@@ -1259,6 +1432,7 @@
     window.addEventListener("agenda-notifications-updated", renderNotifications);
     window.addEventListener("agenda-notices-updated", refreshShellNoticeMarquee);
     window.addEventListener("agenda-notice-view-updated", refreshShellNoticeMarquee);
+    window.addEventListener("agenda-diary-view-updated", refreshShellNotifications);
     window.addEventListener("agenda-message-state-changed", refreshShellNotifications);
 
     if (activeNotificationTimer) {
@@ -1278,6 +1452,7 @@
   window.AgendaGamaApp = {
     mountShell,
     syncCommunicationNotifications,
-    markNoticesSeen
+    markNoticesSeen,
+    markDiaryEntriesSeen
   };
 })();
