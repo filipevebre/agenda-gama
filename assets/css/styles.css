@@ -1714,7 +1714,7 @@ td { color: var(--text-muted); }
 @media (max-width: 1100px) {
   body.app-shell-body { overflow: auto; }
   .login-layout, .grid-2, .grid-3, .status-grid, .hero-grid, .form-grid { grid-template-columns: 1fr; }
-  .app-shell { display: block; height: auto; padding: 16px; }
+  .app-shell { display: block; height: auto; padding: 14px; }
   .sidebar {
     position: fixed; top: 16px; left: -100%; z-index: 20;
     width: min(320px, calc(100vw - 32px)); height: calc(100vh - 32px);
@@ -1744,8 +1744,9 @@ td { color: var(--text-muted); }
   }
   .sidebar.open { left: 16px; }
   .app-overlay { position: fixed; inset: 0; background: rgba(11, 31, 51, 0.45); z-index: 10; }
+  .app-overlay.notification-active { z-index: 55; }
   .app-overlay.open { display: block; }
-  .main-content { height: auto; min-height: calc(100vh - 32px); padding: 18px; overflow: visible; }
+  .main-content { height: auto; min-height: calc(100vh - 28px); padding: 16px; overflow: visible; border-radius: 28px; }
   .main-stack {
     position: static;
     inset: auto;
@@ -1755,6 +1756,7 @@ td { color: var(--text-muted); }
   }
   .topbar {
     padding-bottom: 6px;
+    align-items: flex-start;
   }
   .page-content { gap: 18px; }
   .page-hero { flex-direction: column; }
@@ -1849,6 +1851,24 @@ td { color: var(--text-muted); }
   }
 }
 @media (max-width: 560px) {
+  .topbar-actions {
+    justify-content: flex-start;
+  }
+  .topbar-actions .pill {
+    order: 3;
+  }
+  .notification-panel {
+    top: 74px;
+    left: 10px;
+    right: 10px;
+    max-height: calc(100vh - 90px);
+  }
+  .notification-panel-actions .btn-sm:not(.notification-close) {
+    flex: 1 1 auto;
+  }
+  .page-actions > * {
+    flex-basis: 100%;
+  }
   .notice-status-grid {
     grid-template-columns: 1fr;
   }
@@ -2812,6 +2832,9 @@ body[data-page="comunicacao"] .thread-back-button {
 .topbar-actions {
   position: relative;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .notification-center {
   position: relative;
@@ -2960,6 +2983,10 @@ body[data-page="comunicacao"] .thread-back-button {
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
+}
+.notification-toggle.is-active {
+  background: rgba(15, 157, 122, 0.14);
+  color: var(--primary-dark);
 }
 .notification-toast-stack {
   position: fixed;
@@ -3229,6 +3256,100 @@ body[data-page="comunicacao"] .message-board-actions {
 }
 
 @media (max-width: 720px) {
+  body.notification-panel-open {
+    overflow: hidden;
+  }
+  body.notification-panel-open .main-content,
+  body.notification-panel-open .page-content {
+    overflow: hidden;
+  }
+  .app-shell {
+    padding: 10px;
+  }
+  .main-content {
+    min-height: calc(100vh - 20px);
+    padding: 14px;
+    border-radius: 24px;
+  }
+  .main-stack {
+    inset: 16px;
+    gap: 14px;
+  }
+  .topbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .topbar-actions .pill,
+  #logout-button-mobile {
+    min-height: 44px;
+  }
+  .topbar-actions .pill {
+    padding: 10px 12px;
+    font-size: 0.78rem;
+  }
+  .menu-toggle,
+  .notification-toggle {
+    width: 46px;
+    height: 46px;
+  }
+  .notification-center {
+    position: static;
+  }
+  .notification-panel {
+    position: fixed;
+    top: 84px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: min(76vh, calc(100vh - 96px));
+    border-radius: 22px;
+    z-index: 60;
+  }
+  .notification-panel-head {
+    display: grid;
+    gap: 12px;
+    padding: 14px 14px 12px;
+  }
+  .notification-panel-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .notification-panel-actions .btn-sm:not(.notification-close) {
+    flex: 1 1 180px;
+    min-height: 40px;
+  }
+  .notification-list {
+    padding: 6px;
+  }
+  .notification-item {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+  .notification-item-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+  .notification-empty {
+    padding: 16px 12px;
+  }
+  .page-actions {
+    width: 100%;
+  }
+  .page-actions > * {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 140px;
+  }
+  .page-content {
+    padding-right: 0;
+  }
   .notice-marquee {
     grid-template-columns: 44px minmax(0, 1fr);
   }
@@ -3260,10 +3381,6 @@ body[data-page="comunicacao"] .message-board-actions {
   }
   body[data-page="comunicacao"] .channel-manager-card-actions {
     justify-content: flex-start;
-  }
-  .notification-panel {
-    right: -8px;
-    width: min(360px, calc(100vw - 32px));
   }
   .notification-toast-stack {
     right: 16px;

@@ -551,6 +551,30 @@
     if (!activeNotificationElements?.panel || !activeNotificationElements?.toggle) return;
     activeNotificationElements.panel.hidden = true;
     activeNotificationElements.toggle.setAttribute("aria-expanded", "false");
+    activeNotificationElements.toggle.classList.remove("is-active");
+    syncShellOverlayState();
+  }
+
+  function syncShellOverlayState() {
+    const overlay = activeNotificationElements?.overlay;
+    const sidebar = activeNotificationElements?.sidebar;
+    const notificationPanel = activeNotificationElements?.panel;
+    if (!overlay) return;
+
+    const sidebarOpen = Boolean(sidebar?.classList.contains("open"));
+    const notificationOpen = Boolean(notificationPanel && !notificationPanel.hidden && window.innerWidth <= 720);
+
+    overlay.classList.toggle("open", sidebarOpen || notificationOpen);
+    overlay.classList.toggle("notification-active", notificationOpen);
+    document.body.classList.toggle("notification-panel-open", notificationOpen);
+  }
+
+  function setNotificationPanelState(isOpen) {
+    if (!activeNotificationElements?.panel || !activeNotificationElements?.toggle) return;
+    activeNotificationElements.panel.hidden = !isOpen;
+    activeNotificationElements.toggle.setAttribute("aria-expanded", String(isOpen));
+    activeNotificationElements.toggle.classList.toggle("is-active", isOpen);
+    syncShellOverlayState();
   }
 
   function renderNotifications() {
@@ -1296,7 +1320,9 @@
       list: notificationList,
       badge: notificationBadge,
       empty: notificationEmpty,
-      markAll: notificationMarkAll
+      markAll: notificationMarkAll,
+      overlay: overlay,
+      sidebar: sidebar
     };
     activeNoticeMarqueeElements = {
       root: noticeMarquee,
@@ -1316,7 +1342,7 @@
     toggle?.addEventListener("click", function () {
       if (window.innerWidth <= 1100) {
         sidebar.classList.toggle("open");
-        overlay.classList.toggle("open");
+        syncShellOverlayState();
         return;
       }
 
@@ -1328,7 +1354,7 @@
     collapseButton?.addEventListener("click", function () {
       if (window.innerWidth <= 1100) {
         sidebar.classList.remove("open");
-        overlay.classList.remove("open");
+        syncShellOverlayState();
         return;
       }
 
@@ -1338,15 +1364,14 @@
     });
 
     overlay?.addEventListener("click", function () {
+      closeNotificationPanel();
       sidebar.classList.remove("open");
-      overlay.classList.remove("open");
+      syncShellOverlayState();
     });
 
     notificationToggle?.addEventListener("click", function (event) {
       event.stopPropagation();
-      const nextHidden = !notificationPanel.hidden;
-      notificationPanel.hidden = nextHidden;
-      notificationToggle.setAttribute("aria-expanded", String(!nextHidden));
+      setNotificationPanelState(notificationPanel.hidden);
     });
 
     notificationList?.addEventListener("click", function (event) {
@@ -1397,6 +1422,10 @@
       if (event.key === "Escape") {
         closeNotificationPanel();
       }
+    });
+
+    window.addEventListener("resize", function () {
+      syncShellOverlayState();
     });
 
     window.addEventListener("storage", function (event) {
