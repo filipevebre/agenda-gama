@@ -1866,10 +1866,22 @@ td { color: var(--text-muted); }
     border-radius: 14px;
   }
   .topbar-actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
+    gap: 6px;
   }
   .topbar-actions .pill {
-    order: 3;
+    order: 0;
+    padding: 0 12px;
+    font-size: 0.72rem;
+  }
+  #logout-button-mobile {
+    padding: 0 14px;
+    min-height: 40px;
+  }
+  .menu-toggle,
+  .notification-toggle {
+    width: 42px;
+    height: 42px;
   }
   .notification-panel {
     top: 72px;
@@ -3323,26 +3335,46 @@ body[data-page="comunicacao"] .message-board-actions {
     gap: 14px;
   }
   .topbar {
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
   }
   .topbar-actions {
-    width: 100%;
+    width: auto;
+    margin-left: auto;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
     justify-content: flex-end;
     gap: 8px;
   }
+  .topbar-actions > * {
+    flex: 0 0 auto;
+  }
   .topbar-actions .pill,
   #logout-button-mobile {
-    min-height: 44px;
+    min-height: 42px;
   }
   .topbar-actions .pill {
-    padding: 10px 12px;
-    font-size: 0.78rem;
+    padding: 0 14px;
+    font-size: 0.76rem;
+  }
+  #logout-button-mobile {
+    padding: 0 16px;
+    border-radius: 14px;
   }
   .menu-toggle,
   .notification-toggle {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+  .notification-badge {
+    top: -5px;
+    right: -2px;
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.66rem;
   }
   .notification-center {
     position: static;
