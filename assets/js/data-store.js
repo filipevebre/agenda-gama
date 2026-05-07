@@ -10,10 +10,15 @@
     channels: "communication_channels",
     messages: "communication_messages"
   };
-  const LOCAL_ONLY_KEYS = new Set(["diario"]);
+  const LOCAL_ONLY_KEYS = new Set();
+  const MIGRATABLE_KEYS = new Set(["diario"]);
 
   function getStorageKey(key) {
     return `agenda-gama-${key}`;
+  }
+
+  function getMigrationFlagKey(key) {
+    return `agenda-gama-remote-migrated-${key}`;
   }
 
   function generateId() {
@@ -63,8 +68,45 @@
     return await window.AgendaGamaSupabase.isConfigured();
   }
 
+  async function migrateLocalToRemoteIfNeeded(key, seedData) {
+    if (!MIGRATABLE_KEYS.has(key)) return;
+    if (localStorage.getItem(getMigrationFlagKey(key)) === "done") return;
+
+    const raw = localStorage.getItem(getStorageKey(key));
+    if (!raw) {
+      localStorage.setItem(getMigrationFlagKey(key), "done");
+      return;
+    }
+
+    let localItems = [];
+    try {
+      localItems = normalizeLocalItems(JSON.parse(raw));
+    } catch (error) {
+      localStorage.setItem(getMigrationFlagKey(key), "done");
+      return;
+    }
+
+    const seedIds = new Set(normalizeLocalItems(seedData || []).map((item) => item.id));
+    const migratableItems = localItems.filter((item) => !seedIds.has(item.id));
+    if (!migratableItems.length) {
+      localStorage.setItem(getMigrationFlagKey(key), "done");
+      return;
+    }
+
+    const remoteItems = await window.AgendaGamaSupabase.fetchTable(getTableName(key));
+    const remoteIds = new Set((remoteItems || []).map((item) => item.id));
+
+    for (const item of migratableItems) {
+      if (remoteIds.has(item.id)) continue;
+      await window.AgendaGamaSupabase.saveRow(getTableName(key), item);
+    }
+
+    localStorage.setItem(getMigrationFlagKey(key), "done");
+  }
+
   async function list(key, seedData) {
     if (!LOCAL_ONLY_KEYS.has(key) && await useRemote()) {
+      await migrateLocalToRemoteIfNeeded(key, seedData);
       return await window.AgendaGamaSupabase.fetchTable(getTableName(key));
     }
 

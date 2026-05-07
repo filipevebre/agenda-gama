@@ -506,6 +506,11 @@
         pendingPhotos: []
       };
 
+      async function reloadEntries() {
+        state.entries = await window.AgendaGamaDataStore.list("diario", DIARIO_SEED);
+        render();
+      }
+
       function setFeedback(message, type) {
         if (!refs.feedback) return;
         refs.feedback.textContent = message || "";
@@ -951,10 +956,11 @@
 
       window.addEventListener("storage", function (event) {
         if (event.key !== "agenda-gama-diario") return;
-        window.AgendaGamaDataStore.list("diario", DIARIO_SEED).then(function (items) {
-          state.entries = items;
-          render();
-        });
+        reloadEntries();
+      });
+
+      window.addEventListener("focus", function () {
+        reloadEntries();
       });
 
       populateTargetOptions();
