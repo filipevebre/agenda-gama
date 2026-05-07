@@ -195,9 +195,11 @@
     let response;
 
     if (payload.id) {
-      const id = payload.id;
-      delete payload.id;
-      response = await client.from(tableName).update(payload).eq("id", id).select("*").single();
+      response = await client
+        .from(tableName)
+        .upsert(payload, { onConflict: "id" })
+        .select("*")
+        .single();
     } else {
       response = await client.from(tableName).insert(payload).select("*").single();
     }
