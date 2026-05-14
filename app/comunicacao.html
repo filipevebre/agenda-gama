@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260507-6">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-1">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
@@ -26,7 +26,7 @@
           <div class="message-sidebar-top clean-sidebar-top">
             <div class="message-sidebar-title">
               <h1>Canais Familia</h1>
-              <p>Atendimento escolar por canal e por familia.</p>
+              <p>Canais e conversas do seu perfil.</p>
             </div>
             <label class="field search-field compact-search-field">
               <span>Buscar conversa</span>
@@ -42,7 +42,7 @@
               <div class="section-heading compact-heading">
                 <div>
                   <h2>Canais ativos</h2>
-                  <p>Turmas e setores visiveis no seu perfil.</p>
+                  <p>Turmas e setores disponiveis.</p>
                 </div>
               </div>
               <div id="message-channel-list" class="message-channel-list"></div>
@@ -51,8 +51,8 @@
             <section class="message-sidebar-section message-sidebar-secondary">
               <div class="section-heading compact-heading">
                 <div>
-                  <h2>Atalhos</h2>
-                  <p>Conversas recentes e prioritarias.</p>
+                  <h2>Recentes</h2>
+                  <p>Conversas em andamento.</p>
                 </div>
               </div>
               <div id="sidebar-thread-list" class="message-thread-list"></div>
@@ -194,7 +194,7 @@
               <div class="section-heading compact-heading">
                 <div>
                   <h2 id="new-thread-title">Nova conversa</h2>
-                  <p>Abra um novo atendimento com familia, setor ou canal.</p>
+                  <p>Escolha o destino e abra o atendimento.</p>
                 </div>
               </div>
               <button type="button" id="close-new-thread" class="btn btn-secondary message-modal-close" aria-label="Fechar nova conversa">x</button>
@@ -256,7 +256,7 @@
               <div class="section-heading compact-heading">
                 <div>
                   <h2 id="channel-manager-title">Gerenciar canais</h2>
-                  <p>Crie novos canais e acompanhe os canais ja cadastrados no sistema.</p>
+                  <p>Crie, revise e exclua canais.</p>
                 </div>
               </div>
               <button type="button" id="close-channel-manager" class="btn btn-secondary message-modal-close" aria-label="Fechar gerenciamento de canais">x</button>
@@ -312,7 +312,7 @@
               <div class="section-heading compact-heading">
                 <div>
                   <h2 id="forward-message-title">Encaminhar mensagem</h2>
-                  <p>Escolha um ou mais responsaveis para receber a mesma mensagem.</p>
+                  <p>Envie esta mensagem para outros responsaveis.</p>
                 </div>
               </div>
               <button type="button" id="close-forward-message" class="btn btn-secondary message-modal-close" aria-label="Fechar encaminhamento">x</button>
@@ -366,7 +366,7 @@
   <script src="../assets/js/config.js?v=20260417-20"></script>
   <script src="../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../assets/js/auth.js?v=20260417-20"></script>
-  <script src="../assets/js/app.js?v=20260507-3"></script>
+  <script src="../assets/js/app.js?v=20260514-1"></script>
   <script src="../assets/js/data-store.js?v=20260507-2"></script>
   <script src="../assets/js/communication.js?v=20260505-4"></script>
   <script>
@@ -376,3 +376,4 @@
   <script src="/assets/js/pwa.js?v=20260507-1"></script>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -14,16 +14,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260507-6">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260514-1">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
   <template id="page-template">
     <section class="page-hero">
       <div>
-        <span class="pill">Organização</span>
+        <span class="pill">OrganizaÃ§Ã£o</span>
         <h1>Cadastro de alunos</h1>
-        <p>Cadastre ou edite alunos em uma página separada da listagem.</p>
+        <p>Cadastre ou edite alunos em uma pÃ¡gina separada da listagem.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -38,7 +38,7 @@
         <div class="section-heading"><div><h2>Novo aluno</h2><p>Cadastre matricula e vincule o estudante a uma turma ja cadastrada.</p></div></div>
         <form id="alunos-form" class="form-grid">
           <label class="field"><span>Nome completo</span><input name="nome" placeholder="Ex.: Ana Clara Silva" required></label>
-          <label class="field"><span>Matrícula</span><input name="matricula" placeholder="Ex.: 20260045" required></label>
+          <label class="field"><span>MatrÃ­cula</span><input name="matricula" placeholder="Ex.: 20260045" required></label>
           <label class="field full">
             <span>Turma</span>
             <input id="aluno-turma-search" name="turma_busca" list="aluno-turmas-list" placeholder="Digite o nome da turma cadastrada" autocomplete="off" required>
@@ -61,7 +61,7 @@
   <script src="../../assets/js/config.js?v=20260416-9"></script>
   <script src="../../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../../assets/js/auth.js?v=20260416-9"></script>
-  <script src="../../assets/js/app.js?v=20260507-3"></script>
+  <script src="../../assets/js/app.js?v=20260514-1"></script>
   <script src="../../assets/js/data-store.js?v=20260507-2"></script>
   <script src="../../assets/js/forms.js?v=20260416-9"></script>
   <script>
@@ -78,7 +78,7 @@
       return String(value || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[��]/g, "")
+        .replace(/[ï¿½ï¿½]/g, "")
         .trim()
         .toLowerCase();
     }
@@ -228,4 +228,5 @@
   <script src="/assets/js/pwa.js?v=20260507-1"></script>
 </body>
 </html>
+
 

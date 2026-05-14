@@ -1151,6 +1151,30 @@
     toggleButton.textContent = collapsed ? ">" : "=";
   }
 
+  function getPageContext() {
+    const navSections = getNavItems();
+    const currentPath = window.location.href;
+
+    for (const section of navSections) {
+      const matchedItem = section.items.find(function (item) {
+        return normalizeHref(item.href) === currentPath;
+      });
+
+      if (matchedItem) {
+        return {
+          section: section.section,
+          label: matchedItem.label
+        };
+      }
+    }
+
+    const rawTitle = String(document.title || "Agenda Gama").split("|").pop() || "Agenda Gama";
+    return {
+      section: isOrganizationPage() ? "Organizacao" : "Area atual",
+      label: rawTitle.trim()
+    };
+  }
+
   async function mountShell() {
     const session = await window.AgendaGamaAuth.protectPage();
     if (!session) return;
@@ -1162,6 +1186,7 @@
     appShell.className = "app-shell";
     const currentPath = window.location.href;
     const collapsed = getCollapsedState();
+    const pageContext = getPageContext();
 
     const sidebarSections = getNavItems().map((section) => {
       const items = section.items
@@ -1230,6 +1255,10 @@
         <div class="main-stack" id="main-stack">
           <div class="topbar">
             <button id="menu-toggle" class="menu-toggle btn" aria-label="Abrir menu">${collapsed ? ">" : "="}</button>
+            <div class="topbar-context" aria-label="Pagina atual">
+              <small>${pageContext.section}</small>
+              <strong>${pageContext.label}</strong>
+            </div>
             <div class="action-row topbar-actions" style="margin-top: 0;">
               <div class="notification-center" id="notification-center">
                 <button id="notification-toggle" class="btn btn-secondary notification-toggle" aria-label="Abrir notificacoes" aria-expanded="false">
