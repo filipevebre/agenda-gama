@@ -2318,6 +2318,12 @@ body.pwa-standalone.app-shell-body .main-content {
   gap: 12px;
   flex-wrap: wrap;
 }
+.message-toolbar-compact-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
 .message-toolbar-stats {
   display: flex;
   align-items: center;
@@ -2339,6 +2345,32 @@ body.pwa-standalone.app-shell-body .main-content {
   color: var(--title);
   font-family: "Outfit", sans-serif;
   font-size: 0.98rem;
+}
+.message-help-trigger {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border: 1px solid rgba(25, 50, 77, 0.12);
+  border-radius: 999px;
+  background: rgba(244, 247, 251, 0.94);
+  color: var(--title);
+  font-family: "Outfit", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.message-help-trigger:hover {
+  background: rgba(232, 239, 247, 0.98);
+}
+.message-highlights-stats {
+  margin-bottom: 8px;
+}
+.message-highlights-list-section {
+  gap: 10px;
+}
+.message-highlights-list-section > .section-heading {
+  margin-bottom: 0;
 }
 .message-board-header {
   padding: 0 20px;
@@ -3407,6 +3439,17 @@ body[data-page="comunicacao"] .message-modal-close {
 body[data-page="comunicacao"] .message-new-thread-modal-panel .toolbar {
   justify-content: flex-end;
 }
+body[data-page="comunicacao"] .message-highlights-stats {
+  justify-content: flex-start;
+}
+body[data-page="comunicacao"] .message-highlights-list-section {
+  display: grid;
+}
+body[data-page="comunicacao"] .message-highlights-list-section .message-sidebar-thread {
+  border-radius: 16px;
+  border: 1px solid rgba(18, 38, 63, 0.08);
+  background: #ffffff;
+}
 body[data-page="comunicacao"] .channel-manager-panel {
   display: grid;
   gap: 18px;
@@ -3835,6 +3878,9 @@ body[data-page="comunicacao"] .thread-templates-panel {
     padding: 18px;
     border-radius: 20px;
   }
+  .message-toolbar-compact-actions {
+    margin-left: 0;
+  }
   .diary-help-trigger {
     width: 34px;
     height: 34px;
@@ -3906,6 +3952,16 @@ body[data-page="comunicacao"] .thread-templates-panel {
     width: 42px;
     height: 42px;
     border-radius: 14px;
+  }
+  .message-toolbar-compact-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .message-help-trigger {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 0.95rem;
   }
   .app-modal {
     padding: 10px;

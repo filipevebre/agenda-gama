@@ -1215,12 +1215,18 @@
         layout: document.getElementById("message-central-layout"),
         searchInput: document.getElementById("message-search-input"),
         toggleNewThread: document.getElementById("toggle-new-thread"),
+        openMessageHelp: document.getElementById("open-message-help"),
+        openMessageHighlights: document.getElementById("open-message-highlights"),
         openChannelManager: document.getElementById("open-channel-manager"),
         newThreadModal: document.getElementById("new-thread-modal"),
+        messageHelpModal: document.getElementById("message-help-modal"),
+        messageHighlightsModal: document.getElementById("message-highlights-modal"),
         newThreadPanel: document.getElementById("new-thread-panel"),
         newThreadForm: document.getElementById("new-thread-form"),
         cancelNewThread: document.getElementById("cancel-new-thread"),
         closeNewThread: document.getElementById("close-new-thread"),
+        closeMessageHelp: document.getElementById("close-message-help"),
+        closeMessageHighlights: document.getElementById("close-message-highlights"),
         newThreadFeedback: document.getElementById("new-thread-feedback"),
         newThreadType: document.getElementById("new-thread-type"),
         newThreadChannelField: document.getElementById("new-thread-channel-field"),
@@ -1651,7 +1657,11 @@
       }
 
       function updateModalBodyState() {
-        const hasOpenModal = !refs.newThreadModal?.hidden || !refs.channelManagerModal?.hidden || !refs.forwardMessageModal?.hidden;
+        const hasOpenModal = !refs.newThreadModal?.hidden
+          || !refs.channelManagerModal?.hidden
+          || !refs.forwardMessageModal?.hidden
+          || !refs.messageHelpModal?.hidden
+          || !refs.messageHighlightsModal?.hidden;
         document.body.classList.toggle("message-modal-open", Boolean(hasOpenModal));
       }
 
@@ -1674,6 +1684,30 @@
         window.requestAnimationFrame(function () {
           getNewThreadFocusTarget()?.focus();
         });
+      }
+
+      function openMessageHelpModal() {
+        if (!refs.messageHelpModal) return;
+        refs.messageHelpModal.hidden = false;
+        updateModalBodyState();
+      }
+
+      function closeMessageHelpModal() {
+        if (!refs.messageHelpModal) return;
+        refs.messageHelpModal.hidden = true;
+        updateModalBodyState();
+      }
+
+      function openMessageHighlightsModal() {
+        if (!refs.messageHighlightsModal) return;
+        refs.messageHighlightsModal.hidden = false;
+        updateModalBodyState();
+      }
+
+      function closeMessageHighlightsModal() {
+        if (!refs.messageHighlightsModal) return;
+        refs.messageHighlightsModal.hidden = true;
+        updateModalBodyState();
       }
 
       function closeNewThreadModal() {
@@ -2893,6 +2927,14 @@
         openNewThreadModal();
       });
 
+      refs.openMessageHelp?.addEventListener("click", function () {
+        openMessageHelpModal();
+      });
+
+      refs.openMessageHighlights?.addEventListener("click", function () {
+        openMessageHighlightsModal();
+      });
+
       refs.openChannelManager?.addEventListener("click", function () {
         openChannelManagerModal();
       });
@@ -2905,9 +2947,27 @@
         closeNewThreadModal();
       });
 
+      refs.closeMessageHelp?.addEventListener("click", function () {
+        closeMessageHelpModal();
+      });
+
+      refs.closeMessageHighlights?.addEventListener("click", function () {
+        closeMessageHighlightsModal();
+      });
+
       refs.newThreadModal?.addEventListener("click", function (event) {
         if (!event.target.closest("[data-close-new-thread]")) return;
         closeNewThreadModal();
+      });
+
+      refs.messageHelpModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-close-message-help]")) return;
+        closeMessageHelpModal();
+      });
+
+      refs.messageHighlightsModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-close-message-highlights]")) return;
+        closeMessageHighlightsModal();
       });
 
       refs.cancelForwardMessage?.addEventListener("click", function () {
@@ -2938,6 +2998,14 @@
 
       document.addEventListener("keydown", function (event) {
         if (event.key !== "Escape") return;
+        if (!refs.messageHighlightsModal?.hidden) {
+          closeMessageHighlightsModal();
+          return;
+        }
+        if (!refs.messageHelpModal?.hidden) {
+          closeMessageHelpModal();
+          return;
+        }
         if (!refs.forwardMessageModal?.hidden) {
           closeForwardMessageModal();
           return;
@@ -3165,6 +3233,7 @@
           rebuildThreads();
         }
         setViewMode("thread");
+        closeMessageHighlightsModal();
         renderAll();
         if (refs.threadBody) refs.threadBody.scrollTop = refs.threadBody.scrollHeight;
       }

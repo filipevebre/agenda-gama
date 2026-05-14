@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-2">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-3">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
@@ -47,27 +47,15 @@
               </div>
               <div id="message-channel-list" class="message-channel-list"></div>
             </section>
-
-            <section class="message-sidebar-section message-sidebar-secondary">
-              <div class="section-heading compact-heading">
-                <div>
-                  <h2>Recentes</h2>
-                  <p>Conversas em andamento.</p>
-                </div>
-              </div>
-              <div id="sidebar-thread-list" class="message-thread-list"></div>
-              <p id="sidebar-thread-empty" class="empty-state" hidden>Nenhuma conversa encontrada.</p>
-            </section>
           </div>
         </aside>
 
         <section class="panel message-board-column">
           <div class="message-board-toolbar">
             <button type="button" id="toggle-new-thread" class="btn btn-primary btn-sm">Nova conversa</button>
-            <div class="message-toolbar-stats">
-              <span class="message-toolbar-stat">Abertas <strong id="stat-open-count">00</strong></span>
-              <span class="message-toolbar-stat">Nao lidas <strong id="stat-unread-count">00</strong></span>
-              <span class="message-toolbar-stat">Aprovar <strong id="stat-approval-count">00</strong></span>
+            <div class="message-toolbar-compact-actions">
+              <button type="button" id="open-message-highlights" class="btn btn-secondary btn-sm">Destaques</button>
+              <button type="button" id="open-message-help" class="message-help-trigger" aria-label="Como funciona a comunicacao">?</button>
             </div>
             <div class="message-view-switcher" aria-label="Alternar painel">
               <button type="button" class="message-view-toggle active" data-view="board">Atendimentos</button>
@@ -360,6 +348,65 @@
           </article>
         </div>
       </div>
+
+      <div id="message-help-modal" class="message-modal" hidden>
+        <div class="message-modal-backdrop" data-close-message-help="true"></div>
+        <div class="message-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="message-help-title">
+          <article class="message-new-thread-panel message-new-thread-modal-panel">
+            <div class="message-modal-header">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2 id="message-help-title">Como funciona</h2>
+                  <p>Resumo rapido para nao sobrecarregar o mural.</p>
+                </div>
+              </div>
+              <button type="button" id="close-message-help" class="btn btn-secondary message-modal-close" aria-label="Fechar ajuda">x</button>
+            </div>
+
+            <ul class="feature-list">
+              <li>Use os canais da lateral para filtrar a comunicacao por turma ou setor.</li>
+              <li>Abra uma conversa no mural para responder no chat completo.</li>
+              <li>`Destaques` mostra conversas recentes e os numeros gerais sem ocupar o topo da tela.</li>
+              <li>Professores, funcionarios e administradores podem iniciar atendimentos e encaminhar mensagens.</li>
+              <li>Responsaveis veem apenas suas conversas e canais ligados aos filhos.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+
+      <div id="message-highlights-modal" class="message-modal" hidden>
+        <div class="message-modal-backdrop" data-close-message-highlights="true"></div>
+        <div class="message-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="message-highlights-title">
+          <article class="message-new-thread-panel message-new-thread-modal-panel">
+            <div class="message-modal-header">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2 id="message-highlights-title">Destaques</h2>
+                  <p>Resumo rapido e conversas recentes.</p>
+                </div>
+              </div>
+              <button type="button" id="close-message-highlights" class="btn btn-secondary message-modal-close" aria-label="Fechar destaques">x</button>
+            </div>
+
+            <div class="message-toolbar-stats message-highlights-stats">
+              <span class="message-toolbar-stat">Abertas <strong id="stat-open-count">00</strong></span>
+              <span class="message-toolbar-stat">Nao lidas <strong id="stat-unread-count">00</strong></span>
+              <span class="message-toolbar-stat">Aprovar <strong id="stat-approval-count">00</strong></span>
+            </div>
+
+            <section class="message-sidebar-section message-highlights-list-section">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2>Recentes</h2>
+                  <p>Conversas em andamento.</p>
+                </div>
+              </div>
+              <div id="sidebar-thread-list" class="message-thread-list"></div>
+              <p id="sidebar-thread-empty" class="empty-state" hidden>Nenhuma conversa encontrada.</p>
+            </section>
+          </article>
+        </div>
+      </div>
     </section>
   </template>
 
@@ -368,7 +415,7 @@
   <script src="../assets/js/auth.js?v=20260417-20"></script>
   <script src="../assets/js/app.js?v=20260514-1"></script>
   <script src="../assets/js/data-store.js?v=20260507-2"></script>
-  <script src="../assets/js/communication.js?v=20260505-4"></script>
+  <script src="../assets/js/communication.js?v=20260514-3"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();
