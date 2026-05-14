@@ -209,6 +209,14 @@ button, input, select, textarea { font: inherit; }
   background: rgba(255, 255, 255, 0.12);
   color: white;
 }
+.install-app-button {
+  margin-bottom: 10px;
+  background: rgba(103, 183, 255, 0.18) !important;
+  border: 1px solid rgba(160, 214, 255, 0.26);
+}
+.install-app-button:hover {
+  background: rgba(103, 183, 255, 0.26) !important;
+}
 .sidebar.collapsed .sidebar-brand-text,
 .sidebar.collapsed .user-card strong,
 .sidebar.collapsed .user-card .user-role,
@@ -1711,6 +1719,14 @@ td { color: var(--text-muted); }
   border-radius: 999px;
 }
 .app-overlay { display: none; }
+html.pwa-standalone,
+body.pwa-standalone {
+  overscroll-behavior: none;
+}
+body.pwa-standalone.app-shell-body .main-content {
+  padding-top: calc(24px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
 @media (max-width: 1100px) {
   body.app-shell-body { overflow: auto; }
   .login-layout, .grid-2, .grid-3, .status-grid, .hero-grid, .form-grid { grid-template-columns: 1fr; }
@@ -1741,6 +1757,10 @@ td { color: var(--text-muted); }
     background: transparent;
     box-shadow: none;
     border: 0;
+  }
+  body.pwa-standalone.app-shell-body .main-content {
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
   .sidebar.open { left: 16px; }
   .app-overlay { position: fixed; inset: 0; background: rgba(11, 31, 51, 0.45); z-index: 10; }

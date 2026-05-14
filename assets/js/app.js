@@ -1213,6 +1213,10 @@
         </div>
 
         <div class="sidebar-footer">
+          <button id="install-app-button" type="button" class="btn install-app-button" title="Instalar app" hidden>
+            <span class="sidebar-link-icon">AP</span>
+            <span class="sidebar-footer-text">Instalar app</span>
+          </button>
           <button id="logout-button" class="btn" title="Sair e trocar conta">
             <span class="sidebar-link-icon">SA</span>
             <span class="sidebar-footer-text">Sair e trocar conta</span>
@@ -1314,6 +1318,7 @@
     const noticeMarqueeKicker = document.getElementById("notice-marquee-kicker");
     const noticeMarqueeTitle = document.getElementById("notice-marquee-title");
     const noticeMarqueeMeta = document.getElementById("notice-marquee-meta");
+    const installAppButton = document.getElementById("install-app-button");
     activeNotificationElements = {
       toggle: notificationToggle,
       panel: notificationPanel,
@@ -1337,6 +1342,38 @@
     async function logout() {
       await window.AgendaGamaAuth.clearSession();
       window.location.href = isOrganizationPage() ? "../../index.html" : "../index.html";
+    }
+
+    function syncInstallAppButton() {
+      if (!installAppButton) return;
+
+      const pwa = window.AgendaGamaPWA;
+      const isStandalone = Boolean(pwa?.isStandalone?.());
+      const isIosBrowser = Boolean(pwa?.isIosBrowser?.());
+      const canInstall = Boolean(pwa?.canInstall?.());
+      const shouldShow = !isStandalone && (canInstall || isIosBrowser);
+
+      installAppButton.hidden = !shouldShow;
+      installAppButton.title = canInstall ? "Instalar app" : "Como instalar no celular";
+      installAppButton.querySelector(".sidebar-footer-text").textContent = canInstall ? "Instalar app" : "Como instalar";
+    }
+
+    async function handleInstallApp() {
+      const pwa = window.AgendaGamaPWA;
+      if (!pwa || pwa.isStandalone?.()) return;
+
+      if (pwa.canInstall?.()) {
+        await pwa.promptInstall();
+        syncInstallAppButton();
+        return;
+      }
+
+      if (pwa.isIosBrowser?.()) {
+        window.alert("No iPhone, toque em Compartilhar e depois em 'Adicionar à Tela de Início'.");
+        return;
+      }
+
+      window.alert("Use o menu do navegador e escolha a opção de instalar este app.");
     }
 
     toggle?.addEventListener("click", function () {
@@ -1463,6 +1500,11 @@
     window.addEventListener("agenda-notice-view-updated", refreshShellNoticeMarquee);
     window.addEventListener("agenda-diary-view-updated", refreshShellNotifications);
     window.addEventListener("agenda-message-state-changed", refreshShellNotifications);
+    window.addEventListener("agenda-pwa-ready", syncInstallAppButton);
+    window.addEventListener("agenda-pwa-installable", syncInstallAppButton);
+    window.addEventListener("agenda-pwa-installed", syncInstallAppButton);
+    window.addEventListener("focus", syncInstallAppButton);
+    window.addEventListener("load", syncInstallAppButton, { once: true });
 
     if (activeNotificationTimer) {
       window.clearInterval(activeNotificationTimer);
@@ -1474,6 +1516,8 @@
 
     document.getElementById("logout-button")?.addEventListener("click", logout);
     document.getElementById("logout-button-mobile")?.addEventListener("click", logout);
+    installAppButton?.addEventListener("click", handleInstallApp);
+    syncInstallAppButton();
     window.dispatchEvent(new CustomEvent("agenda-shell-ready", { detail: { session } }));
     return session;
   }
