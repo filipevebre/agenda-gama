@@ -488,8 +488,10 @@
 
       const refs = {
         openEditor: document.getElementById("diario-open-editor"),
+        openHelp: document.getElementById("diario-open-help"),
         modal: document.getElementById("diario-editor-modal"),
         viewModal: document.getElementById("diario-view-modal"),
+        helpModal: document.getElementById("diario-help-modal"),
         form: document.getElementById("diario-form"),
         feedback: document.getElementById("diario-feedback"),
         boardFeedback: document.getElementById("diario-board-feedback"),
@@ -510,6 +512,7 @@
         uploadHint: document.getElementById("diario-upload-hint"),
         cancel: document.getElementById("diario-cancel"),
         close: document.getElementById("diario-editor-close"),
+        helpClose: document.getElementById("diario-help-close"),
         viewClose: document.getElementById("diario-view-close"),
         viewContent: document.getElementById("diario-view-content"),
         viewActions: document.getElementById("diario-view-actions"),
@@ -572,13 +575,21 @@
       }
 
       function syncBodyModalState() {
-        const isAnyModalOpen = Boolean(refs.modal && !refs.modal.hidden) || Boolean(refs.viewModal && !refs.viewModal.hidden);
+        const isAnyModalOpen = Boolean(refs.modal && !refs.modal.hidden)
+          || Boolean(refs.viewModal && !refs.viewModal.hidden)
+          || Boolean(refs.helpModal && !refs.helpModal.hidden);
         document.body.classList.toggle("app-modal-open", isAnyModalOpen);
       }
 
       function setViewModalState(isOpen) {
         if (!refs.viewModal) return;
         refs.viewModal.hidden = !isOpen;
+        syncBodyModalState();
+      }
+
+      function setHelpModalState(isOpen) {
+        if (!refs.helpModal) return;
+        refs.helpModal.hidden = !isOpen;
         syncBodyModalState();
       }
 
@@ -703,6 +714,14 @@
           refs.viewActions.hidden = true;
         }
         setViewModalState(false);
+      }
+
+      function openHelp() {
+        setHelpModalState(true);
+      }
+
+      function closeHelp() {
+        setHelpModalState(false);
       }
 
       function renderUploadPreview() {
@@ -848,6 +867,7 @@
         if (!canCreateEntries(session)) return;
 
         closeView();
+        closeHelp();
         setEditorModalState(true);
         state.editingId = entry?.id || null;
         refs.editorTitle.textContent = entry ? "Editar registro do dia" : "Novo registro do dia";
@@ -1044,8 +1064,16 @@
         openEditor(null);
       });
 
+      refs.openHelp?.addEventListener("click", function () {
+        openHelp();
+      });
+
       refs.close?.addEventListener("click", function () {
         closeEditor();
+      });
+
+      refs.helpClose?.addEventListener("click", function () {
+        closeHelp();
       });
 
       refs.viewClose?.addEventListener("click", function () {
@@ -1060,6 +1088,11 @@
       refs.viewModal?.addEventListener("click", function (event) {
         if (!event.target.closest("[data-diario-close-view]")) return;
         closeView();
+      });
+
+      refs.helpModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-diario-close-help]")) return;
+        closeHelp();
       });
 
       refs.viewEdit?.addEventListener("click", function () {
@@ -1131,6 +1164,10 @@
         }
         if (event.key === "Escape" && refs.viewModal && !refs.viewModal.hidden) {
           closeView();
+          return;
+        }
+        if (event.key === "Escape" && refs.helpModal && !refs.helpModal.hidden) {
+          closeHelp();
         }
       });
 

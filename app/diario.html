@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-3">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-4">
 </head>
 <body data-page="diario" data-roles="administrador,funcionarios,professores,responsaveis">
   <div id="app-shell"></div>
@@ -43,27 +43,14 @@
       </div>
     </section>
 
-    <section class="grid grid-2 diary-layout">
-      <aside class="stack-sm diary-side-column">
-        <details class="panel compact-guide-panel">
-          <summary class="compact-guide-summary">
-            <div>
-              <strong>Como funciona</strong>
-              <small>Resumo rapido do uso do diario.</small>
-            </div>
-          </summary>
-          <div class="compact-guide-body">
-            <div id="diario-access-panel" class="stack-sm"></div>
-          </div>
-        </details>
-      </aside>
-
+    <section class="stack-sm diary-layout-simple">
       <article class="panel diary-board-panel">
         <div class="section-heading">
           <div>
             <h2>Registros enviados</h2>
             <p>Use os filtros para localizar o historico.</p>
           </div>
+          <button id="diario-open-help" type="button" class="diary-help-trigger" aria-label="Como funciona o diario">?</button>
         </div>
 
         <div class="toolbar diary-filter-toolbar">
@@ -95,6 +82,24 @@
         <p id="diario-empty" class="empty-state" hidden>Nenhum registro encontrado para os filtros atuais.</p>
       </article>
     </section>
+
+    <div id="diario-help-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-diario-close-help="true"></div>
+      <div class="app-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="diario-help-title">
+        <article class="panel app-modal-panel diary-help-panel">
+          <div class="app-modal-header">
+            <div class="section-heading">
+              <div>
+                <h2 id="diario-help-title">Como funciona o diario</h2>
+                <p>Resumo rapido para nao sobrecarregar a tela principal.</p>
+              </div>
+            </div>
+            <button id="diario-help-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar ajuda do diario">x</button>
+          </div>
+          <div id="diario-access-panel" class="stack-sm"></div>
+        </article>
+      </div>
+    </div>
 
     <div id="diario-editor-modal" class="app-modal" hidden>
       <div class="app-modal-backdrop" data-diario-close-modal="true"></div>
@@ -214,7 +219,7 @@
   <script src="../assets/js/auth.js?v=20260416-7"></script>
   <script src="../assets/js/data-store.js?v=20260507-2"></script>
   <script src="../assets/js/app.js?v=20260514-1"></script>
-  <script src="../assets/js/diario.js?v=20260514-3"></script>
+  <script src="../assets/js/diario.js?v=20260514-4"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDiario.mountDiario();
