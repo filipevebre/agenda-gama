@@ -404,6 +404,12 @@
     `;
   }
 
+  function buildBodyPreview(value) {
+    const text = String(value || "").replace(/\s+/g, " ").trim();
+    if (text.length <= 140) return text;
+    return `${text.slice(0, 137)}...`;
+  }
+
   function buildDiaryCard(entry, session, responsavelNamesMap) {
     const key = entry.studentId || normalizeText(entry.studentName);
     const responsavelNames = (responsavelNamesMap.get(key) || []).slice(0, 3);
@@ -411,17 +417,8 @@
       ? responsavelNames.join(", ")
       : "Familia vinculada";
 
-    const actions = canManageEntry(session, entry)
-      ? `
-        <div class="diary-card-actions">
-          <button type="button" class="btn btn-secondary btn-sm" data-diario-edit-id="${escapeHtml(entry.id)}">Editar</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-diario-remove-id="${escapeHtml(entry.id)}">Excluir</button>
-        </div>
-      `
-      : "";
-
     return `
-      <article class="diary-card">
+      <article class="diary-card diary-card-preview" data-diario-open-id="${escapeHtml(entry.id)}" tabindex="0" role="button" aria-label="Abrir registro de ${escapeHtml(entry.studentName)}">
         <div class="card-head diary-card-head">
           <div>
             <h3 class="card-title">${escapeHtml(entry.title || "Registro do dia")}</h3>
@@ -438,14 +435,48 @@
           ${entry.photos?.length ? `<span class="tag">Fotos ${entry.photos.length}</span>` : ""}
           ${entry.batchId ? `<span class="tag">Envio em lote</span>` : ""}
         </div>
-        <p class="diary-card-body">${escapeHtml(entry.body)}</p>
-        ${buildPhotoGrid(entry.photos)}
+        <p class="diary-card-preview-body">${escapeHtml(buildBodyPreview(entry.body))}</p>
         <div class="diary-card-footer">
           <small><strong>Professor(a):</strong> ${escapeHtml(entry.authorName || "Equipe escolar")}</small>
           <small><strong>Responsaveis:</strong> ${escapeHtml(responsavelSummary)}</small>
         </div>
-        ${actions}
+        <div class="diary-card-actions">
+          <button type="button" class="btn btn-secondary btn-sm" data-diario-open-id="${escapeHtml(entry.id)}">Abrir registro</button>
+        </div>
       </article>
+    `;
+  }
+
+  function buildDiaryView(entry, responsavelNamesMap) {
+    const key = entry.studentId || normalizeText(entry.studentName);
+    const responsavelNames = (responsavelNamesMap.get(key) || []).slice(0, 6);
+    const responsavelSummary = responsavelNames.length
+      ? responsavelNames.join(", ")
+      : "Familia vinculada";
+
+    return `
+      <div class="card-head diary-card-head">
+        <div>
+          <h3 class="card-title">${escapeHtml(entry.title || "Registro do dia")}</h3>
+          <p class="diary-card-meta">${escapeHtml(entry.studentName)} - ${escapeHtml(entry.turma || "Sem turma")} - ${escapeHtml(buildCategoryLabel(entry.category))}</p>
+        </div>
+        <div class="diary-card-time">
+          <strong>${escapeHtml(formatDateLabel(entry.entryDate))}</strong>
+          <small>${escapeHtml(formatDateTimeLabel(entry.updatedAt || entry.createdAt))}</small>
+        </div>
+      </div>
+      <div class="inline-tags">
+        <span class="tag">${escapeHtml(buildCategoryLabel(entry.category))}</span>
+        <span class="tag notice-tag-turma">${escapeHtml(entry.turma || "Sem turma")}</span>
+        ${entry.photos?.length ? `<span class="tag">Fotos ${entry.photos.length}</span>` : ""}
+        ${entry.batchId ? `<span class="tag">Envio em lote</span>` : ""}
+      </div>
+      <p class="diary-card-body">${escapeHtml(entry.body)}</p>
+      ${buildPhotoGrid(entry.photos)}
+      <div class="diary-card-footer">
+        <small><strong>Professor(a):</strong> ${escapeHtml(entry.authorName || "Equipe escolar")}</small>
+        <small><strong>Responsaveis:</strong> ${escapeHtml(responsavelSummary)}</small>
+      </div>
     `;
   }
 
@@ -458,6 +489,7 @@
       const refs = {
         openEditor: document.getElementById("diario-open-editor"),
         modal: document.getElementById("diario-editor-modal"),
+        viewModal: document.getElementById("diario-view-modal"),
         form: document.getElementById("diario-form"),
         feedback: document.getElementById("diario-feedback"),
         boardFeedback: document.getElementById("diario-board-feedback"),
@@ -478,6 +510,11 @@
         uploadHint: document.getElementById("diario-upload-hint"),
         cancel: document.getElementById("diario-cancel"),
         close: document.getElementById("diario-editor-close"),
+        viewClose: document.getElementById("diario-view-close"),
+        viewContent: document.getElementById("diario-view-content"),
+        viewActions: document.getElementById("diario-view-actions"),
+        viewEdit: document.getElementById("diario-view-edit"),
+        viewDelete: document.getElementById("diario-view-delete"),
         list: document.getElementById("diario-list"),
         empty: document.getElementById("diario-empty"),
         total: document.getElementById("diario-stat-total"),
@@ -503,6 +540,7 @@
       const state = {
         entries: await window.AgendaGamaDataStore.list("diario", DIARIO_SEED),
         editingId: null,
+        viewingId: null,
         searchTerm: "",
         selectedStudentId: "all",
         selectedCategory: "all",
@@ -530,7 +568,18 @@
       function setEditorModalState(isOpen) {
         if (!refs.modal) return;
         refs.modal.hidden = !isOpen;
-        document.body.classList.toggle("app-modal-open", isOpen);
+        syncBodyModalState();
+      }
+
+      function syncBodyModalState() {
+        const isAnyModalOpen = Boolean(refs.modal && !refs.modal.hidden) || Boolean(refs.viewModal && !refs.viewModal.hidden);
+        document.body.classList.toggle("app-modal-open", isAnyModalOpen);
+      }
+
+      function setViewModalState(isOpen) {
+        if (!refs.viewModal) return;
+        refs.viewModal.hidden = !isOpen;
+        syncBodyModalState();
       }
 
       function getStudentChoices() {
@@ -631,6 +680,29 @@
       function closeEditor(options) {
         resetForm(options);
         setEditorModalState(false);
+        syncBodyModalState();
+      }
+
+      function openView(entry) {
+        if (!entry || !refs.viewContent) return;
+
+        state.viewingId = entry.id;
+        refs.viewContent.innerHTML = buildDiaryView(entry, responsavelNamesMap);
+        if (refs.viewActions) {
+          refs.viewActions.hidden = !canManageEntry(session, entry);
+        }
+        setViewModalState(true);
+      }
+
+      function closeView() {
+        state.viewingId = null;
+        if (refs.viewContent) {
+          refs.viewContent.innerHTML = "";
+        }
+        if (refs.viewActions) {
+          refs.viewActions.hidden = true;
+        }
+        setViewModalState(false);
       }
 
       function renderUploadPreview() {
@@ -775,6 +847,7 @@
       function openEditor(entry) {
         if (!canCreateEntries(session)) return;
 
+        closeView();
         setEditorModalState(true);
         state.editingId = entry?.id || null;
         refs.editorTitle.textContent = entry ? "Editar registro do dia" : "Novo registro do dia";
@@ -805,6 +878,15 @@
       }
 
       refs.list.addEventListener("click", async function (event) {
+        const openButton = event.target.closest("[data-diario-open-id]");
+        if (openButton) {
+          const entry = state.entries.find(function (item) { return item.id === openButton.dataset.diarioOpenId; }) || null;
+          if (entry) {
+            openView(entry);
+          }
+          return;
+        }
+
         const editButton = event.target.closest("[data-diario-edit-id]");
         if (editButton) {
           const entry = state.entries.find(function (item) { return item.id === editButton.dataset.diarioEditId; }) || null;
@@ -822,8 +904,22 @@
         if (state.editingId === removeButton.dataset.diarioRemoveId) {
           closeEditor();
         }
+        if (state.viewingId === removeButton.dataset.diarioRemoveId) {
+          closeView();
+        }
         setBoardFeedback("Registro excluido com sucesso.", "success");
         render();
+      });
+
+      refs.list.addEventListener("keydown", function (event) {
+        const card = event.target.closest("[data-diario-open-id]");
+        if (!card) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        const entry = state.entries.find(function (item) { return item.id === card.dataset.diarioOpenId; }) || null;
+        if (entry) {
+          openView(entry);
+        }
       });
 
       refs.uploadList.addEventListener("click", function (event) {
@@ -952,9 +1048,38 @@
         closeEditor();
       });
 
+      refs.viewClose?.addEventListener("click", function () {
+        closeView();
+      });
+
       refs.modal?.addEventListener("click", function (event) {
         if (!event.target.closest("[data-diario-close-modal]")) return;
         closeEditor();
+      });
+
+      refs.viewModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-diario-close-view]")) return;
+        closeView();
+      });
+
+      refs.viewEdit?.addEventListener("click", function () {
+        const entry = state.entries.find(function (item) { return item.id === state.viewingId; }) || null;
+        if (entry) {
+          openEditor(entry);
+        }
+      });
+
+      refs.viewDelete?.addEventListener("click", async function () {
+        const entryId = state.viewingId;
+        if (!entryId) return;
+        state.entries = state.entries.filter(function (item) { return item.id !== entryId; });
+        await window.AgendaGamaDataStore.remove("diario", entryId, DIARIO_SEED);
+        closeView();
+        if (state.editingId === entryId) {
+          closeEditor();
+        }
+        setBoardFeedback("Registro excluido com sucesso.", "success");
+        render();
       });
 
       refs.targetMode.addEventListener("change", function () {
@@ -1002,6 +1127,10 @@
       document.addEventListener("keydown", function (event) {
         if (event.key === "Escape" && refs.modal && !refs.modal.hidden) {
           closeEditor({ keepFeedback: true });
+          return;
+        }
+        if (event.key === "Escape" && refs.viewModal && !refs.viewModal.hidden) {
+          closeView();
         }
       });
 

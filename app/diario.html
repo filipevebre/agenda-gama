@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-2">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-3">
 </head>
 <body data-page="diario" data-roles="administrador,funcionarios,professores,responsaveis">
   <div id="app-shell"></div>
@@ -184,6 +184,29 @@
         </article>
       </div>
     </div>
+
+    <div id="diario-view-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-diario-close-view="true"></div>
+      <div class="app-modal-dialog app-modal-dialog-wide" role="dialog" aria-modal="true" aria-labelledby="diario-view-title">
+        <article class="panel diary-view-panel app-modal-panel">
+          <div class="app-modal-header">
+            <div class="section-heading">
+              <div>
+                <h2 id="diario-view-title">Registro do dia</h2>
+                <p id="diario-view-description">Visualize o conteudo completo do diario.</p>
+              </div>
+            </div>
+            <button id="diario-view-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar registro">x</button>
+          </div>
+
+          <div id="diario-view-content" class="stack-sm"></div>
+          <div id="diario-view-actions" class="action-row" hidden>
+            <button id="diario-view-edit" type="button" class="btn btn-primary">Editar registro</button>
+            <button id="diario-view-delete" type="button" class="btn btn-secondary">Excluir registro</button>
+          </div>
+        </article>
+      </div>
+    </div>
   </template>
 
   <script src="../assets/js/config.js?v=20260416-7"></script>
@@ -191,7 +214,7 @@
   <script src="../assets/js/auth.js?v=20260416-7"></script>
   <script src="../assets/js/data-store.js?v=20260507-2"></script>
   <script src="../assets/js/app.js?v=20260514-1"></script>
-  <script src="../assets/js/diario.js?v=20260514-2"></script>
+  <script src="../assets/js/diario.js?v=20260514-3"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDiario.mountDiario();
