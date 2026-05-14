@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-2">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-4">
 </head>
 <body data-page="comunicados" data-roles="all">
   <div id="app-shell"></div>
@@ -31,30 +31,13 @@
           <span class="notice-page-link-icon">AR</span>
           <span>Arquivados</span>
         </a>
+        <button id="open-notice-highlights" type="button" class="btn btn-secondary">Destaques</button>
+        <button id="open-notice-help" type="button" class="notice-help-trigger" aria-label="Como funciona os comunicados">?</button>
         <button id="notice-open-editor" type="button" class="btn btn-primary">Novo comunicado</button>
       </div>
     </section>
 
-    <section class="status-grid notice-status-grid">
-      <article class="status-card">
-        <span>Total visivel</span>
-        <strong id="notice-stat-total">0</strong>
-      </article>
-      <article class="status-card">
-        <span>Fixados</span>
-        <strong id="notice-stat-pinned">0</strong>
-      </article>
-      <article class="status-card">
-        <span>Urgentes</span>
-        <strong id="notice-stat-urgent">0</strong>
-      </article>
-      <article class="status-card">
-        <span>Publicados hoje</span>
-        <strong id="notice-stat-today">0</strong>
-      </article>
-    </section>
-
-    <section class="grid grid-2 notices-layout">
+    <section class="stack-sm notices-layout-simple">
       <article class="panel notices-board">
         <div class="section-heading">
           <div>
@@ -98,35 +81,6 @@
         <div id="notice-list" class="cards-list notice-list"></div>
         <p id="notice-empty" class="empty-state" hidden>Nenhum comunicado encontrado com os filtros atuais.</p>
       </article>
-
-      <aside class="stack-sm notice-side-column">
-        <article class="panel">
-          <div class="section-heading">
-            <div>
-              <h2>Destaques</h2>
-              <p>Fixados e urgentes.</p>
-            </div>
-          </div>
-          <div id="notice-highlight-list" class="stack-sm"></div>
-          <p id="notice-highlight-empty" class="empty-state" hidden>Nenhum destaque no momento.</p>
-        </article>
-
-        <details id="notice-guide-panel" class="panel compact-guide-panel">
-          <summary class="compact-guide-summary">
-            <div>
-              <strong>Como funciona</strong>
-              <small>Guia rapido do mural.</small>
-            </div>
-          </summary>
-          <div class="compact-guide-body">
-            <ul class="feature-list">
-              <li>Responsaveis veem avisos destinados a familias e a escola toda.</li>
-              <li>Professores acompanham orientacoes gerais e avisos pedagogicos.</li>
-              <li>Administracao e equipe podem publicar, editar e excluir comunicados.</li>
-            </ul>
-          </div>
-        </details>
-      </aside>
     </section>
 
     <div id="notice-editor-modal" class="app-modal" hidden>
@@ -211,6 +165,68 @@
         </article>
       </div>
     </div>
+
+    <div id="notice-help-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-notice-close-help="true"></div>
+      <div class="app-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="notice-help-title">
+        <article class="panel app-modal-panel">
+          <div class="app-modal-header">
+            <div class="section-heading">
+              <div>
+                <h2 id="notice-help-title">Como funciona</h2>
+                <p>Resumo rapido para deixar o mural principal mais limpo.</p>
+              </div>
+            </div>
+            <button id="notice-help-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar ajuda de comunicados">x</button>
+          </div>
+          <ul class="feature-list">
+            <li>Responsaveis veem avisos destinados a familias e a escola toda.</li>
+            <li>Professores acompanham orientacoes gerais e avisos pedagogicos.</li>
+            <li>Administracao e equipe podem publicar, editar e excluir comunicados.</li>
+            <li>Use os filtros do mural para localizar publico, prioridade e turma.</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+
+    <div id="notice-highlights-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-notice-close-highlights="true"></div>
+      <div class="app-modal-dialog app-modal-dialog-wide" role="dialog" aria-modal="true" aria-labelledby="notice-highlights-title">
+        <article class="panel app-modal-panel">
+          <div class="app-modal-header">
+            <div class="section-heading">
+              <div>
+                <h2 id="notice-highlights-title">Destaques</h2>
+                <p>Resumo rapido do mural e avisos mais importantes.</p>
+              </div>
+            </div>
+            <button id="notice-highlights-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar destaques">x</button>
+          </div>
+
+          <section class="status-grid notice-status-grid notice-highlights-stats">
+            <article class="status-card">
+              <span>Total visivel</span>
+              <strong id="notice-stat-total">0</strong>
+            </article>
+            <article class="status-card">
+              <span>Fixados</span>
+              <strong id="notice-stat-pinned">0</strong>
+            </article>
+            <article class="status-card">
+              <span>Urgentes</span>
+              <strong id="notice-stat-urgent">0</strong>
+            </article>
+            <article class="status-card">
+              <span>Publicados hoje</span>
+              <strong id="notice-stat-today">0</strong>
+            </article>
+          </section>
+
+          <div id="notice-highlight-list" class="stack-sm notice-highlight-list-modal"></div>
+          <p id="notice-highlight-empty" class="empty-state" hidden>Nenhum destaque no momento.</p>
+        </article>
+      </div>
+    </div>
   </template>
 
   <script src="../assets/js/config.js?v=20260415-4"></script>
@@ -218,7 +234,7 @@
   <script src="../assets/js/auth.js?v=20260416-4"></script>
   <script src="../assets/js/data-store.js?v=20260507-2"></script>
   <script src="../assets/js/app.js?v=20260514-1"></script>
-  <script src="../assets/js/comunicados.js?v=20260514-2"></script>
+  <script src="../assets/js/comunicados.js?v=20260514-3"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaComunicados.mountComunicados();

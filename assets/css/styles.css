@@ -527,6 +527,10 @@ td { color: var(--text-muted); }
   grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
   align-items: start;
 }
+.notices-layout-simple {
+  display: grid;
+  gap: 0;
+}
 .notice-status-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -587,6 +591,23 @@ td { color: var(--text-muted); }
   align-items: center;
   gap: 10px;
 }
+.notice-help-trigger {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border: 1px solid rgba(25, 50, 77, 0.12);
+  border-radius: 999px;
+  background: rgba(244, 247, 251, 0.94);
+  color: var(--title);
+  font-family: "Outfit", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: none;
+}
+.notice-help-trigger:hover {
+  background: rgba(232, 239, 247, 0.98);
+}
 .notice-page-link-icon {
   display: inline-flex;
   align-items: center;
@@ -636,6 +657,12 @@ td { color: var(--text-muted); }
 }
 .notice-highlight-card p {
   margin: 12px 0 10px;
+}
+.notice-highlights-stats {
+  margin-bottom: 18px;
+}
+.notice-highlight-list-modal {
+  gap: 12px;
 }
 .notice-editor-panel .action-row {
   margin-top: 4px;
@@ -3878,6 +3905,11 @@ body[data-page="comunicacao"] .thread-templates-panel {
     padding: 18px;
     border-radius: 20px;
   }
+  .notice-help-trigger {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+  }
   .message-toolbar-compact-actions {
     margin-left: 0;
   }
@@ -3981,6 +4013,12 @@ body[data-page="comunicacao"] .thread-templates-panel {
   }
   .app-modal-header {
     margin-bottom: 12px;
+  }
+  .notice-help-trigger {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 0.95rem;
   }
   .diary-help-trigger {
     width: 32px;

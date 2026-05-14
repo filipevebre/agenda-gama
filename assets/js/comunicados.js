@@ -491,13 +491,18 @@
     async function init(session) {
       const refs = {
         openEditor: document.getElementById("notice-open-editor"),
+        openHelp: document.getElementById("open-notice-help"),
+        openHighlights: document.getElementById("open-notice-highlights"),
         modal: document.getElementById("notice-editor-modal"),
+        helpModal: document.getElementById("notice-help-modal"),
+        highlightsModal: document.getElementById("notice-highlights-modal"),
         editorPanel: document.getElementById("notice-editor-panel"),
-        guidePanel: document.getElementById("notice-guide-panel"),
         editorTitle: document.getElementById("notice-editor-title"),
         form: document.getElementById("notice-form"),
         cancel: document.getElementById("notice-cancel"),
         close: document.getElementById("notice-editor-close"),
+        helpClose: document.getElementById("notice-help-close"),
+        highlightsClose: document.getElementById("notice-highlights-close"),
         feedback: document.getElementById("notice-form-feedback"),
         boardFeedback: document.getElementById("notice-board-feedback"),
         title: document.getElementById("notice-title"),
@@ -617,7 +622,26 @@
       function setEditorModalState(isOpen) {
         if (!refs.modal) return;
         refs.modal.hidden = !isOpen;
-        document.body.classList.toggle("app-modal-open", isOpen);
+        syncModalBodyState();
+      }
+
+      function syncModalBodyState() {
+        const isAnyModalOpen = Boolean(refs.modal && !refs.modal.hidden)
+          || Boolean(refs.helpModal && !refs.helpModal.hidden)
+          || Boolean(refs.highlightsModal && !refs.highlightsModal.hidden);
+        document.body.classList.toggle("app-modal-open", isAnyModalOpen);
+      }
+
+      function setHelpModalState(isOpen) {
+        if (!refs.helpModal) return;
+        refs.helpModal.hidden = !isOpen;
+        syncModalBodyState();
+      }
+
+      function setHighlightsModalState(isOpen) {
+        if (!refs.highlightsModal) return;
+        refs.highlightsModal.hidden = !isOpen;
+        syncModalBodyState();
       }
 
       function closeEditor() {
@@ -632,10 +656,20 @@
         setEditorModalState(false);
       }
 
+      function closeHelp() {
+        setHelpModalState(false);
+      }
+
+      function closeHighlights() {
+        setHighlightsModalState(false);
+      }
+
       function openEditor(notice) {
         if (!canManage(session) || PAGE_MODE === "archived") return;
         if (!refs.editorPanel) return;
 
+        closeHelp();
+        closeHighlights();
         setEditorModalState(true);
         resetFeedback();
         state.editingId = notice?.id || null;
@@ -689,6 +723,14 @@
         openEditor(null);
       });
 
+      refs.openHelp?.addEventListener("click", function () {
+        setHelpModalState(true);
+      });
+
+      refs.openHighlights?.addEventListener("click", function () {
+        setHighlightsModalState(true);
+      });
+
       refs.cancel?.addEventListener("click", function () {
         closeEditor();
       });
@@ -697,9 +739,27 @@
         closeEditor();
       });
 
+      refs.helpClose?.addEventListener("click", function () {
+        closeHelp();
+      });
+
+      refs.highlightsClose?.addEventListener("click", function () {
+        closeHighlights();
+      });
+
       refs.modal?.addEventListener("click", function (event) {
         if (!event.target.closest("[data-notice-close-modal]")) return;
         closeEditor();
+      });
+
+      refs.helpModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-notice-close-help]")) return;
+        closeHelp();
+      });
+
+      refs.highlightsModal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-notice-close-highlights]")) return;
+        closeHighlights();
       });
 
       refs.turmaTargetSelectAll?.addEventListener("click", function () {
@@ -846,6 +906,14 @@
       });
 
       document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && refs.highlightsModal && !refs.highlightsModal.hidden) {
+          closeHighlights();
+          return;
+        }
+        if (event.key === "Escape" && refs.helpModal && !refs.helpModal.hidden) {
+          closeHelp();
+          return;
+        }
         if (event.key === "Escape" && refs.modal && !refs.modal.hidden) {
           closeEditor();
         }
