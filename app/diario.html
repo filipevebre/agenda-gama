@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-1">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-2">
 </head>
 <body data-page="diario" data-roles="administrador,funcionarios,professores,responsaveis">
   <div id="app-shell"></div>
@@ -27,6 +27,7 @@
         <p>Registre o dia da crianca e envie para a familia de forma simples.</p>
       </div>
       <div class="page-actions">
+        <button id="diario-open-editor" type="button" class="btn btn-primary">Novo registro</button>
         <article class="info-card">
           <span>Registros visiveis</span>
           <strong id="diario-stat-total">0</strong>
@@ -44,12 +45,69 @@
 
     <section class="grid grid-2 diary-layout">
       <aside class="stack-sm diary-side-column">
-        <article id="diario-editor-panel" class="panel diary-editor-panel">
-          <div class="section-heading">
+        <details class="panel compact-guide-panel">
+          <summary class="compact-guide-summary">
             <div>
-              <h2 id="diario-editor-title">Novo registro do dia</h2>
-              <p id="diario-editor-description">Envie para um aluno, varios alunos ou uma turma.</p>
+              <strong>Como funciona</strong>
+              <small>Resumo rapido do uso do diario.</small>
             </div>
+          </summary>
+          <div class="compact-guide-body">
+            <div id="diario-access-panel" class="stack-sm"></div>
+          </div>
+        </details>
+      </aside>
+
+      <article class="panel diary-board-panel">
+        <div class="section-heading">
+          <div>
+            <h2>Registros enviados</h2>
+            <p>Use os filtros para localizar o historico.</p>
+          </div>
+        </div>
+
+        <div class="toolbar diary-filter-toolbar">
+          <label class="field search-field">
+            <span>Buscar</span>
+            <input id="diario-search" type="search" placeholder="Buscar por aluno, titulo ou mensagem">
+          </label>
+          <label class="field">
+            <span>Aluno</span>
+            <select id="diario-filter-student">
+              <option value="all">Todos os alunos</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Categoria</span>
+            <select id="diario-filter-category">
+              <option value="all">Todas</option>
+              <option value="rotina">Rotina</option>
+              <option value="alimentacao">Alimentacao</option>
+              <option value="atividade">Atividade</option>
+              <option value="comportamento">Comportamento</option>
+              <option value="saude">Saude</option>
+            </select>
+          </label>
+        </div>
+
+        <p id="diario-board-feedback" class="feedback" role="status" aria-live="polite"></p>
+        <div id="diario-list" class="cards-list diary-list"></div>
+        <p id="diario-empty" class="empty-state" hidden>Nenhum registro encontrado para os filtros atuais.</p>
+      </article>
+    </section>
+
+    <div id="diario-editor-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-diario-close-modal="true"></div>
+      <div class="app-modal-dialog app-modal-dialog-wide" role="dialog" aria-modal="true" aria-labelledby="diario-editor-title">
+        <article id="diario-editor-panel" class="panel diary-editor-panel app-modal-panel">
+          <div class="app-modal-header">
+            <div class="section-heading">
+              <div>
+                <h2 id="diario-editor-title">Novo registro do dia</h2>
+                <p id="diario-editor-description">Envie para um aluno, varios alunos ou uma turma.</p>
+              </div>
+            </div>
+            <button id="diario-editor-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar novo registro">x</button>
           </div>
 
           <form id="diario-form" class="stack-sm">
@@ -124,54 +182,8 @@
             <p id="diario-feedback" class="feedback" role="status" aria-live="polite"></p>
           </form>
         </article>
-
-        <article class="panel">
-          <div class="section-heading">
-            <div>
-              <h2>Como funciona</h2>
-              <p>Resumo rapido do uso do diario.</p>
-            </div>
-          </div>
-          <div id="diario-access-panel" class="stack-sm"></div>
-        </article>
-      </aside>
-
-      <article class="panel diary-board-panel">
-        <div class="section-heading">
-          <div>
-            <h2>Registros enviados</h2>
-            <p>Use os filtros para localizar o historico.</p>
-          </div>
-        </div>
-
-        <div class="toolbar diary-filter-toolbar">
-          <label class="field search-field">
-            <span>Buscar</span>
-            <input id="diario-search" type="search" placeholder="Buscar por aluno, titulo ou mensagem">
-          </label>
-          <label class="field">
-            <span>Aluno</span>
-            <select id="diario-filter-student">
-              <option value="all">Todos os alunos</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Categoria</span>
-            <select id="diario-filter-category">
-              <option value="all">Todas</option>
-              <option value="rotina">Rotina</option>
-              <option value="alimentacao">Alimentacao</option>
-              <option value="atividade">Atividade</option>
-              <option value="comportamento">Comportamento</option>
-              <option value="saude">Saude</option>
-            </select>
-          </label>
-        </div>
-
-        <div id="diario-list" class="cards-list diary-list"></div>
-        <p id="diario-empty" class="empty-state" hidden>Nenhum registro encontrado para os filtros atuais.</p>
-      </article>
-    </section>
+      </div>
+    </div>
   </template>
 
   <script src="../assets/js/config.js?v=20260416-7"></script>
@@ -179,7 +191,7 @@
   <script src="../assets/js/auth.js?v=20260416-7"></script>
   <script src="../assets/js/data-store.js?v=20260507-2"></script>
   <script src="../assets/js/app.js?v=20260514-1"></script>
-  <script src="../assets/js/diario.js?v=20260507-1"></script>
+  <script src="../assets/js/diario.js?v=20260514-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDiario.mountDiario();
@@ -187,4 +199,5 @@
   <script src="/assets/js/pwa.js?v=20260507-1"></script>
 </body>
 </html>
+
 

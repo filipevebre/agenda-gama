@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-1">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260514-2">
 </head>
 <body data-page="comunicados" data-roles="all">
   <div id="app-shell"></div>
@@ -94,6 +94,7 @@
           </label>
         </div>
 
+        <p id="notice-board-feedback" class="feedback" role="status" aria-live="polite"></p>
         <div id="notice-list" class="cards-list notice-list"></div>
         <p id="notice-empty" class="empty-state" hidden>Nenhum comunicado encontrado com os filtros atuais.</p>
       </article>
@@ -110,12 +111,36 @@
           <p id="notice-highlight-empty" class="empty-state" hidden>Nenhum destaque no momento.</p>
         </article>
 
-        <article id="notice-editor-panel" class="panel notice-editor-panel" hidden>
-          <div class="section-heading">
+        <details id="notice-guide-panel" class="panel compact-guide-panel">
+          <summary class="compact-guide-summary">
             <div>
-              <h2 id="notice-editor-title">Novo comunicado</h2>
-              <p>Preencha e publique para o publico certo.</p>
+              <strong>Como funciona</strong>
+              <small>Guia rapido do mural.</small>
             </div>
+          </summary>
+          <div class="compact-guide-body">
+            <ul class="feature-list">
+              <li>Responsaveis veem avisos destinados a familias e a escola toda.</li>
+              <li>Professores acompanham orientacoes gerais e avisos pedagogicos.</li>
+              <li>Administracao e equipe podem publicar, editar e excluir comunicados.</li>
+            </ul>
+          </div>
+        </details>
+      </aside>
+    </section>
+
+    <div id="notice-editor-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-notice-close-modal="true"></div>
+      <div class="app-modal-dialog app-modal-dialog-wide" role="dialog" aria-modal="true" aria-labelledby="notice-editor-title">
+        <article id="notice-editor-panel" class="panel notice-editor-panel app-modal-panel">
+          <div class="app-modal-header">
+            <div class="section-heading">
+              <div>
+                <h2 id="notice-editor-title">Novo comunicado</h2>
+                <p>Preencha e publique para o publico certo.</p>
+              </div>
+            </div>
+            <button id="notice-editor-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar comunicado">x</button>
           </div>
 
           <form id="notice-form" class="stack-sm">
@@ -184,22 +209,8 @@
             <p id="notice-form-feedback" class="feedback" role="status" aria-live="polite"></p>
           </form>
         </article>
-
-        <article id="notice-guide-panel" class="panel">
-          <div class="section-heading">
-            <div>
-              <h2>Como funciona</h2>
-              <p>Guia rapido do mural.</p>
-            </div>
-          </div>
-          <ul class="feature-list">
-            <li>Responsaveis veem avisos destinados a familias e a escola toda.</li>
-            <li>Professores acompanham orientacoes gerais e avisos pedagogicos.</li>
-            <li>Administracao e equipe podem publicar, editar e excluir comunicados.</li>
-          </ul>
-        </article>
-      </aside>
-    </section>
+      </div>
+    </div>
   </template>
 
   <script src="../assets/js/config.js?v=20260415-4"></script>
@@ -207,7 +218,7 @@
   <script src="../assets/js/auth.js?v=20260416-4"></script>
   <script src="../assets/js/data-store.js?v=20260507-2"></script>
   <script src="../assets/js/app.js?v=20260514-1"></script>
-  <script src="../assets/js/comunicados.js?v=20260505-2"></script>
+  <script src="../assets/js/comunicados.js?v=20260514-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaComunicados.mountComunicados();
@@ -215,4 +226,5 @@
   <script src="/assets/js/pwa.js?v=20260507-1"></script>
 </body>
 </html>
+
 

@@ -456,8 +456,11 @@
       }
 
       const refs = {
+        openEditor: document.getElementById("diario-open-editor"),
+        modal: document.getElementById("diario-editor-modal"),
         form: document.getElementById("diario-form"),
         feedback: document.getElementById("diario-feedback"),
+        boardFeedback: document.getElementById("diario-board-feedback"),
         targetMode: document.getElementById("diario-target-mode"),
         studentsField: document.getElementById("diario-students-field"),
         studentTurmaFilter: document.getElementById("diario-student-turma-filter"),
@@ -474,6 +477,7 @@
         uploadList: document.getElementById("diario-upload-list"),
         uploadHint: document.getElementById("diario-upload-hint"),
         cancel: document.getElementById("diario-cancel"),
+        close: document.getElementById("diario-editor-close"),
         list: document.getElementById("diario-list"),
         empty: document.getElementById("diario-empty"),
         total: document.getElementById("diario-stat-total"),
@@ -515,6 +519,18 @@
         if (!refs.feedback) return;
         refs.feedback.textContent = message || "";
         refs.feedback.className = type ? `feedback ${type}` : "feedback";
+      }
+
+      function setBoardFeedback(message, type) {
+        if (!refs.boardFeedback) return;
+        refs.boardFeedback.textContent = message || "";
+        refs.boardFeedback.className = type ? `feedback ${type}` : "feedback";
+      }
+
+      function setEditorModalState(isOpen) {
+        if (!refs.modal) return;
+        refs.modal.hidden = !isOpen;
+        document.body.classList.toggle("app-modal-open", isOpen);
       }
 
       function getStudentChoices() {
@@ -610,6 +626,11 @@
         if (!keepFeedback) {
           setFeedback("", "");
         }
+      }
+
+      function closeEditor(options) {
+        resetForm(options);
+        setEditorModalState(false);
       }
 
       function renderUploadPreview() {
@@ -754,6 +775,7 @@
       function openEditor(entry) {
         if (!canCreateEntries(session)) return;
 
+        setEditorModalState(true);
         state.editingId = entry?.id || null;
         refs.editorTitle.textContent = entry ? "Editar registro do dia" : "Novo registro do dia";
         if (refs.editorDescription) {
@@ -798,8 +820,9 @@
         state.entries = state.entries.filter(function (item) { return item.id !== removeButton.dataset.diarioRemoveId; });
         await window.AgendaGamaDataStore.remove("diario", removeButton.dataset.diarioRemoveId, DIARIO_SEED);
         if (state.editingId === removeButton.dataset.diarioRemoveId) {
-          resetForm();
+          closeEditor();
         }
+        setBoardFeedback("Registro excluido com sucesso.", "success");
         render();
       });
 
@@ -912,13 +935,26 @@
             ? `Registro enviado para ${targetStudents.length} aluno(s) das turmas selecionadas.`
             : `Registro enviado para ${targetStudents.length} aluno(s) com sucesso.`;
 
-        resetForm({ keepFeedback: true });
-        setFeedback(successMessage, "success");
+        closeEditor();
+        setBoardFeedback(successMessage, "success");
         render();
       });
 
       refs.cancel.addEventListener("click", function () {
-        resetForm();
+        closeEditor();
+      });
+
+      refs.openEditor?.addEventListener("click", function () {
+        openEditor(null);
+      });
+
+      refs.close?.addEventListener("click", function () {
+        closeEditor();
+      });
+
+      refs.modal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-diario-close-modal]")) return;
+        closeEditor();
       });
 
       refs.targetMode.addEventListener("change", function () {
@@ -963,6 +999,12 @@
         reloadEntries();
       });
 
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && refs.modal && !refs.modal.hidden) {
+          closeEditor({ keepFeedback: true });
+        }
+      });
+
       populateTargetOptions();
       renderAccessPanel();
       renderUploadPreview();
@@ -978,6 +1020,7 @@
           refs.editorDescription.textContent = "Os registros enviados pelos professores ficam organizados aqui para consulta da familia.";
         }
         refs.form.hidden = true;
+        refs.openEditor?.setAttribute("hidden", "hidden");
       }
 
       if (!accessibleStudents.length) {

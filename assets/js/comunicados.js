@@ -491,12 +491,15 @@
     async function init(session) {
       const refs = {
         openEditor: document.getElementById("notice-open-editor"),
+        modal: document.getElementById("notice-editor-modal"),
         editorPanel: document.getElementById("notice-editor-panel"),
         guidePanel: document.getElementById("notice-guide-panel"),
         editorTitle: document.getElementById("notice-editor-title"),
         form: document.getElementById("notice-form"),
         cancel: document.getElementById("notice-cancel"),
+        close: document.getElementById("notice-editor-close"),
         feedback: document.getElementById("notice-form-feedback"),
+        boardFeedback: document.getElementById("notice-board-feedback"),
         title: document.getElementById("notice-title"),
         audience: document.getElementById("notice-audience"),
         summary: document.getElementById("notice-summary"),
@@ -605,6 +608,18 @@
         refs.feedback.className = "feedback";
       }
 
+      function setBoardFeedback(message, type) {
+        if (!refs.boardFeedback) return;
+        refs.boardFeedback.textContent = message || "";
+        refs.boardFeedback.className = type ? `feedback ${type}` : "feedback";
+      }
+
+      function setEditorModalState(isOpen) {
+        if (!refs.modal) return;
+        refs.modal.hidden = !isOpen;
+        document.body.classList.toggle("app-modal-open", isOpen);
+      }
+
       function closeEditor() {
         state.editingId = null;
         state.selectedTargetTurmas = [];
@@ -614,18 +629,14 @@
         }
         resetFeedback();
         renderTurmaTargetSelection();
-        if (canManage(session) && refs.editorPanel && refs.guidePanel) {
-          refs.editorPanel.hidden = true;
-          refs.guidePanel.hidden = false;
-        }
+        setEditorModalState(false);
       }
 
       function openEditor(notice) {
         if (!canManage(session) || PAGE_MODE === "archived") return;
-        if (!refs.editorPanel || !refs.guidePanel) return;
+        if (!refs.editorPanel) return;
 
-        refs.editorPanel.hidden = false;
-        refs.guidePanel.hidden = true;
+        setEditorModalState(true);
         resetFeedback();
         state.editingId = notice?.id || null;
         state.selectedTargetTurmas = Array.isArray(notice?.targetTurmas) ? [...notice.targetTurmas] : [];
@@ -668,9 +679,7 @@
 
       if (!canManage(session) || PAGE_MODE === "archived") {
         refs.openEditor?.setAttribute("hidden", "hidden");
-        if (refs.editorPanel) {
-          refs.editorPanel.hidden = true;
-        }
+        if (refs.modal) refs.modal.hidden = true;
       }
 
       populateTurmaFilterOptions();
@@ -681,6 +690,15 @@
       });
 
       refs.cancel?.addEventListener("click", function () {
+        closeEditor();
+      });
+
+      refs.close?.addEventListener("click", function () {
+        closeEditor();
+      });
+
+      refs.modal?.addEventListener("click", function (event) {
+        if (!event.target.closest("[data-notice-close-modal]")) return;
         closeEditor();
       });
 
@@ -746,12 +764,8 @@
         writeNotices(state.notices);
         dispatchNoticesUpdated();
         render();
-        refs.feedback.textContent = state.editingId ? "Comunicado atualizado com sucesso." : "Comunicado publicado com sucesso.";
-        refs.feedback.className = "feedback success";
-        state.editingId = nextNotice.id;
-        if (refs.editorTitle) {
-          refs.editorTitle.textContent = "Editar comunicado";
-        }
+        setBoardFeedback(state.editingId ? "Comunicado atualizado com sucesso." : "Comunicado publicado com sucesso.", "success");
+        closeEditor();
       });
 
       refs.list?.addEventListener("click", function (event) {
@@ -776,6 +790,7 @@
             if (state.editingId === archiveButton.dataset.noticeArchiveId) {
               closeEditor();
             }
+            setBoardFeedback("Comunicado arquivado com sucesso.", "success");
             render();
           }
           return;
@@ -791,6 +806,7 @@
             });
             writeNotices(state.notices);
             dispatchNoticesUpdated();
+            setBoardFeedback("Comunicado restaurado com sucesso.", "success");
             render();
           }
           return;
@@ -805,6 +821,7 @@
         if (state.editingId === removeButton.dataset.noticeRemoveId) {
           closeEditor();
         }
+        setBoardFeedback("Comunicado excluido com sucesso.", "success");
         render();
       });
 
@@ -826,6 +843,12 @@
       refs.turmaFilter?.addEventListener("change", function () {
         state.turmaFilter = refs.turmaFilter.value;
         render();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && refs.modal && !refs.modal.hidden) {
+          closeEditor();
+        }
       });
 
       window.addEventListener("storage", function (event) {
