@@ -1,5 +1,6 @@
 (function () {
   const ROOT_SCOPE = "/";
+  let serviceWorkerRegistrationPromise = null;
 
   function isStandaloneMode() {
     return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
@@ -12,16 +13,107 @@
 
   let deferredPrompt = null;
 
+  function dispatchNotificationPermissionChanged() {
+    window.dispatchEvent(new CustomEvent("agenda-pwa-notification-permission-changed", {
+      detail: {
+        permission: getNotificationPermission()
+      }
+    }));
+  }
+
+  function getNotificationPermission() {
+    if (typeof window.Notification === "undefined") {
+      return "unsupported";
+    }
+
+    return window.Notification.permission || "default";
+  }
+
+  async function ensureServiceWorkerRegistration() {
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+      return null;
+    }
+
+    if (serviceWorkerRegistrationPromise) {
+      return serviceWorkerRegistrationPromise;
+    }
+
+    serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration(ROOT_SCOPE).then(function (registration) {
+      if (registration) {
+        return registration;
+      }
+
+      return navigator.serviceWorker.register("/sw.js", { scope: ROOT_SCOPE });
+    }).catch(function (error) {
+      console.warn("[Agenda Gama] Nao foi possivel preparar o service worker para notificacoes.", error);
+      return null;
+    });
+
+    return serviceWorkerRegistrationPromise;
+  }
+
   async function registerServiceWorker() {
     if (!("serviceWorker" in navigator) || !window.isSecureContext) {
       return;
     }
 
     try {
-      await navigator.serviceWorker.register("/sw.js", { scope: ROOT_SCOPE });
+      serviceWorkerRegistrationPromise = navigator.serviceWorker.register("/sw.js", { scope: ROOT_SCOPE });
+      await serviceWorkerRegistrationPromise;
     } catch (error) {
       console.warn("[Agenda Gama] Nao foi possivel registrar o service worker.", error);
     }
+  }
+
+  async function requestNotificationPermission() {
+    if (!window.isSecureContext || typeof window.Notification === "undefined") {
+      return "unsupported";
+    }
+
+    const currentPermission = getNotificationPermission();
+    if (currentPermission === "granted" || currentPermission === "denied") {
+      dispatchNotificationPermissionChanged();
+      return currentPermission;
+    }
+
+    try {
+      const nextPermission = await window.Notification.requestPermission();
+      dispatchNotificationPermissionChanged();
+      return nextPermission;
+    } catch (error) {
+      dispatchNotificationPermissionChanged();
+      return getNotificationPermission();
+    }
+  }
+
+  async function showNotification(options) {
+    if (getNotificationPermission() !== "granted") {
+      return false;
+    }
+
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration || typeof registration.showNotification !== "function") {
+      return false;
+    }
+
+    const title = String(options?.title || "Agenda Gama");
+    const body = String(options?.body || "");
+    const href = String(options?.href || options?.url || "/app/dashboard.html");
+
+    await registration.showNotification(title, {
+      body: body,
+      tag: String(options?.tag || options?.id || `agenda-gama-${Date.now()}`),
+      lang: "pt-BR",
+      badge: "/assets/icons/icon-192.png",
+      icon: "/assets/icons/icon-192.png",
+      renotify: false,
+      data: {
+        href: href,
+        id: String(options?.id || ""),
+        kind: String(options?.kind || "")
+      }
+    });
+    return true;
   }
 
   async function promptInstall() {
@@ -65,10 +157,14 @@
     canInstall: function () {
       return Boolean(deferredPrompt);
     },
-    promptInstall: promptInstall
+    promptInstall: promptInstall,
+    requestNotificationPermission: requestNotificationPermission,
+    getNotificationPermission: getNotificationPermission,
+    showNotification: showNotification
   };
 
   window.dispatchEvent(new CustomEvent("agenda-pwa-ready"));
+  dispatchNotificationPermissionChanged();
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", updateStandaloneClass, { once: true });

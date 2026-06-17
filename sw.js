@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-gama-pwa-v2";
+const CACHE_NAME = "agenda-gama-pwa-v3";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -127,4 +127,35 @@ self.addEventListener("fetch", function (event) {
   }
 
   event.respondWith(staleWhileRevalidate(request));
+});
+
+self.addEventListener("notificationclick", function (event) {
+  const targetHref = new URL(String(event.notification?.data?.href || "/app/dashboard.html"), self.location.origin).toString();
+  event.notification?.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (windowClients) {
+      const matchedClient = windowClients.find(function (client) {
+        return client.url === targetHref || client.url.startsWith(targetHref);
+      }) || windowClients[0] || null;
+
+      if (matchedClient) {
+        if ("focus" in matchedClient) {
+          matchedClient.focus();
+        }
+        if ("navigate" in matchedClient && matchedClient.url !== targetHref) {
+          return matchedClient.navigate(targetHref).then(function () {
+            return matchedClient.focus();
+          });
+        }
+        return matchedClient;
+      }
+
+      if (clients.openWindow) {
+        return clients.openWindow(targetHref);
+      }
+
+      return null;
+    })
+  );
 });

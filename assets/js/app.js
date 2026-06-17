@@ -628,6 +628,59 @@
     }).join("");
   }
 
+  function syncNotificationPermissionButton() {
+    const button = activeNotificationElements?.permissionButton;
+    if (!button) return;
+
+    const pwa = window.AgendaGamaPWA;
+    const permission = pwa?.getNotificationPermission?.() || "unsupported";
+    const mustInstallOnIos = Boolean(pwa?.isIosBrowser?.() && !pwa?.isStandalone?.());
+
+    if (permission === "unsupported") {
+      button.hidden = true;
+      return;
+    }
+
+    button.hidden = false;
+    button.disabled = permission === "denied";
+
+    if (mustInstallOnIos) {
+      button.textContent = "Instale para ativar";
+      button.disabled = false;
+      button.title = "No iPhone, instale o app na Tela de Inicio para receber notificacoes.";
+      return;
+    }
+
+    if (permission === "granted") {
+      button.textContent = "Alertas ativos";
+      button.title = "As notificacoes do celular estao ativas.";
+      return;
+    }
+
+    if (permission === "denied") {
+      button.textContent = "Permissao bloqueada";
+      button.title = "Libere as notificacoes nas configuracoes do navegador.";
+      return;
+    }
+
+    button.textContent = "Ativar no celular";
+    button.title = "Permitir notificacoes nativas do celular para mensagens e diario.";
+  }
+
+  async function showSystemNotification(notification) {
+    const pwa = window.AgendaGamaPWA;
+    if (!notification || !pwa?.showNotification) return false;
+
+    return pwa.showNotification({
+      id: notification.id,
+      kind: notification.kind,
+      tag: notification.dedupeKey || notification.id,
+      title: notification.title,
+      body: notification.body,
+      href: notification.href
+    });
+  }
+
   function showNotificationToast(notification) {
     if (!activeToastHost || !notification || !activeShellSession) return;
 
@@ -726,6 +779,9 @@
 
     if (activeShellSession && getNotificationSessionKey(activeShellSession) === sessionKey) {
       toastQueue.slice(0, 2).forEach(showNotificationToast);
+      toastQueue.slice(0, 2).forEach(function (notification) {
+        void showSystemNotification(notification);
+      });
     }
   }
 
@@ -794,6 +850,9 @@
 
     if (activeShellSession && getNotificationSessionKey(activeShellSession) === sessionKey) {
       toastQueue.slice(0, 2).forEach(showNotificationToast);
+      toastQueue.slice(0, 2).forEach(function (notification) {
+        void showSystemNotification(notification);
+      });
     }
   }
 
@@ -1363,6 +1422,7 @@
                       <span>Acompanhe mensagens novas e pendencias.</span>
                     </div>
                     <div class="notification-panel-actions">
+                      <button id="notification-enable-device" type="button" class="btn btn-secondary btn-sm" hidden>Ativar no celular</button>
                       <button id="notification-mark-all" type="button" class="btn btn-secondary btn-sm">Marcar lidas</button>
                       <button id="notification-close" type="button" class="btn btn-secondary btn-sm notification-close" data-notification-close="true" aria-label="Fechar notificacoes">x</button>
                     </div>
@@ -1434,6 +1494,7 @@
     const notificationBadge = document.getElementById("notification-badge");
     const notificationEmpty = document.getElementById("notification-empty");
     const notificationMarkAll = document.getElementById("notification-mark-all");
+    const notificationEnableDevice = document.getElementById("notification-enable-device");
     const noticeMarquee = document.getElementById("notice-marquee");
     const noticeMarqueeKicker = document.getElementById("notice-marquee-kicker");
     const noticeMarqueeTitle = document.getElementById("notice-marquee-title");
@@ -1446,6 +1507,7 @@
       badge: notificationBadge,
       empty: notificationEmpty,
       markAll: notificationMarkAll,
+      permissionButton: notificationEnableDevice,
       overlay: overlay,
       sidebar: sidebar
     };
@@ -1458,10 +1520,39 @@
     renderNotifications();
     refreshShellNotifications();
     refreshShellNoticeMarquee();
+    syncNotificationPermissionButton();
 
     async function logout() {
       await window.AgendaGamaAuth.clearSession();
       window.location.href = isOrganizationPage() ? "../../index.html" : "../index.html";
+    }
+
+    async function handleEnableDeviceNotifications() {
+      const pwa = window.AgendaGamaPWA;
+      if (!pwa?.requestNotificationPermission) return;
+
+      if (pwa.isIosBrowser?.() && !pwa.isStandalone?.()) {
+        window.alert("No iPhone, instale o Agenda Gama na Tela de Inicio primeiro. Depois abra o app instalado e ative as notificacoes.");
+        return;
+      }
+
+      const permission = await pwa.requestNotificationPermission();
+      syncNotificationPermissionButton();
+
+      if (permission === "granted") {
+        await pwa.showNotification({
+          id: "agenda-gama-notification-enabled",
+          tag: "agenda-gama-notification-enabled",
+          title: "Notificacoes ativadas",
+          body: "Agora o Agenda Gama pode avisar sobre mensagens novas e registros do diario.",
+          href: window.location.href
+        });
+        return;
+      }
+
+      if (permission === "denied") {
+        window.alert("As notificacoes ficaram bloqueadas. Se quiser ativar depois, libere nas configuracoes do navegador ou do app instalado.");
+      }
     }
 
     function syncInstallAppButton() {
@@ -1555,6 +1646,10 @@
       await markNotificationsSourceSeen(unreadNotifications);
     });
 
+    notificationEnableDevice?.addEventListener("click", function () {
+      void handleEnableDeviceNotifications();
+    });
+
     noticeMarquee?.addEventListener("click", function () {
       const href = noticeMarquee.dataset.href;
       if (!href) return;
@@ -1631,7 +1726,11 @@
     window.addEventListener("agenda-pwa-ready", syncInstallAppButton);
     window.addEventListener("agenda-pwa-installable", syncInstallAppButton);
     window.addEventListener("agenda-pwa-installed", syncInstallAppButton);
+    window.addEventListener("agenda-pwa-ready", syncNotificationPermissionButton);
+    window.addEventListener("agenda-pwa-installed", syncNotificationPermissionButton);
+    window.addEventListener("agenda-pwa-notification-permission-changed", syncNotificationPermissionButton);
     window.addEventListener("focus", syncInstallAppButton);
+    window.addEventListener("focus", syncNotificationPermissionButton);
     window.addEventListener("load", syncInstallAppButton, { once: true });
 
     if (activeNotificationTimer) {
