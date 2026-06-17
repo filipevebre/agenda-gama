@@ -287,6 +287,26 @@
     dispatchDiaryViewUpdated();
   }
 
+  function markThreadSeen(session, threadKey, timestamp) {
+    if (!session || !threadKey) return;
+
+    const sessionKey = getNotificationSessionKey(session);
+    const state = readJson(THREAD_VIEW_KEY, {});
+    const nextTimestamp = String(timestamp || new Date().toISOString());
+    const currentSessionState = {
+      ...(state[sessionKey] || {})
+    };
+
+    if (currentSessionState[threadKey] === nextTimestamp) return;
+
+    state[sessionKey] = {
+      ...currentSessionState,
+      [threadKey]: nextTimestamp
+    };
+    localStorage.setItem(THREAD_VIEW_KEY, JSON.stringify(state));
+    window.dispatchEvent(new CustomEvent("agenda-message-state-changed"));
+  }
+
   function readNotifications() {
     try {
       const raw = localStorage.getItem(NOTIFICATIONS_KEY);
@@ -619,10 +639,11 @@
       <span>${notification.body}</span>
     `;
 
-    toast.addEventListener("click", function () {
+    toast.addEventListener("click", async function () {
       markNotificationRead(notification.id);
+      await markNotificationSourceSeen(notification);
       if (notification.href) {
-        window.location.href = notification.href;
+        openNotificationDestination(notification.href);
       } else {
         closeNotificationPanel();
       }
@@ -1060,11 +1081,14 @@
 
     const context = buildNoticeSessionContext(session, directory);
     const linkedStudentIds = context.linkedStudentIds || new Set();
+    const seenMap = getDiarySeenMap(session);
     if (!linkedStudentIds.size) return [];
 
     return [...(entries || [])]
       .filter(function (entry) {
-        return Boolean(entry?.id) && linkedStudentIds.has(entry.studentId);
+        return Boolean(entry?.id)
+          && linkedStudentIds.has(entry.studentId)
+          && seenMap[entry.id] !== getDiaryEntrySourceStamp(entry);
       })
       .sort(function (left, right) {
         return new Date(right.updatedAt || right.createdAt || 0).getTime() - new Date(left.updatedAt || left.createdAt || 0).getTime();
@@ -1095,6 +1119,73 @@
     } catch (error) {
       renderNotifications();
     }
+  }
+
+  async function markNotificationSourceSeen(notification) {
+    if (!notification || !activeShellSession) return;
+
+    let targetUrl = null;
+    try {
+      targetUrl = notification.href ? new URL(notification.href, window.location.href) : null;
+    } catch (error) {
+      targetUrl = null;
+    }
+
+    const entryId = targetUrl?.searchParams.get("entry");
+    if (entryId) {
+      const entries = await safeList("diario", []);
+      const matchedEntry = (entries || []).find(function (entry) {
+        return String(entry?.id || "") === String(entryId);
+      }) || null;
+      if (matchedEntry) {
+        markDiaryEntriesSeen(activeShellSession, [matchedEntry]);
+      }
+      return;
+    }
+
+    const noticeId = targetUrl?.searchParams.get("notice");
+    if (noticeId) {
+      const matchedNotice = readNotices().find(function (notice) {
+        return String(notice?.id || "") === String(noticeId);
+      }) || null;
+      if (matchedNotice) {
+        markNoticesSeen(activeShellSession, [matchedNotice]);
+      }
+      return;
+    }
+
+    const threadKey = targetUrl?.searchParams.get("thread");
+    if (threadKey) {
+      markThreadSeen(activeShellSession, threadKey, notification.createdAt || notification.sourceStamp || new Date().toISOString());
+    }
+  }
+
+  async function markNotificationsSourceSeen(notifications) {
+    if (!Array.isArray(notifications) || !notifications.length) return;
+    await Promise.all(notifications.map(function (notification) {
+      return markNotificationSourceSeen(notification);
+    }));
+  }
+
+  function openNotificationDestination(href) {
+    if (!href) return;
+
+    let targetUrl = null;
+    try {
+      targetUrl = new URL(href, window.location.href);
+    } catch (error) {
+      window.location.href = href;
+      return;
+    }
+
+    const currentUrl = new URL(window.location.href);
+    const entryId = targetUrl.searchParams.get("entry");
+    if (entryId && targetUrl.pathname === currentUrl.pathname && window.AgendaGamaDiario?.openEntryById) {
+      window.AgendaGamaDiario.openEntryById(entryId);
+      return;
+    }
+
+    window.location.href = href;
   }
 
   function isOrganizationPage() {
@@ -1440,20 +1531,28 @@
       setNotificationPanelState(notificationPanel.hidden);
     });
 
-    notificationList?.addEventListener("click", function (event) {
+    notificationList?.addEventListener("click", async function (event) {
       const button = event.target.closest("[data-notification-id]");
       if (!button) return;
       const notificationId = button.dataset.notificationId;
       const href = button.dataset.notificationHref;
+      const notification = listSessionNotifications(activeShellSession).find(function (item) {
+        return item.id === notificationId;
+      }) || null;
       markNotificationRead(notificationId);
+      await markNotificationSourceSeen(notification);
       closeNotificationPanel();
       if (href) {
-        window.location.href = href;
+        openNotificationDestination(href);
       }
     });
 
-    notificationMarkAll?.addEventListener("click", function () {
+    notificationMarkAll?.addEventListener("click", async function () {
+      const unreadNotifications = listSessionNotifications(activeShellSession).filter(function (item) {
+        return !item.readAt;
+      });
       markAllNotificationsRead();
+      await markNotificationsSourceSeen(unreadNotifications);
     });
 
     noticeMarquee?.addEventListener("click", function () {
@@ -1511,7 +1610,7 @@
       }
 
       if (event.key === DIARY_VIEW_KEY) {
-        renderNotifications();
+        refreshShellNotifications();
         return;
       }
 

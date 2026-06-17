@@ -544,6 +544,7 @@
         entries: await window.AgendaGamaDataStore.list("diario", DIARIO_SEED),
         editingId: null,
         viewingId: null,
+        focusedEntryId: new URLSearchParams(window.location.search).get("entry") || "",
         searchTerm: "",
         selectedStudentId: "all",
         selectedCategory: "all",
@@ -591,6 +592,25 @@
         if (!refs.helpModal) return;
         refs.helpModal.hidden = !isOpen;
         syncBodyModalState();
+      }
+
+      function syncViewUrl(entryId) {
+        if (!window.history?.replaceState) return;
+        const nextUrl = new URL(window.location.href);
+        if (entryId) {
+          nextUrl.searchParams.set("entry", entryId);
+        } else {
+          nextUrl.searchParams.delete("entry");
+        }
+        window.history.replaceState({}, "", nextUrl.toString());
+      }
+
+      function markEntrySeen(entry) {
+        if (session.role !== "responsaveis" || !entry || !window.AgendaGamaApp?.markDiaryEntriesSeen) {
+          return;
+        }
+
+        window.AgendaGamaApp.markDiaryEntriesSeen(session, [entry]);
       }
 
       function getStudentChoices() {
@@ -694,26 +714,61 @@
         syncBodyModalState();
       }
 
-      function openView(entry) {
+      function openView(entry, options) {
         if (!entry || !refs.viewContent) return;
 
+        const settings = options || {};
         state.viewingId = entry.id;
+        state.focusedEntryId = entry.id;
         refs.viewContent.innerHTML = buildDiaryView(entry, responsavelNamesMap);
         if (refs.viewActions) {
           refs.viewActions.hidden = !canManageEntry(session, entry);
         }
+        markEntrySeen(entry);
+        if (settings.syncUrl !== false) {
+          syncViewUrl(entry.id);
+        }
         setViewModalState(true);
       }
 
-      function closeView() {
+      function closeView(options) {
+        const settings = options || {};
         state.viewingId = null;
+        state.focusedEntryId = "";
         if (refs.viewContent) {
           refs.viewContent.innerHTML = "";
         }
         if (refs.viewActions) {
           refs.viewActions.hidden = true;
         }
+        if (settings.syncUrl !== false) {
+          syncViewUrl("");
+        }
         setViewModalState(false);
+      }
+
+      function openEntryById(entryId, options) {
+        if (!entryId) return false;
+
+        const accessibleIds = new Set(accessibleStudents.map(function (student) { return student.id; }));
+        const entry = sortEntries(state.entries).find(function (item) {
+          return String(item?.id || "") === String(entryId) && accessibleIds.has(item.studentId);
+        }) || null;
+
+        if (!entry) return false;
+        openView(entry, options);
+        return true;
+      }
+
+      function applyRequestedEntry() {
+        const requestedEntryId = state.focusedEntryId || new URLSearchParams(window.location.search).get("entry") || "";
+        if (!requestedEntryId) return;
+
+        const opened = openEntryById(requestedEntryId, { syncUrl: false });
+        if (!opened) {
+          state.focusedEntryId = "";
+          syncViewUrl("");
+        }
       }
 
       function openHelp() {
@@ -1200,6 +1255,10 @@
       }
 
       render();
+      applyRequestedEntry();
+      window.AgendaGamaDiario.openEntryById = function (entryId) {
+        return openEntryById(entryId);
+      };
     }
 
     ensureShellContent(function () {
@@ -1216,7 +1275,6 @@
     });
   }
 
-  window.AgendaGamaDiario = {
-    mountDiario
-  };
+  window.AgendaGamaDiario = window.AgendaGamaDiario || {};
+  window.AgendaGamaDiario.mountDiario = mountDiario;
 })();
