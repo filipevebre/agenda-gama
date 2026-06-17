@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-gama-pwa-v3";
+const CACHE_NAME = "agenda-gama-pwa-v4";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -109,6 +109,17 @@ async function staleWhileRevalidate(request) {
   return networkResponse || Response.error();
 }
 
+function normalizePushPayload(payload) {
+  return {
+    title: String(payload?.title || "Agenda Gama"),
+    body: String(payload?.body || ""),
+    href: new URL(String(payload?.href || "/app/dashboard.html"), self.location.origin).toString(),
+    tag: String(payload?.tag || payload?.id || `agenda-gama-${Date.now()}`),
+    kind: String(payload?.kind || ""),
+    id: String(payload?.id || "")
+  };
+}
+
 self.addEventListener("fetch", function (event) {
   const request = event.request;
   const url = new URL(request.url);
@@ -127,6 +138,41 @@ self.addEventListener("fetch", function (event) {
   }
 
   event.respondWith(staleWhileRevalidate(request));
+});
+
+self.addEventListener("push", function (event) {
+  event.waitUntil((async function () {
+    let payload = normalizePushPayload({});
+
+    try {
+      payload = normalizePushPayload(event.data ? await event.data.json() : {});
+    } catch (error) {
+      payload = normalizePushPayload({ body: event.data ? await event.data.text() : "" });
+    }
+
+    const windowClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    const visibleClient = windowClients.find(function (client) {
+      return client.visibilityState === "visible";
+    }) || null;
+
+    if (visibleClient) {
+      visibleClient.postMessage({
+        type: "agenda-push-received",
+        payload: payload
+      });
+      return;
+    }
+
+    await self.registration.showNotification(payload.title, {
+      body: payload.body,
+      tag: payload.tag,
+      lang: "pt-BR",
+      badge: "/assets/icons/icon-192.png",
+      icon: "/assets/icons/icon-192.png",
+      renotify: false,
+      data: payload
+    });
+  })());
 });
 
 self.addEventListener("notificationclick", function (event) {

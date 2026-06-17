@@ -404,6 +404,29 @@
     }
   }
 
+  async function notifyCommunicationMessages(messages) {
+    const validIds = (messages || []).map(function (message) {
+      return String(message?.id || "").trim();
+    }).filter(Boolean);
+
+    if (!validIds.length || !window.AgendaGamaSupabase?.invokeFunction || !window.AgendaGamaAuth?.isSupabaseEnabled) {
+      return;
+    }
+
+    if (!(await window.AgendaGamaAuth.isSupabaseEnabled())) {
+      return;
+    }
+
+    try {
+      await window.AgendaGamaSupabase.invokeFunction("send-push-notifications", {
+        kind: "communication",
+        messageIds: validIds
+      });
+    } catch (error) {
+      console.warn("[Agenda Gama] Nao foi possivel disparar o push da comunicacao.", error);
+    }
+  }
+
   function ensureStatus(status) {
     const legacy = {
       "rascunho": "draft",
@@ -2405,6 +2428,7 @@
         savedMessages.forEach(function (savedMessage) {
           appendSavedMessage(savedMessage);
         });
+        void notifyCommunicationMessages(savedMessages);
 
         return createdThreads;
       }
@@ -2499,6 +2523,9 @@
           recipients: recipients
         });
         appendSavedMessage(savedMessage);
+        if (workflowStatus === "sent" || workflowStatus === "pending_approval") {
+          void notifyCommunicationMessages([savedMessage]);
+        }
 
         refs.composerInput.value = "";
         state.pendingAttachments = [];
@@ -3394,7 +3421,7 @@
           return;
         }
 
-        await window.AgendaGamaDataStore.save("messages", {
+        const updatedPendingMessage = await window.AgendaGamaDataStore.save("messages", {
           ...pendingMessage,
           status: nextStatus,
           approved_by: session.name,
@@ -3403,6 +3430,10 @@
 
         if (note) {
           await window.AgendaGamaDataStore.save("messages", buildSystemNote(thread, `${action === "return" ? "Mensagem devolvida" : "Mensagem rejeitada"}: ${note}`, session.name, session.email, session.role), DEFAULT_MESSAGES);
+        }
+
+        if (nextStatus === "sent") {
+          void notifyCommunicationMessages([updatedPendingMessage]);
         }
 
         await refreshAll();

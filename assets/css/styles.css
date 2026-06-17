@@ -3222,6 +3222,9 @@ body[data-page="comunicacao"] .thread-back-button {
   position: relative;
   z-index: 12;
 }
+.notification-center.is-open {
+  z-index: 70;
+}
 .notification-toggle {
   position: relative;
   width: 52px;
@@ -3281,6 +3284,11 @@ body[data-page="comunicacao"] .thread-back-button {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.notification-panel-actions .btn {
+  position: relative;
+  z-index: 1;
+  touch-action: manipulation;
 }
 .notification-panel-head strong {
   display: block;
@@ -3738,6 +3746,10 @@ body[data-page="comunicacao"] .message-board-actions {
   }
   .notification-center {
     position: static;
+  }
+  .notification-center.is-open {
+    position: relative;
+    z-index: 80;
   }
   .notification-panel {
     position: fixed;

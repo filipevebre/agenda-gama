@@ -189,6 +189,29 @@
     }
   }
 
+  async function notifyDiaryRecipients(entries) {
+    const validIds = (entries || []).map(function (entry) {
+      return String(entry?.id || "").trim();
+    }).filter(Boolean);
+
+    if (!validIds.length || !window.AgendaGamaSupabase?.invokeFunction || !window.AgendaGamaAuth?.isSupabaseEnabled) {
+      return;
+    }
+
+    if (!(await window.AgendaGamaAuth.isSupabaseEnabled())) {
+      return;
+    }
+
+    try {
+      await window.AgendaGamaSupabase.invokeFunction("send-push-notifications", {
+        kind: "diary",
+        entryIds: validIds
+      });
+    } catch (error) {
+      console.warn("[Agenda Gama] Nao foi possivel disparar o push do diario.", error);
+    }
+  }
+
   async function loadDirectory() {
     const [turmas, alunos, responsaveis, professores, equipe] = await Promise.all([
       safeList("turmas", []),
@@ -1099,6 +1122,7 @@
         state.entries = sortEntries(savedEntries.concat(state.entries.filter(function (entry) {
           return !savedIds.has(entry.id);
         })));
+        void notifyDiaryRecipients(savedEntries);
 
         const successMessage = state.editingId
           ? "Registro atualizado com sucesso."

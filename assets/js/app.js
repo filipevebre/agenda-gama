@@ -568,11 +568,7 @@
   }
 
   function closeNotificationPanel() {
-    if (!activeNotificationElements?.panel || !activeNotificationElements?.toggle) return;
-    activeNotificationElements.panel.hidden = true;
-    activeNotificationElements.toggle.setAttribute("aria-expanded", "false");
-    activeNotificationElements.toggle.classList.remove("is-active");
-    syncShellOverlayState();
+    setNotificationPanelState(false);
   }
 
   function syncShellOverlayState() {
@@ -592,8 +588,10 @@
   function setNotificationPanelState(isOpen) {
     if (!activeNotificationElements?.panel || !activeNotificationElements?.toggle) return;
     activeNotificationElements.panel.hidden = !isOpen;
+    activeNotificationElements.panel.setAttribute("aria-hidden", String(!isOpen));
     activeNotificationElements.toggle.setAttribute("aria-expanded", String(isOpen));
     activeNotificationElements.toggle.classList.toggle("is-active", isOpen);
+    activeNotificationElements.center?.classList.toggle("is-open", isOpen);
     syncShellOverlayState();
   }
 
@@ -670,6 +668,7 @@
   async function showSystemNotification(notification) {
     const pwa = window.AgendaGamaPWA;
     if (!notification || !pwa?.showNotification) return false;
+    if (pwa?.hasPushSubscription && await pwa.hasPushSubscription()) return false;
 
     return pwa.showNotification({
       id: notification.id,
@@ -1488,6 +1487,7 @@
     const overlay = document.getElementById("app-overlay");
     const toggle = document.getElementById("menu-toggle");
     const collapseButton = document.getElementById("sidebar-collapse");
+    const notificationCenter = document.getElementById("notification-center");
     const notificationToggle = document.getElementById("notification-toggle");
     const notificationPanel = document.getElementById("notification-panel");
     const notificationList = document.getElementById("notification-list");
@@ -1501,6 +1501,7 @@
     const noticeMarqueeMeta = document.getElementById("notice-marquee-meta");
     const installAppButton = document.getElementById("install-app-button");
     activeNotificationElements = {
+      center: notificationCenter,
       toggle: notificationToggle,
       panel: notificationPanel,
       list: notificationList,
@@ -1521,25 +1522,58 @@
     refreshShellNotifications();
     refreshShellNoticeMarquee();
     syncNotificationPermissionButton();
+    void syncDevicePushSubscription();
 
     async function logout() {
+      await window.AgendaGamaPWA?.removePushSubscription?.({ unsubscribe: false });
       await window.AgendaGamaAuth.clearSession();
       window.location.href = isOrganizationPage() ? "../../index.html" : "../index.html";
     }
 
+    async function syncDevicePushSubscription() {
+      const pwa = window.AgendaGamaPWA;
+      if (!activeShellSession || !pwa?.syncPushSubscription) return false;
+      if (pwa.getNotificationPermission?.() !== "granted") return false;
+
+      try {
+        return Boolean(await pwa.syncPushSubscription());
+      } catch (error) {
+        console.warn("[Agenda Gama] Nao foi possivel sincronizar o dispositivo para push.", error);
+        return false;
+      }
+    }
+
     async function handleEnableDeviceNotifications() {
       const pwa = window.AgendaGamaPWA;
-      if (!pwa?.requestNotificationPermission) return;
+      const triggerButton = activeNotificationElements?.permissionButton || null;
+      const originalLabel = triggerButton?.textContent || "Ativar no celular";
+
+      if (!pwa?.requestNotificationPermission) {
+        window.alert("Este navegador nao oferece suporte a notificacoes push neste momento.");
+        return;
+      }
 
       if (pwa.isIosBrowser?.() && !pwa.isStandalone?.()) {
         window.alert("No iPhone, instale o Agenda Gama na Tela de Inicio primeiro. Depois abra o app instalado e ative as notificacoes.");
         return;
       }
 
-      const permission = await pwa.requestNotificationPermission();
+      if (triggerButton) {
+        triggerButton.disabled = true;
+        triggerButton.textContent = "Ativando...";
+      }
+
+      const permission = await pwa.requestNotificationPermission().catch(function () {
+        return "default";
+      });
       syncNotificationPermissionButton();
 
       if (permission === "granted") {
+        const synced = await syncDevicePushSubscription();
+        if (!synced) {
+          window.alert("A permissao foi liberada, mas o dispositivo ainda nao conseguiu se registrar para push. Verifique as configuracoes do Supabase e tente novamente.");
+          return;
+        }
         await pwa.showNotification({
           id: "agenda-gama-notification-enabled",
           tag: "agenda-gama-notification-enabled",
@@ -1552,7 +1586,37 @@
 
       if (permission === "denied") {
         window.alert("As notificacoes ficaram bloqueadas. Se quiser ativar depois, libere nas configuracoes do navegador ou do app instalado.");
+        return;
       }
+
+      if (permission === "default") {
+        if (triggerButton) {
+          triggerButton.disabled = false;
+          triggerButton.textContent = originalLabel;
+        }
+        window.alert("O navegador nao abriu a permissao de notificacoes. Tente novamente e, se estiver no celular, use o app instalado ou confira se o site nao esta bloqueado nas configuracoes do navegador.");
+      }
+    }
+
+    function bindTapButton(button, handler) {
+      if (!button) return;
+
+      let lastTouchActivationAt = 0;
+
+      button.addEventListener("pointerup", function (event) {
+        if (event.pointerType !== "touch") return;
+        event.preventDefault();
+        lastTouchActivationAt = Date.now();
+        handler(event);
+      });
+
+      button.addEventListener("click", function (event) {
+        if (Date.now() - lastTouchActivationAt < 700) {
+          event.preventDefault();
+          return;
+        }
+        handler(event);
+      });
     }
 
     function syncInstallAppButton() {
@@ -1638,15 +1702,17 @@
       }
     });
 
-    notificationMarkAll?.addEventListener("click", async function () {
-      const unreadNotifications = listSessionNotifications(activeShellSession).filter(function (item) {
-        return !item.readAt;
-      });
-      markAllNotificationsRead();
-      await markNotificationsSourceSeen(unreadNotifications);
+    bindTapButton(notificationMarkAll, function () {
+      void (async function () {
+        const unreadNotifications = listSessionNotifications(activeShellSession).filter(function (item) {
+          return !item.readAt;
+        });
+        markAllNotificationsRead();
+        await markNotificationsSourceSeen(unreadNotifications);
+      })();
     });
 
-    notificationEnableDevice?.addEventListener("click", function () {
+    bindTapButton(notificationEnableDevice, function () {
       void handleEnableDeviceNotifications();
     });
 
@@ -1728,10 +1794,27 @@
     window.addEventListener("agenda-pwa-installed", syncInstallAppButton);
     window.addEventListener("agenda-pwa-ready", syncNotificationPermissionButton);
     window.addEventListener("agenda-pwa-installed", syncNotificationPermissionButton);
-    window.addEventListener("agenda-pwa-notification-permission-changed", syncNotificationPermissionButton);
+    window.addEventListener("agenda-pwa-notification-permission-changed", function () {
+      syncNotificationPermissionButton();
+      if (window.AgendaGamaPWA?.getNotificationPermission?.() === "granted") {
+        void syncDevicePushSubscription();
+        return;
+      }
+      if (window.AgendaGamaPWA?.getNotificationPermission?.() === "denied") {
+        void window.AgendaGamaPWA?.removePushSubscription?.({ unsubscribe: false });
+      }
+    });
     window.addEventListener("focus", syncInstallAppButton);
-    window.addEventListener("focus", syncNotificationPermissionButton);
+    window.addEventListener("focus", function () {
+      syncNotificationPermissionButton();
+      void syncDevicePushSubscription();
+    });
     window.addEventListener("load", syncInstallAppButton, { once: true });
+    navigator.serviceWorker?.addEventListener?.("message", function (event) {
+      if (event.data?.type !== "agenda-push-received") return;
+      refreshShellNotifications();
+      refreshShellNoticeMarquee();
+    });
 
     if (activeNotificationTimer) {
       window.clearInterval(activeNotificationTimer);

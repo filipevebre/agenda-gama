@@ -1,6 +1,8 @@
 (function () {
   const ROOT_SCOPE = "/";
   let serviceWorkerRegistrationPromise = null;
+  let pushConfigPromise = null;
+  let activePushEndpoint = "";
 
   function isStandaloneMode() {
     return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
@@ -12,6 +14,32 @@
   }
 
   let deferredPrompt = null;
+
+  function supportsPushNotifications() {
+    return window.isSecureContext
+      && "serviceWorker" in navigator
+      && "PushManager" in window
+      && typeof window.Notification !== "undefined";
+  }
+
+  function toBase64UrlUint8Array(value) {
+    const base64 = String(value || "")
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4 || 4)) % 4);
+    const raw = window.atob(padded);
+    const bytes = new Uint8Array(raw.length);
+    for (let index = 0; index < raw.length; index += 1) {
+      bytes[index] = raw.charCodeAt(index);
+    }
+    return bytes;
+  }
+
+  function buildDeviceLabel() {
+    const platform = String(window.navigator.platform || "");
+    const standalone = isStandaloneMode() ? "App instalado" : "Navegador";
+    return [platform, standalone].filter(Boolean).join(" - ") || standalone;
+  }
 
   function dispatchNotificationPermissionChanged() {
     window.dispatchEvent(new CustomEvent("agenda-pwa-notification-permission-changed", {
@@ -65,8 +93,33 @@
     }
   }
 
+  async function getPushConfig() {
+    if (pushConfigPromise) {
+      return pushConfigPromise;
+    }
+
+    pushConfigPromise = (async function () {
+      if (!window.AgendaGamaSupabase?.invokeFunction) {
+        return { publicKey: "", available: false };
+      }
+
+      try {
+        const response = await window.AgendaGamaSupabase.invokeFunction("push-config", {});
+        return {
+          publicKey: String(response?.publicKey || ""),
+          available: Boolean(response?.available)
+        };
+      } catch (error) {
+        console.warn("[Agenda Gama] Nao foi possivel carregar a configuracao de push.", error);
+        return { publicKey: "", available: false };
+      }
+    })();
+
+    return pushConfigPromise;
+  }
+
   async function requestNotificationPermission() {
-    if (!window.isSecureContext || typeof window.Notification === "undefined") {
+    if (!supportsPushNotifications()) {
       return "unsupported";
     }
 
@@ -84,6 +137,82 @@
       dispatchNotificationPermissionChanged();
       return getNotificationPermission();
     }
+  }
+
+  async function syncPushSubscription() {
+    if (!supportsPushNotifications() || getNotificationPermission() !== "granted") {
+      return null;
+    }
+
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration?.pushManager) {
+      return null;
+    }
+
+    const pushConfig = await getPushConfig();
+    if (!pushConfig.available || !pushConfig.publicKey) {
+      return null;
+    }
+
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: toBase64UrlUint8Array(pushConfig.publicKey)
+      });
+    }
+
+    activePushEndpoint = String(subscription.endpoint || "");
+
+    if (window.AgendaGamaSupabase?.invokeFunction) {
+      await window.AgendaGamaSupabase.invokeFunction("upsert-push-subscription", {
+        subscription: subscription.toJSON(),
+        deviceLabel: buildDeviceLabel(),
+        userAgent: window.navigator.userAgent || ""
+      });
+    }
+
+    return subscription;
+  }
+
+  async function removePushSubscription(options) {
+    const registration = await ensureServiceWorkerRegistration();
+    const subscription = registration?.pushManager
+      ? await registration.pushManager.getSubscription()
+      : null;
+    const endpoint = String(options?.endpoint || subscription?.endpoint || activePushEndpoint || "");
+
+    if (window.AgendaGamaSupabase?.invokeFunction && endpoint) {
+      try {
+        await window.AgendaGamaSupabase.invokeFunction("remove-push-subscription", {
+          endpoint: endpoint
+        });
+      } catch (error) {
+        console.warn("[Agenda Gama] Nao foi possivel remover a assinatura de push.", error);
+      }
+    }
+
+    if (subscription && options?.unsubscribe !== false) {
+      try {
+        await subscription.unsubscribe();
+      } catch (error) {
+        console.warn("[Agenda Gama] Nao foi possivel cancelar a assinatura local de push.", error);
+      }
+    }
+
+    activePushEndpoint = "";
+    return true;
+  }
+
+  async function hasPushSubscription() {
+    const registration = await ensureServiceWorkerRegistration();
+    if (!registration?.pushManager) {
+      return false;
+    }
+
+    const subscription = await registration.pushManager.getSubscription();
+    activePushEndpoint = String(subscription?.endpoint || activePushEndpoint || "");
+    return Boolean(subscription);
   }
 
   async function showNotification(options) {
@@ -160,7 +289,11 @@
     promptInstall: promptInstall,
     requestNotificationPermission: requestNotificationPermission,
     getNotificationPermission: getNotificationPermission,
-    showNotification: showNotification
+    showNotification: showNotification,
+    syncPushSubscription: syncPushSubscription,
+    removePushSubscription: removePushSubscription,
+    hasPushSubscription: hasPushSubscription,
+    supportsPushNotifications: supportsPushNotifications
   };
 
   window.dispatchEvent(new CustomEvent("agenda-pwa-ready"));
