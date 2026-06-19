@@ -197,17 +197,6 @@
     window.location.href = session.firstAccessPending ? "app/criar-senha.html" : "app/dashboard.html";
   }
 
-  function renderActiveSession(container, session) {
-    container.hidden = false;
-    container.innerHTML = `
-      <p>Voce esta conectado como <strong>${session.name}</strong> (${session.roleLabel}).</p>
-      <div class="action-row">
-        <button type="button" id="go-dashboard" class="btn btn-primary">${session.firstAccessPending ? "Criar senha agora" : "Continuar nessa conta"}</button>
-        <button type="button" id="switch-account" class="btn btn-secondary">Deslogar e entrar em outra</button>
-      </div>
-    `;
-  }
-
   function syncLoginModeUi(useSupabase) {
     const helperText = document.getElementById("login-helper-text");
     const demoUsers = document.getElementById("demo-users");
@@ -274,24 +263,13 @@
     });
   }
 
-  async function mountSupabaseLogin(form, feedback, activeSession) {
+  async function mountSupabaseLogin(form, feedback) {
     const session = await loadSupabaseSession({ timeoutMs: 8000 });
     if (session) {
+      feedback.textContent = "Sessao encontrada. Redirecionando...";
+      feedback.className = "feedback success";
       form.hidden = true;
-      renderActiveSession(activeSession, session);
-
-      document.getElementById("go-dashboard")?.addEventListener("click", function () {
-        redirectAfterLogin(session);
-      });
-
-      document.getElementById("switch-account")?.addEventListener("click", async function () {
-        await clearSession();
-        activeSession.hidden = true;
-        form.hidden = false;
-        feedback.textContent = "Sessao encerrada. Agora voce pode entrar com outra conta.";
-        feedback.className = "feedback success";
-      });
-
+      redirectAfterLogin(session);
       return;
     }
 
@@ -332,8 +310,13 @@
     const feedback = document.getElementById("login-feedback");
     const activeSession = document.getElementById("active-session");
 
-    if (!form || !feedback || !activeSession) {
+    if (!form || !feedback) {
       return;
+    }
+
+    if (activeSession) {
+      activeSession.hidden = true;
+      activeSession.innerHTML = "";
     }
 
     const supabaseEnabled = await isSupabaseEnabled();
@@ -341,27 +324,16 @@
     await showLoginFeedbackFromQuery(feedback);
 
     if (supabaseEnabled) {
-      await mountSupabaseLogin(form, feedback, activeSession);
+      await mountSupabaseLogin(form, feedback);
       return;
     }
 
     const session = getLocalSession();
     if (session) {
+      feedback.textContent = "Sessao encontrada. Redirecionando...";
+      feedback.className = "feedback success";
       form.hidden = true;
-      renderActiveSession(activeSession, session);
-
-      document.getElementById("go-dashboard")?.addEventListener("click", function () {
-        redirectAfterLogin(session);
-      });
-
-      document.getElementById("switch-account")?.addEventListener("click", function () {
-        clearLocalSession();
-        activeSession.hidden = true;
-        form.hidden = false;
-        feedback.textContent = "Sessao encerrada. Agora voce pode entrar com outra conta.";
-        feedback.className = "feedback success";
-      });
-
+      redirectAfterLogin(session);
       return;
     }
 
