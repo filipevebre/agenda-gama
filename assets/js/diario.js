@@ -611,6 +611,15 @@
         syncBodyModalState();
       }
 
+      function resetModalScroll(modal) {
+        if (!modal) return;
+        modal.scrollTop = 0;
+        const dialog = modal.querySelector(".app-modal-dialog, .app-modal-dialog-wide");
+        if (dialog) {
+          dialog.scrollTop = 0;
+        }
+      }
+
       function setHelpModalState(isOpen) {
         if (!refs.helpModal) return;
         refs.helpModal.hidden = !isOpen;
@@ -752,6 +761,10 @@
           syncViewUrl(entry.id);
         }
         setViewModalState(true);
+        window.requestAnimationFrame(function () {
+          resetModalScroll(refs.viewModal);
+          refs.viewClose?.focus?.({ preventScroll: true });
+        });
       }
 
       function closeView(options) {
@@ -971,6 +984,7 @@
         syncTargetFields();
         setFeedback("", "");
         window.requestAnimationFrame(function () {
+          resetModalScroll(refs.modal);
           refs.body.focus();
         });
       }

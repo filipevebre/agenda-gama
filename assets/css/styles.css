@@ -4092,7 +4092,10 @@ body[data-page="comunicacao"] .thread-templates-panel {
     font-size: 0.95rem;
   }
   .app-modal {
-    padding: 10px;
+    place-items: start center;
+    align-content: start;
+    overflow-y: auto;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 10px 16px;
   }
   .app-modal-backdrop {
     background: rgba(11, 31, 51, 0.2);
@@ -4101,7 +4104,8 @@ body[data-page="comunicacao"] .thread-templates-panel {
   .app-modal-dialog,
   .app-modal-dialog-wide {
     width: 100%;
-    max-height: calc(100vh - 20px);
+    max-height: calc(100vh - 28px - env(safe-area-inset-top, 0px));
+    margin: 0 auto;
   }
   .app-modal-panel {
     padding: 16px 14px;
