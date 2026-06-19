@@ -580,8 +580,8 @@
     const sidebarOpen = Boolean(sidebar?.classList.contains("open"));
     const notificationOpen = Boolean(notificationPanel && !notificationPanel.hidden && window.innerWidth <= 720);
 
-    overlay.classList.toggle("open", sidebarOpen || notificationOpen);
-    overlay.classList.toggle("notification-active", notificationOpen);
+    overlay.classList.toggle("open", sidebarOpen);
+    overlay.classList.toggle("notification-active", false);
     document.body.classList.toggle("notification-panel-open", notificationOpen);
   }
 
@@ -1494,6 +1494,7 @@
     const notificationEmpty = document.getElementById("notification-empty");
     const notificationMarkAll = document.getElementById("notification-mark-all");
     const notificationEnableDevice = document.getElementById("notification-enable-device");
+    const notificationClose = document.getElementById("notification-close");
     const noticeMarquee = document.getElementById("notice-marquee");
     const noticeMarqueeKicker = document.getElementById("notice-marquee-kicker");
     const noticeMarqueeTitle = document.getElementById("notice-marquee-title");
@@ -1728,6 +1729,10 @@
       void handleEnableDeviceNotifications();
     });
 
+    bindTapButton(notificationClose, function () {
+      closeNotificationPanel();
+    });
+
     noticeMarquee?.addEventListener("click", function () {
       const href = noticeMarquee.dataset.href;
       if (!href) return;
@@ -1750,11 +1755,14 @@
       event.stopPropagation();
     });
 
-    document.addEventListener("click", function (event) {
+    function handleNotificationOutsideInteraction(event) {
       if (!notificationPanel || notificationPanel.hidden) return;
       if (notificationPanel.contains(event.target) || notificationToggle?.contains(event.target)) return;
       closeNotificationPanel();
-    });
+    }
+
+    document.addEventListener("click", handleNotificationOutsideInteraction);
+    document.addEventListener("touchstart", handleNotificationOutsideInteraction, { passive: true });
 
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape") {
