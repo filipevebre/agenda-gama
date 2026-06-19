@@ -179,7 +179,7 @@ function buildCommunicationPayload(message: Record<string, unknown>, thread: Rec
   if (status === "pending_approval") {
     return {
       kind: "communication-approval",
-      tag: `approval:${threadKey || message.id || Date.now()}`,
+      tag: `approval:${String(message?.id || threadKey || Date.now())}`,
       title: "Mensagem aguardando aprovacao",
       body: [context, preview].filter(Boolean).join(" - "),
       href: threadKey ? `/app/comunicacao.html?thread=${encodeURIComponent(threadKey)}` : buildAppUrl("/app/comunicacao.html")
@@ -188,7 +188,7 @@ function buildCommunicationPayload(message: Record<string, unknown>, thread: Rec
 
   return {
     kind: "communication-thread",
-    tag: `message:${threadKey || message.id || Date.now()}`,
+    tag: `message:${String(message?.id || threadKey || Date.now())}`,
     title: String(message?.sender_role || "") === "responsaveis"
       ? `Nova mensagem em ${String(thread?.responsibleName || thread?.channelName || "Atendimento")}`
       : String(thread?.type || "") === "broadcast"

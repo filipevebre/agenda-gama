@@ -191,7 +191,10 @@ export async function sendPushToUserIds(
         title: payload.title,
         body: payload.body,
         href: buildAppUrl(payload.href)
-      }))
+      }), {
+        TTL: 60,
+        urgency: "high"
+      })
       sentCount += 1
     } catch (error) {
       const statusCode = Number((error as { statusCode?: number; status?: number })?.statusCode || (error as { status?: number })?.status || 0)

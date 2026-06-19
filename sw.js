@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-gama-pwa-v4";
+const CACHE_NAME = "agenda-gama-pwa-v5";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -151,17 +151,12 @@ self.addEventListener("push", function (event) {
     }
 
     const windowClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
-    const visibleClient = windowClients.find(function (client) {
-      return client.visibilityState === "visible";
-    }) || null;
-
-    if (visibleClient) {
-      visibleClient.postMessage({
+    windowClients.forEach(function (client) {
+      client.postMessage({
         type: "agenda-push-received",
         payload: payload
       });
-      return;
-    }
+    });
 
     await self.registration.showNotification(payload.title, {
       body: payload.body,
@@ -169,7 +164,7 @@ self.addEventListener("push", function (event) {
       lang: "pt-BR",
       badge: "/assets/icons/icon-192.png",
       icon: "/assets/icons/icon-192.png",
-      renotify: false,
+      renotify: true,
       data: payload
     });
   })());
