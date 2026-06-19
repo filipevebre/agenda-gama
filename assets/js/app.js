@@ -1600,21 +1600,34 @@
     function bindTapButton(button, handler) {
       if (!button) return;
 
-      let lastTouchActivationAt = 0;
+      let lastHandledAt = 0;
+
+      function runHandler(event) {
+        if (button.disabled) return;
+        const now = Date.now();
+        if (now - lastHandledAt < 500) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
+        lastHandledAt = now;
+        event.preventDefault();
+        event.stopPropagation();
+        handler(event);
+      }
+
+      button.addEventListener("touchend", function (event) {
+        runHandler(event);
+      }, { passive: false });
 
       button.addEventListener("pointerup", function (event) {
-        if (event.pointerType !== "touch") return;
-        event.preventDefault();
-        lastTouchActivationAt = Date.now();
-        handler(event);
+        if (event.pointerType && event.pointerType !== "touch") return;
+        runHandler(event);
       });
 
       button.addEventListener("click", function (event) {
-        if (Date.now() - lastTouchActivationAt < 700) {
-          event.preventDefault();
-          return;
-        }
-        handler(event);
+        runHandler(event);
       });
     }
 
