@@ -108,7 +108,8 @@
       role: profile?.role || user.user_metadata?.role || "responsaveis",
       roleLabel: profile?.role_label || user.user_metadata?.role_label || "Responsavel",
       canApprove: Boolean(profile?.can_approve ?? user.user_metadata?.can_approve ?? false),
-      firstAccessPending: Boolean(profile?.first_access_pending ?? user.user_metadata?.first_access_pending ?? false)
+      firstAccessPending: Boolean(profile?.first_access_pending ?? user.user_metadata?.first_access_pending ?? false),
+      authProvider: "supabase"
     };
   }
 
@@ -144,21 +145,30 @@
     return cachedUsers;
   }
 
-  async function loadSupabaseSession() {
+  function getPersistedSupabaseSession() {
+    const session = getLocalSession();
+    return session?.authProvider === "supabase" ? session : null;
+  }
+
+  async function loadSupabaseSession(options) {
     if (!(await isSupabaseEnabled())) {
       cachedSession = getLocalSession();
       cachedUsers = getLocalUsers();
       return cachedSession;
     }
 
-    const session = await window.AgendaGamaSupabase.waitForSession(2000);
+    const timeoutMs = Number(options?.timeoutMs || 6000);
+    const allowFallback = options?.allowFallback !== false;
+    const session = await window.AgendaGamaSupabase.waitForSession(timeoutMs);
     if (!session?.user) {
-      cachedSession = null;
-      return null;
+      const fallbackSession = allowFallback ? getPersistedSupabaseSession() : null;
+      cachedSession = fallbackSession;
+      return fallbackSession;
     }
 
     const profile = await window.AgendaGamaSupabase.getProfile(session.user.id);
     cachedSession = mapProfileToSession(session.user, profile);
+    saveLocalSession(cachedSession);
     await refreshSupabaseUsers();
     return cachedSession;
   }
@@ -166,6 +176,7 @@
   async function clearSession() {
     if (await isSupabaseEnabled()) {
       await window.AgendaGamaSupabase.signOut();
+      clearLocalSession();
       cachedSession = null;
       cachedUsers = [];
       return;
@@ -264,7 +275,7 @@
   }
 
   async function mountSupabaseLogin(form, feedback, activeSession) {
-    const session = await loadSupabaseSession();
+    const session = await loadSupabaseSession({ timeoutMs: 8000 });
     if (session) {
       form.hidden = true;
       renderActiveSession(activeSession, session);
@@ -298,7 +309,7 @@
         return;
       }
 
-      const nextSession = await loadSupabaseSession();
+      const nextSession = await loadSupabaseSession({ timeoutMs: 8000, allowFallback: false });
       if (!nextSession) {
         feedback.textContent = "Autenticacao realizada, mas nao foi possivel carregar o perfil do usuario.";
         feedback.className = "feedback error";
@@ -511,7 +522,7 @@
   }
 
   async function protectPage() {
-    const session = await loadSupabaseSession();
+    const session = await loadSupabaseSession({ timeoutMs: 8000 });
     if (!session) {
       window.location.href = loginPath();
       return null;
