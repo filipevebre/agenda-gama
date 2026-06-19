@@ -668,7 +668,6 @@
   async function showSystemNotification(notification) {
     const pwa = window.AgendaGamaPWA;
     if (!notification || !pwa?.showNotification) return false;
-    if (pwa?.hasPushSubscription && await pwa.hasPushSubscription()) return false;
 
     return pwa.showNotification({
       id: notification.id,
@@ -1808,6 +1807,16 @@
     window.addEventListener("focus", function () {
       syncNotificationPermissionButton();
       void syncDevicePushSubscription();
+      refreshShellNotifications();
+      refreshShellNoticeMarquee();
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") return;
+      syncInstallAppButton();
+      syncNotificationPermissionButton();
+      void syncDevicePushSubscription();
+      refreshShellNotifications();
+      refreshShellNoticeMarquee();
     });
     window.addEventListener("load", syncInstallAppButton, { once: true });
     navigator.serviceWorker?.addEventListener?.("message", function (event) {
