@@ -4111,6 +4111,13 @@ body[data-page="comunicacao"] .thread-templates-panel {
     padding: 16px 14px;
     border-radius: 18px;
   }
+  body[data-page="diario"] #diario-view-modal {
+    padding-top: calc(68px + env(safe-area-inset-top, 0px));
+  }
+  body[data-page="diario"] #diario-view-modal .app-modal-dialog,
+  body[data-page="diario"] #diario-view-modal .app-modal-dialog-wide {
+    max-height: calc(100vh - 86px - env(safe-area-inset-top, 0px));
+  }
   .app-modal-header {
     margin-bottom: 12px;
   }
