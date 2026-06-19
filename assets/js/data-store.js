@@ -6,12 +6,13 @@
     professores: "professores",
     alunos: "alunos",
     responsaveis: "responsaveis",
+    notices: "school_notices",
     diario: "student_diary_entries",
     channels: "communication_channels",
     messages: "communication_messages"
   };
   const LOCAL_ONLY_KEYS = new Set();
-  const MIGRATABLE_KEYS = new Set(["diario"]);
+  const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -69,9 +70,51 @@
     };
   }
 
+  function mapNoticeFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      title: item.title || "",
+      summary: item.summary || "",
+      body: item.body || "",
+      audience: item.audience || "all",
+      targetTurmas: normalizeArray(item.target_turmas || item.targetTurmas).filter(Boolean),
+      archiveDate: item.archive_date || item.archiveDate || "",
+      pinned: Boolean(item.pinned),
+      urgent: Boolean(item.urgent),
+      authorName: item.author_name || item.authorName || "",
+      authorRole: item.author_role || item.authorRole || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapNoticeToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      title: item.title || "",
+      summary: item.summary || "",
+      body: item.body || "",
+      audience: item.audience || "all",
+      target_turmas: normalizeArray(item.targetTurmas || item.target_turmas).filter(Boolean),
+      archive_date: item.archiveDate || item.archive_date || null,
+      pinned: Boolean(item.pinned),
+      urgent: Boolean(item.urgent),
+      author_name: item.authorName || item.author_name || "",
+      author_role: item.authorRole || item.author_role || ""
+    };
+  }
+
   function mapFromRemote(key, item) {
     if (key === "diario") {
       return mapDiaryFromRemote(item);
+    }
+
+    if (key === "notices") {
+      return mapNoticeFromRemote(item);
     }
 
     return item;
@@ -80,6 +123,10 @@
   function mapToRemote(key, item) {
     if (key === "diario") {
       return mapDiaryToRemote(item);
+    }
+
+    if (key === "notices") {
+      return mapNoticeToRemote(item);
     }
 
     return item;

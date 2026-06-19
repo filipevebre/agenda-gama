@@ -175,6 +175,10 @@
     }
   }
 
+  async function loadNotices() {
+    return (await safeList("notices", NOTICE_SEED)).map(normalizeNoticeRecord);
+  }
+
   function getNoticeAudienceLabel(audience) {
     const labels = {
       all: "Toda a escola",
@@ -491,7 +495,7 @@
   async function listVisibleNoticesForSession(session) {
     const directory = await loadNoticeDirectory();
     const context = buildNoticeSessionContext(session, directory);
-    return sortNotices(readNotices()).filter(function (notice) {
+    return sortNotices(await loadNotices()).filter(function (notice) {
       if (isNoticeArchived(notice)) {
         return false;
       }
@@ -1202,7 +1206,8 @@
 
     const noticeId = targetUrl?.searchParams.get("notice");
     if (noticeId) {
-      const matchedNotice = readNotices().find(function (notice) {
+      const notices = await loadNotices();
+      const matchedNotice = notices.find(function (notice) {
         return String(notice?.id || "") === String(noticeId);
       }) || null;
       if (matchedNotice) {
@@ -1733,10 +1738,10 @@
       closeNotificationPanel();
     });
 
-    noticeMarquee?.addEventListener("click", function () {
+    noticeMarquee?.addEventListener("click", async function () {
       const href = noticeMarquee.dataset.href;
       if (!href) return;
-      const notices = readNotices();
+      const notices = await loadNotices();
       const noticeId = new URL(href, window.location.href).searchParams.get("notice");
       const matchedNotice = notices.find(function (item) { return item.id === noticeId; }) || null;
       if (matchedNotice) {

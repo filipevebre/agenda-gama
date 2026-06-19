@@ -135,27 +135,33 @@
   }
 
   function readNotices() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      const seeded = NOTICE_SEED.map(normalizeNotice);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-      return seeded;
-    }
-
-    try {
-      const parsed = JSON.parse(raw);
-      const normalized = Array.isArray(parsed) ? parsed.map(normalizeNotice) : NOTICE_SEED.map(normalizeNotice);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-      return normalized;
-    } catch (error) {
-      const fallback = NOTICE_SEED.map(normalizeNotice);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback));
-      return fallback;
-    }
+    return NOTICE_SEED.map(normalizeNotice);
   }
 
-  function writeNotices(items) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(normalizeNotice)));
+  async function loadNotices() {
+    if (!window.AgendaGamaDataStore?.list) {
+      return readNotices();
+    }
+
+    const items = await window.AgendaGamaDataStore.list("notices", NOTICE_SEED);
+    return (items || []).map(normalizeNotice);
+  }
+
+  async function saveNoticeRecord(item) {
+    const normalized = normalizeNotice(item);
+    if (!window.AgendaGamaDataStore?.save) {
+      return normalized;
+    }
+
+    return normalizeNotice(await window.AgendaGamaDataStore.save("notices", normalized, NOTICE_SEED));
+  }
+
+  async function removeNoticeRecord(noticeId) {
+    if (!window.AgendaGamaDataStore?.remove) {
+      return;
+    }
+
+    await window.AgendaGamaDataStore.remove("notices", noticeId, NOTICE_SEED);
   }
 
   function dispatchNoticesUpdated() {
@@ -537,7 +543,7 @@
       const context = buildSessionContext(session, directory);
 
       const state = {
-        notices: readNotices(),
+        notices: await loadNotices(),
         editingId: null,
         searchTerm: "",
         audienceFilter: "all",
@@ -711,6 +717,11 @@
         }, session, context), refs);
       }
 
+      async function reloadNotices() {
+        state.notices = await loadNotices();
+        render();
+      }
+
       if (!canManage(session) || PAGE_MODE === "archived") {
         refs.openEditor?.setAttribute("hidden", "hidden");
         if (refs.modal) refs.modal.hidden = true;
@@ -787,7 +798,7 @@
         renderTurmaTargetSelection();
       });
 
-      refs.form?.addEventListener("submit", function (event) {
+      refs.form?.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const nextNotice = normalizeNotice({
@@ -814,21 +825,14 @@
           return;
         }
 
-        const existingIndex = state.notices.findIndex(function (item) { return item.id === nextNotice.id; });
-        if (existingIndex >= 0) {
-          state.notices[existingIndex] = nextNotice;
-        } else {
-          state.notices.unshift(nextNotice);
-        }
-
-        writeNotices(state.notices);
+        await saveNoticeRecord(nextNotice);
         dispatchNoticesUpdated();
-        render();
+        await reloadNotices();
         setBoardFeedback(state.editingId ? "Comunicado atualizado com sucesso." : "Comunicado publicado com sucesso.", "success");
         closeEditor();
       });
 
-      refs.list?.addEventListener("click", function (event) {
+      refs.list?.addEventListener("click", async function (event) {
         const editButton = event.target.closest("[data-notice-edit-id]");
         if (editButton) {
           const notice = state.notices.find(function (item) { return item.id === editButton.dataset.noticeEditId; }) || null;
@@ -840,18 +844,17 @@
         if (archiveButton) {
           const noticeIndex = state.notices.findIndex(function (item) { return item.id === archiveButton.dataset.noticeArchiveId; });
           if (noticeIndex >= 0) {
-            state.notices[noticeIndex] = normalizeNotice({
+            await saveNoticeRecord({
               ...state.notices[noticeIndex],
               archiveDate: getTodayDateKey(),
               updatedAt: new Date().toISOString()
             });
-            writeNotices(state.notices);
             dispatchNoticesUpdated();
             if (state.editingId === archiveButton.dataset.noticeArchiveId) {
               closeEditor();
             }
             setBoardFeedback("Comunicado arquivado com sucesso.", "success");
-            render();
+            await reloadNotices();
           }
           return;
         }
@@ -860,14 +863,13 @@
         if (restoreButton) {
           const noticeIndex = state.notices.findIndex(function (item) { return item.id === restoreButton.dataset.noticeRestoreId; });
           if (noticeIndex >= 0) {
-            state.notices[noticeIndex] = normalizeNotice({
+            await saveNoticeRecord({
               ...state.notices[noticeIndex],
               archiveDate: ""
             });
-            writeNotices(state.notices);
             dispatchNoticesUpdated();
             setBoardFeedback("Comunicado restaurado com sucesso.", "success");
-            render();
+            await reloadNotices();
           }
           return;
         }
@@ -875,14 +877,13 @@
         const removeButton = event.target.closest("[data-notice-remove-id]");
         if (!removeButton) return;
 
-        state.notices = state.notices.filter(function (item) { return item.id !== removeButton.dataset.noticeRemoveId; });
-        writeNotices(state.notices);
+        await removeNoticeRecord(removeButton.dataset.noticeRemoveId);
         dispatchNoticesUpdated();
         if (state.editingId === removeButton.dataset.noticeRemoveId) {
           closeEditor();
         }
         setBoardFeedback("Comunicado excluido com sucesso.", "success");
-        render();
+        await reloadNotices();
       });
 
       refs.search?.addEventListener("input", function () {
@@ -919,10 +920,9 @@
         }
       });
 
-      window.addEventListener("storage", function (event) {
+      window.addEventListener("storage", async function (event) {
         if (event.key !== STORAGE_KEY) return;
-        state.notices = readNotices();
-        render();
+        await reloadNotices();
       });
 
       render();
