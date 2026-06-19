@@ -557,6 +557,15 @@
 
       if (!refs.list || !refs.form) return;
 
+      function mountModalPortal(modal) {
+        if (!modal || modal.parentElement === document.body) return;
+        document.body.appendChild(modal);
+      }
+
+      mountModalPortal(refs.modal);
+      mountModalPortal(refs.viewModal);
+      mountModalPortal(refs.helpModal);
+
       const directory = await loadDirectory();
       const actorContext = buildActorContext(session, directory);
       const accessibleStudents = getAccessibleStudents(session, actorContext, directory);
@@ -603,6 +612,13 @@
           || Boolean(refs.viewModal && !refs.viewModal.hidden)
           || Boolean(refs.helpModal && !refs.helpModal.hidden);
         document.body.classList.toggle("app-modal-open", isAnyModalOpen);
+        const shellRoot = document.getElementById("app-shell");
+        if (shellRoot) {
+          shellRoot.setAttribute("aria-hidden", String(isAnyModalOpen));
+          if ("inert" in shellRoot) {
+            shellRoot.inert = isAnyModalOpen;
+          }
+        }
       }
 
       function setViewModalState(isOpen) {
