@@ -322,10 +322,14 @@
     return ["administrador", "funcionarios", "professores"].includes(session?.role);
   }
 
-  function canManageEntry(session, entry) {
+  function canEditEntry(session, entry) {
     if (!session || !entry) return false;
     if (session.role === "administrador" || session.role === "funcionarios") return true;
     return session.role === "professores" && normalizeEmail(session.email) === normalizeEmail(entry.authorEmail);
+  }
+
+  function canDeleteEntry(session) {
+    return canCreateEntries(session) && session?.role !== "responsaveis";
   }
 
   function getResponsavelNamesByStudent(directory) {
@@ -769,8 +773,16 @@
         state.viewingId = entry.id;
         state.focusedEntryId = entry.id;
         refs.viewContent.innerHTML = buildDiaryView(entry, responsavelNamesMap);
+        const allowEdit = canEditEntry(session, entry);
+        const allowDelete = canDeleteEntry(session);
         if (refs.viewActions) {
-          refs.viewActions.hidden = !canManageEntry(session, entry);
+          refs.viewActions.hidden = !allowEdit && !allowDelete;
+        }
+        if (refs.viewEdit) {
+          refs.viewEdit.hidden = !allowEdit;
+        }
+        if (refs.viewDelete) {
+          refs.viewDelete.hidden = !allowDelete;
         }
         markEntrySeen(entry);
         if (settings.syncUrl !== false) {
@@ -792,6 +804,12 @@
         }
         if (refs.viewActions) {
           refs.viewActions.hidden = true;
+        }
+        if (refs.viewEdit) {
+          refs.viewEdit.hidden = true;
+        }
+        if (refs.viewDelete) {
+          refs.viewDelete.hidden = true;
         }
         if (settings.syncUrl !== false) {
           syncViewUrl("");
@@ -1206,14 +1224,14 @@
 
       refs.viewEdit?.addEventListener("click", function () {
         const entry = state.entries.find(function (item) { return item.id === state.viewingId; }) || null;
-        if (entry) {
+        if (entry && canEditEntry(session, entry)) {
           openEditor(entry);
         }
       });
 
       refs.viewDelete?.addEventListener("click", async function () {
         const entryId = state.viewingId;
-        if (!entryId) return;
+        if (!entryId || !canDeleteEntry(session)) return;
         state.entries = state.entries.filter(function (item) { return item.id !== entryId; });
         await window.AgendaGamaDataStore.remove("diario", entryId, DIARIO_SEED);
         closeView();
