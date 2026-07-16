@@ -1,12 +1,22 @@
 (function () {
+  const MEAL_TYPES = ["breakfast", "lunch", "afternoon_snack"];
   const MEAL_LABELS = {
     breakfast: "Café da manhã",
     lunch: "Almoço",
     afternoon_snack: "Café da tarde"
   };
   const DAY_NAMES = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
-  const DAY_FORMATTER = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
-  const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const PERIOD_LABELS = {
+    year: "Ano inteiro",
+    semester_1: "1º semestre",
+    semester_2: "2º semestre",
+    custom: "Período anterior"
+  };
+  const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
 
   function escapeHtml(value) {
     return String(value || "")
@@ -35,12 +45,29 @@
     return next;
   }
 
-  function startOfWeek(date) {
-    const next = new Date(date);
-    const day = next.getDay();
-    next.setDate(next.getDate() - (day === 0 ? 6 : day - 1));
-    next.setHours(12, 0, 0, 0);
-    return next;
+  function firstMondayOnOrAfter(value) {
+    const date = parseDate(value);
+    const offset = (8 - date.getDay()) % 7;
+    return addDays(date, offset);
+  }
+
+  function periodBounds(year, periodType) {
+    if (periodType === "semester_1") {
+      return { validFrom: `${year}-01-01`, validUntil: `${year}-06-30` };
+    }
+    if (periodType === "semester_2") {
+      return { validFrom: `${year}-07-01`, validUntil: `${year}-12-31` };
+    }
+    return { validFrom: `${year}-01-01`, validUntil: `${year}-12-31` };
+  }
+
+  function createId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (character) {
+      const random = Math.floor(Math.random() * 16);
+      const value = character === "x" ? random : (random & 0x3) | 0x8;
+      return value.toString(16);
+    });
   }
 
   function isManager(session) {
@@ -54,7 +81,9 @@
   function setModalOpen(modal, open) {
     if (!modal) return;
     modal.hidden = !open;
-    const anyOpen = Array.from(document.querySelectorAll(".app-modal")).some(function (item) { return !item.hidden; });
+    const anyOpen = Array.from(document.querySelectorAll(".app-modal")).some(function (item) {
+      return !item.hidden;
+    });
     document.body.classList.toggle("app-modal-open", anyOpen);
   }
 
@@ -78,20 +107,44 @@
     });
   }
 
+  function targetLabel(records) {
+    const targets = Array.from(new Set(records.flatMap(function (record) {
+      return Array.isArray(record.targetTurmas) ? record.targetTurmas : [];
+    })));
+    if (!targets.length) return "Toda a escola";
+    if (targets.length === 1) return targets[0];
+    return `${targets.length} turmas`;
+  }
+
+  function formatPeriod(cycle) {
+    if (!cycle) return "-";
+    if (cycle.periodType === "custom") {
+      return `${SHORT_DATE_FORMATTER.format(parseDate(cycle.validFrom))} a ${SHORT_DATE_FORMATTER.format(parseDate(cycle.validUntil))}`;
+    }
+    return `${PERIOD_LABELS[cycle.periodType] || "Período"} de ${cycle.periodYear}`;
+  }
+
+  function shortPeriod(cycle) {
+    if (!cycle) return "-";
+    if (cycle.periodType === "semester_1") return `1º sem. ${cycle.periodYear}`;
+    if (cycle.periodType === "semester_2") return `2º sem. ${cycle.periodYear}`;
+    if (cycle.periodType === "year") return `Ano ${cycle.periodYear}`;
+    return String(cycle.periodYear || "Anterior");
+  }
+
   function mount() {
     async function init(session) {
       if (!session || !window.AgendaGamaDataStore) return;
 
       const refs = {
         newButton: document.getElementById("menu-new"),
-        statWeek: document.getElementById("menu-stat-week"),
-        statPublished: document.getElementById("menu-stat-published"),
-        statUpcoming: document.getElementById("menu-stat-upcoming"),
-        previousWeek: document.getElementById("menu-previous-week"),
-        nextWeek: document.getElementById("menu-next-week"),
-        today: document.getElementById("menu-today"),
-        weekDate: document.getElementById("menu-week-date"),
-        weekLabel: document.getElementById("menu-week-label"),
+        statPeriod: document.getElementById("menu-stat-period"),
+        periodFilter: document.getElementById("menu-period-filter"),
+        periodLabel: document.getElementById("menu-period-label"),
+        periodActions: document.getElementById("menu-period-actions"),
+        editPeriod: document.getElementById("menu-edit-period"),
+        publishPeriod: document.getElementById("menu-publish-period"),
+        deletePeriod: document.getElementById("menu-delete-period"),
         list: document.getElementById("menu-list"),
         empty: document.getElementById("menu-empty"),
         feedback: document.getElementById("menu-feedback"),
@@ -101,7 +154,8 @@
         editorClose: document.getElementById("menu-editor-close"),
         editorCancel: document.getElementById("menu-editor-cancel"),
         editorFeedback: document.getElementById("menu-editor-feedback"),
-        weekStart: document.getElementById("menu-week-start"),
+        periodYear: document.getElementById("menu-period-year"),
+        periodType: document.getElementById("menu-period-type"),
         audience: document.getElementById("menu-audience"),
         targetBlock: document.getElementById("menu-target-block"),
         turmaList: document.getElementById("menu-turma-list"),
@@ -126,41 +180,63 @@
       const state = {
         menus: menus || [],
         turmas: turmas || [],
-        selectedWeek: startOfWeek(new Date()),
-        editingWeek: startOfWeek(new Date()),
-        expandedIds: new Set()
+        selectedCycleId: "",
+        editingCycleId: "",
+        expandedWeekdays: new Set([new Date().getDay()])
       };
-      state.menus.forEach(function (menu) {
-        if (menu.menuDate === dateKey(new Date())) state.expandedIds.add(menu.id);
-      });
 
       function setFeedback(message, type) {
         refs.feedback.textContent = message || "";
         refs.feedback.className = `feedback${type ? ` ${type}` : ""}`;
       }
 
-      function menusForWeek(week) {
-        const first = dateKey(week);
-        const last = dateKey(addDays(week, 4));
-        return state.menus.filter(function (menu) { return menu.menuDate >= first && menu.menuDate <= last; });
+      function buildCycles() {
+        const grouped = new Map();
+        state.menus.forEach(function (menu) {
+          const fallbackId = `legacy-${menu.validFrom || menu.menuDate || menu.id}`;
+          const cycleId = menu.cycleId || fallbackId;
+          if (!grouped.has(cycleId)) grouped.set(cycleId, []);
+          grouped.get(cycleId).push(menu);
+        });
+
+        return Array.from(grouped.entries()).map(function ([id, records]) {
+          records.sort(function (left, right) {
+            return Number(left.weekday || parseDate(left.menuDate).getDay()) - Number(right.weekday || parseDate(right.menuDate).getDay());
+          });
+          const template = records[0];
+          return {
+            id: id,
+            records: records,
+            periodType: template.periodType || "custom",
+            periodYear: Number(template.periodYear || parseDate(template.menuDate).getFullYear()),
+            validFrom: template.validFrom || template.menuDate,
+            validUntil: template.validUntil || template.menuDate,
+            status: records.every(function (record) { return record.status === "published"; }) ? "published" : "draft",
+            target: targetLabel(records)
+          };
+        }).sort(function (left, right) {
+          return right.validFrom.localeCompare(left.validFrom) || right.id.localeCompare(left.id);
+        });
       }
 
-      function weekMenus() {
-        return menusForWeek(state.selectedWeek);
+      function selectedCycle(cycles) {
+        return cycles.find(function (cycle) { return cycle.id === state.selectedCycleId; }) || null;
       }
 
-      function renderStats() {
+      function ensureSelectedCycle(cycles) {
+        if (selectedCycle(cycles)) return;
         const today = dateKey(new Date());
-        refs.statWeek.textContent = new Set(weekMenus().map(function (menu) { return menu.menuDate; })).size;
-        refs.statPublished.textContent = state.menus.filter(function (menu) { return menu.status === "published"; }).length;
-        refs.statUpcoming.textContent = state.menus.filter(function (menu) {
-          return menu.status === "published" && menu.menuDate >= today && parseDate(menu.menuDate).getDay() >= 1 && parseDate(menu.menuDate).getDay() <= 5;
-        }).length;
+        const active = cycles.find(function (cycle) {
+          return cycle.validFrom <= today && cycle.validUntil >= today;
+        });
+        state.selectedCycleId = active?.id || cycles[0]?.id || "";
       }
 
       function mealList(menu) {
-        const mealMap = new Map(normalizeMeals(menu.meals).map(function (meal) { return [meal.type, meal]; }));
-        return Object.keys(MEAL_LABELS).map(function (type) {
+        const mealMap = new Map(normalizeMeals(menu?.meals).map(function (meal) {
+          return [meal.type, meal];
+        }));
+        return MEAL_TYPES.map(function (type) {
           const meal = mealMap.get(type);
           return `
             <div class="menu-meal-item ${meal ? "" : "is-empty"}">
@@ -171,70 +247,62 @@
         }).join("");
       }
 
-      function menuCard(menu) {
-        const expanded = state.expandedIds.has(menu.id);
-        const targets = menu.targetTurmas?.length ? menu.targetTurmas.join(", ") : "Toda a escola";
-        const manager = isManager(session);
+      function menuCard(cycle, weekday) {
+        const menu = cycle.records.find(function (record) {
+          return Number(record.weekday || parseDate(record.menuDate).getDay()) === weekday;
+        });
+        const expanded = state.expandedWeekdays.has(weekday);
         return `
-          <article class="menu-day-card ${menu.menuDate === dateKey(new Date()) ? "is-today" : ""}">
-            <button class="menu-day-summary" type="button" data-menu-toggle="${escapeHtml(menu.id)}" aria-expanded="${expanded}">
-              <span class="menu-day-date"><strong>${escapeHtml(String(parseDate(menu.menuDate).getDate()).padStart(2, "0"))}</strong><small>${escapeHtml(parseDate(menu.menuDate).toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""))}</small></span>
+          <article class="menu-day-card ${menu ? "" : "menu-day-card-empty"}">
+            <button class="menu-day-summary" type="button" data-menu-toggle-day="${weekday}" aria-expanded="${expanded}">
+              <span class="menu-day-date"><strong>${escapeHtml(DAY_NAMES[weekday - 1].slice(0, 3))}</strong><small>semana</small></span>
               <span class="menu-day-copy">
-                <small>${escapeHtml(DAY_FORMATTER.format(parseDate(menu.menuDate)))}</small>
-                <strong>${escapeHtml(DAY_NAMES[parseDate(menu.menuDate).getDay() - 1] || "Cardápio")}</strong>
-                <span>3 refeições · ${escapeHtml(targets)}</span>
+                <small>Cardápio recorrente</small>
+                <strong>${escapeHtml(DAY_NAMES[weekday - 1])}</strong>
+                <span>${menu ? `3 refeições · ${escapeHtml(cycle.target)}` : "Cardápio não informado"}</span>
               </span>
-              <span class="status-badge menu-status-${escapeHtml(menu.status)}">${menu.status === "published" ? "Publicado" : "Rascunho"}</span>
+              <span class="status-badge menu-status-${escapeHtml(menu?.status || "empty")}">${menu?.status === "published" ? "Publicado" : menu ? "Rascunho" : "Pendente"}</span>
               <span class="menu-expand-icon">${expanded ? "−" : "+"}</span>
             </button>
             <div class="menu-day-details" ${expanded ? "" : "hidden"}>
               <div class="menu-meal-list">${mealList(menu)}</div>
-              ${menu.allergens ? `<div class="menu-info-note menu-allergen-note"><strong>Alergênicos</strong><span>${escapeHtml(menu.allergens)}</span></div>` : ""}
-              ${menu.notes ? `<div class="menu-info-note"><strong>Observações</strong><span>${escapeHtml(menu.notes)}</span></div>` : ""}
-              ${manager ? `
-                <div class="menu-card-actions">
-                  <button class="btn btn-secondary btn-sm" type="button" data-menu-edit-week="${escapeHtml(menu.menuDate)}">Editar semana</button>
-                  ${menu.status === "draft" ? `<button class="btn btn-primary btn-sm" type="button" data-menu-publish-week="${escapeHtml(menu.menuDate)}">Publicar semana</button>` : ""}
-                  <button class="btn btn-danger btn-sm" type="button" data-menu-delete="${escapeHtml(menu.id)}">Excluir dia</button>
-                </div>
-              ` : ""}
+              ${menu?.allergens ? `<div class="menu-info-note menu-allergen-note"><strong>Alergênicos</strong><span>${escapeHtml(menu.allergens)}</span></div>` : ""}
+              ${menu?.notes ? `<div class="menu-info-note"><strong>Observações</strong><span>${escapeHtml(menu.notes)}</span></div>` : ""}
             </div>
           </article>
         `;
       }
 
-      function emptyDayCard(dayDate, offset) {
-        return `
-          <article class="menu-day-card menu-day-card-empty">
-            <div class="menu-day-summary">
-              <span class="menu-day-date"><strong>${escapeHtml(String(dayDate.getDate()).padStart(2, "0"))}</strong><small>${escapeHtml(dayDate.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""))}</small></span>
-              <span class="menu-day-copy">
-                <small>${escapeHtml(DAY_FORMATTER.format(dayDate))}</small>
-                <strong>${escapeHtml(DAY_NAMES[offset])}</strong>
-                <span>Cardápio não informado</span>
-              </span>
-              ${isManager(session) ? `<button class="btn btn-secondary btn-sm" type="button" data-menu-edit-week="${escapeHtml(dateKey(dayDate))}">Preencher semana</button>` : '<span class="status-badge menu-status-empty">Sem cardápio</span>'}
-            </div>
-          </article>
-        `;
+      function renderPeriodOptions(cycles) {
+        if (!cycles.length) {
+          refs.periodFilter.innerHTML = '<option value="">Nenhum período cadastrado</option>';
+          refs.periodFilter.disabled = true;
+          return;
+        }
+        refs.periodFilter.disabled = false;
+        refs.periodFilter.innerHTML = cycles.map(function (cycle) {
+          const status = cycle.status === "draft" ? " · Rascunho" : "";
+          return `<option value="${escapeHtml(cycle.id)}" ${cycle.id === state.selectedCycleId ? "selected" : ""}>${escapeHtml(formatPeriod(cycle))} · ${escapeHtml(cycle.target)}${status}</option>`;
+        }).join("");
       }
 
       function render() {
-        const first = state.selectedWeek;
-        const last = addDays(first, 4);
-        refs.weekLabel.textContent = `${SHORT_DATE_FORMATTER.format(first)} a ${SHORT_DATE_FORMATTER.format(last)}`;
-        refs.weekDate.value = dateKey(first);
-        const visible = weekMenus();
-        const cards = [];
-        for (let offset = 0; offset < 5; offset += 1) {
-          const dayDate = addDays(first, offset);
-          const dayMenus = visible.filter(function (menu) { return menu.menuDate === dateKey(dayDate); });
-          if (dayMenus.length) dayMenus.forEach(function (menu) { cards.push(menuCard(menu)); });
-          else cards.push(emptyDayCard(dayDate, offset));
-        }
-        refs.list.innerHTML = cards.join("");
-        refs.empty.hidden = true;
-        renderStats();
+        const cycles = buildCycles();
+        ensureSelectedCycle(cycles);
+        const cycle = selectedCycle(cycles);
+        renderPeriodOptions(cycles);
+
+        refs.statPeriod.textContent = shortPeriod(cycle);
+        refs.periodLabel.textContent = cycle
+          ? `${SHORT_DATE_FORMATTER.format(parseDate(cycle.validFrom))} até ${SHORT_DATE_FORMATTER.format(parseDate(cycle.validUntil))}`
+          : "Cadastre o primeiro período";
+        refs.periodActions.hidden = !cycle || !isManager(session);
+        refs.publishPeriod.hidden = !cycle || cycle.status === "published";
+        refs.empty.hidden = Boolean(cycle);
+        refs.list.hidden = !cycle;
+        refs.list.innerHTML = cycle
+          ? [1, 2, 3, 4, 5].map(function (weekday) { return menuCard(cycle, weekday); }).join("")
+          : "";
       }
 
       function renderTurmas(selected) {
@@ -254,18 +322,23 @@
         refs.targetBlock.hidden = refs.audience.value !== "selected";
       }
 
-      function fillEditorWeek(week) {
-        state.editingWeek = startOfWeek(week);
-        refs.weekStart.value = dateKey(state.editingWeek);
-        const records = menusForWeek(state.editingWeek);
-        const template = records[0] || null;
+      function fillEditor(cycle) {
+        const currentYear = new Date().getFullYear();
+        const template = cycle?.records[0] || null;
+        state.editingCycleId = cycle?.id || "";
+        refs.periodYear.value = cycle?.periodYear || currentYear;
+        refs.periodType.value = cycle?.periodType && cycle.periodType !== "custom" ? cycle.periodType : "year";
         refs.audience.value = template?.targetTurmas?.length ? "selected" : "all";
         refs.allergens.value = template?.allergens || "";
         refs.notes.value = template?.notes || "";
         refs.dayRows.forEach(function (row) {
-          const offset = Number(row.dataset.menuDay || 0);
-          const record = records.find(function (menu) { return menu.menuDate === dateKey(addDays(state.editingWeek, offset)); });
-          const mealMap = new Map(normalizeMeals(record?.meals).map(function (meal) { return [meal.type, meal.description]; }));
+          const weekday = Number(row.dataset.menuDay || 0) + 1;
+          const record = cycle?.records.find(function (menu) {
+            return Number(menu.weekday || parseDate(menu.menuDate).getDay()) === weekday;
+          });
+          const mealMap = new Map(normalizeMeals(record?.meals).map(function (meal) {
+            return [meal.type, meal.description];
+          }));
           row.querySelectorAll("[data-menu-meal]").forEach(function (input) {
             input.value = mealMap.get(input.dataset.menuMeal) || "";
           });
@@ -274,44 +347,74 @@
         syncAudience();
       }
 
-      function openEditor(menuOrDate) {
-        const selectedDate = typeof menuOrDate === "string"
-          ? parseDate(menuOrDate)
-          : menuOrDate?.menuDate
-            ? parseDate(menuOrDate.menuDate)
-            : state.selectedWeek;
-        refs.editorTitle.textContent = "Cardápio da semana";
-        fillEditorWeek(selectedDate);
+      function openEditor(cycle) {
+        refs.editorTitle.textContent = cycle ? "Editar cardápio recorrente" : "Novo cardápio recorrente";
+        fillEditor(cycle || null);
         refs.editorFeedback.textContent = "";
+        refs.editorFeedback.className = "feedback";
         setModalOpen(refs.modal, true);
-        setTimeout(function () { refs.weekStart.focus(); }, 50);
+        setTimeout(function () { refs.periodYear.focus(); }, 50);
       }
 
       function closeEditor() {
         setModalOpen(refs.modal, false);
       }
 
+      async function publishCycle(cycle) {
+        for (const record of cycle.records) {
+          const saved = await window.AgendaGamaDataStore.save("menus", { ...record, status: "published" }, []);
+          state.menus = [saved].concat(state.menus.filter(function (menu) { return menu.id !== saved.id; }));
+        }
+      }
+
+      async function deleteCycle(cycle) {
+        for (const record of cycle.records) {
+          await window.AgendaGamaDataStore.remove("menus", record.id, []);
+          state.menus = state.menus.filter(function (menu) { return menu.id !== record.id; });
+        }
+      }
+
       refs.newButton.hidden = !isManager(session);
-      refs.newButton.textContent = "Cadastrar semana";
-      refs.newButton.addEventListener("click", function () { openEditor(state.selectedWeek); });
-      refs.previousWeek.addEventListener("click", function () {
-        state.selectedWeek = addDays(state.selectedWeek, -7);
+      refs.newButton.textContent = "Novo período";
+      refs.newButton.addEventListener("click", function () { openEditor(null); });
+      refs.periodFilter.addEventListener("change", function () {
+        state.selectedCycleId = refs.periodFilter.value;
+        state.expandedWeekdays = new Set([new Date().getDay()]);
         render();
       });
-      refs.nextWeek.addEventListener("click", function () {
-        state.selectedWeek = addDays(state.selectedWeek, 7);
-        render();
+      refs.editPeriod.addEventListener("click", function () {
+        const cycle = selectedCycle(buildCycles());
+        if (cycle && isManager(session)) openEditor(cycle);
       });
-      refs.today.addEventListener("click", function () {
-        state.selectedWeek = startOfWeek(new Date());
-        render();
+      refs.publishPeriod.addEventListener("click", async function () {
+        const cycle = selectedCycle(buildCycles());
+        if (!cycle || !isManager(session)) return;
+        refs.publishPeriod.disabled = true;
+        try {
+          await publishCycle(cycle);
+          setFeedback("Cardápio publicado para todo o período.", "success");
+          render();
+        } catch (error) {
+          setFeedback(error.message || "Não foi possível publicar o período.", "error");
+        } finally {
+          refs.publishPeriod.disabled = false;
+        }
       });
-      refs.weekDate.addEventListener("change", function () {
-        state.selectedWeek = startOfWeek(parseDate(refs.weekDate.value));
-        render();
-      });
-      refs.weekStart.addEventListener("change", function () {
-        fillEditorWeek(parseDate(refs.weekStart.value));
+      refs.deletePeriod.addEventListener("click", async function () {
+        const cycle = selectedCycle(buildCycles());
+        if (!cycle || !isManager(session)) return;
+        if (!window.confirm(`Excluir todo o cardápio de ${formatPeriod(cycle)}?`)) return;
+        refs.deletePeriod.disabled = true;
+        try {
+          await deleteCycle(cycle);
+          state.selectedCycleId = "";
+          setFeedback("Cardápio do período excluído.", "success");
+          render();
+        } catch (error) {
+          setFeedback(error.message || "Não foi possível excluir o período.", "error");
+        } finally {
+          refs.deletePeriod.disabled = false;
+        }
       });
       refs.audience.addEventListener("change", syncAudience);
       refs.selectAllTurmas.addEventListener("click", function () {
@@ -323,48 +426,65 @@
       refs.editorClose.addEventListener("click", closeEditor);
       refs.editorCancel.addEventListener("click", closeEditor);
       refs.modal.querySelector("[data-menu-close-editor]").addEventListener("click", closeEditor);
+
       refs.editor.addEventListener("submit", async function (event) {
         event.preventDefault();
         const submitter = event.submitter;
+        const year = Number(refs.periodYear.value);
+        const periodType = refs.periodType.value;
         const targetTurmas = refs.audience.value === "selected"
           ? Array.from(refs.turmaList.querySelectorAll("input:checked")).map(function (input) { return input.value; })
           : [];
+        if (!Number.isInteger(year) || year < 2020 || year > 2100) {
+          refs.editorFeedback.textContent = "Informe um ano válido.";
+          refs.editorFeedback.className = "feedback error";
+          return;
+        }
         if (refs.audience.value === "selected" && !targetTurmas.length) {
           refs.editorFeedback.textContent = "Selecione pelo menos uma turma.";
           refs.editorFeedback.className = "feedback error";
           return;
         }
+
         const rows = refs.dayRows.map(function (row) {
-          const offset = Number(row.dataset.menuDay || 0);
-          const menuDate = dateKey(addDays(state.editingWeek, offset));
+          const weekday = Number(row.dataset.menuDay || 0) + 1;
           const meals = Array.from(row.querySelectorAll("[data-menu-meal]")).map(function (input) {
             return { type: input.dataset.menuMeal, description: input.value.trim() };
           }).filter(function (meal) { return meal.description; });
-          return { offset: offset, menuDate: menuDate, meals: meals };
+          return { weekday: weekday, meals: meals };
         });
         if (rows.some(function (row) { return row.meals.length !== 3; })) {
           refs.editorFeedback.textContent = "Preencha as três refeições de segunda a sexta.";
           refs.editorFeedback.className = "feedback error";
           return;
         }
+
+        const bounds = periodBounds(year, periodType);
+        const firstMonday = firstMondayOnOrAfter(bounds.validFrom);
+        const cycleId = state.editingCycleId || createId();
+        const previousCycle = buildCycles().find(function (cycle) { return cycle.id === state.editingCycleId; }) || null;
+        const status = submitter?.dataset.saveStatus || "published";
         submitter.disabled = true;
-        refs.editorFeedback.textContent = "Salvando a semana...";
+        refs.editorFeedback.textContent = "Salvando o cardápio do período...";
+        refs.editorFeedback.className = "feedback";
+
         try {
           for (const row of rows) {
-            const current = state.menus.find(function (menu) { return menu.menuDate === row.menuDate; });
-            if (!row.meals.length) {
-              if (current) {
-                await window.AgendaGamaDataStore.remove("menus", current.id, []);
-                state.menus = state.menus.filter(function (menu) { return menu.id !== current.id; });
-              }
-              continue;
-            }
+            const current = previousCycle?.records.find(function (record) {
+              return Number(record.weekday || parseDate(record.menuDate).getDay()) === row.weekday;
+            });
             const saved = await window.AgendaGamaDataStore.save("menus", {
               ...current,
-              id: current?.id || null,
-              menuDate: row.menuDate,
-              title: `Cardápio de ${DAY_NAMES[row.offset]}`,
-              status: submitter?.dataset.saveStatus || current?.status || "published",
+              id: current?.id || createId(),
+              cycleId: cycleId,
+              weekday: row.weekday,
+              periodType: periodType,
+              periodYear: year,
+              validFrom: bounds.validFrom,
+              validUntil: bounds.validUntil,
+              menuDate: dateKey(addDays(firstMonday, row.weekday - 1)),
+              title: `Cardápio de ${DAY_NAMES[row.weekday - 1]}`,
+              status: status,
               targetTurmas: targetTurmas,
               meals: row.meals,
               allergens: refs.allergens.value.trim(),
@@ -374,55 +494,27 @@
               authorEmail: current?.authorEmail || session.email
             }, []);
             state.menus = [saved].concat(state.menus.filter(function (menu) { return menu.id !== saved.id; }));
-            state.expandedIds.add(saved.id);
           }
-          state.selectedWeek = state.editingWeek;
+          state.selectedCycleId = cycleId;
+          state.expandedWeekdays = new Set([1]);
           closeEditor();
-          setFeedback(submitter?.dataset.saveStatus === "draft" ? "Rascunho semanal salvo." : "Cardápio semanal publicado.", "success");
+          setFeedback(status === "draft" ? "Rascunho do período salvo." : "Cardápio publicado para todo o período.", "success");
           render();
         } catch (error) {
-          refs.editorFeedback.textContent = error.message || "Não foi possível salvar o cardápio semanal.";
+          refs.editorFeedback.textContent = error.message || "Não foi possível salvar o cardápio.";
           refs.editorFeedback.className = "feedback error";
         } finally {
           submitter.disabled = false;
         }
       });
-      refs.list.addEventListener("click", async function (event) {
-        const toggleId = event.target.closest("[data-menu-toggle]")?.dataset.menuToggle;
-        const editWeekDate = event.target.closest("[data-menu-edit-week]")?.dataset.menuEditWeek;
-        const publishWeekDate = event.target.closest("[data-menu-publish-week]")?.dataset.menuPublishWeek;
-        const deleteId = event.target.closest("[data-menu-delete]")?.dataset.menuDelete;
-        if (toggleId) {
-          if (state.expandedIds.has(toggleId)) state.expandedIds.delete(toggleId);
-          else state.expandedIds.add(toggleId);
-          render();
-        }
-        if (editWeekDate && isManager(session)) openEditor(editWeekDate);
-        if (publishWeekDate && isManager(session)) {
-          try {
-            const records = menusForWeek(startOfWeek(parseDate(publishWeekDate)));
-            for (const record of records) {
-              const saved = await window.AgendaGamaDataStore.save("menus", { ...record, status: "published" }, []);
-              state.menus = [saved].concat(state.menus.filter(function (menu) { return menu.id !== saved.id; }));
-            }
-            setFeedback("Cardápio semanal publicado.", "success");
-            render();
-          } catch (error) {
-            setFeedback(error.message || "Não foi possível publicar a semana.", "error");
-          }
-        }
-        if (deleteId && isManager(session)) {
-          const menu = state.menus.find(function (item) { return item.id === deleteId; });
-          if (!menu || !window.confirm(`Excluir o cardápio de ${SHORT_DATE_FORMATTER.format(parseDate(menu.menuDate))}?`)) return;
-          try {
-            await window.AgendaGamaDataStore.remove("menus", menu.id, []);
-            state.menus = state.menus.filter(function (item) { return item.id !== menu.id; });
-            setFeedback("Cardápio do dia excluído.", "success");
-            render();
-          } catch (error) {
-            setFeedback(error.message || "Não foi possível excluir.", "error");
-          }
-        }
+
+      refs.list.addEventListener("click", function (event) {
+        const toggle = event.target.closest("[data-menu-toggle-day]");
+        if (!toggle) return;
+        const weekday = Number(toggle.dataset.menuToggleDay);
+        if (state.expandedWeekdays.has(weekday)) state.expandedWeekdays.delete(weekday);
+        else state.expandedWeekdays.add(weekday);
+        render();
       });
 
       render();

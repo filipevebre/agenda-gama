@@ -265,6 +265,12 @@
 
     return {
       id: item.id || null,
+      cycleId: item.cycle_id || item.cycleId || null,
+      weekday: Number(item.weekday || 0),
+      periodType: item.period_type || item.periodType || "custom",
+      periodYear: Number(item.period_year || item.periodYear || new Date().getFullYear()),
+      validFrom: item.valid_from || item.validFrom || "",
+      validUntil: item.valid_until || item.validUntil || "",
       menuDate: item.menu_date || item.menuDate || "",
       title: item.title || "Cardápio do dia",
       status: item.status || "draft",
@@ -285,6 +291,12 @@
 
     return {
       id: item.id || null,
+      cycle_id: item.cycleId || item.cycle_id || null,
+      weekday: Number(item.weekday || 0),
+      period_type: item.periodType || item.period_type || "year",
+      period_year: Number(item.periodYear || item.period_year || new Date().getFullYear()),
+      valid_from: item.validFrom || item.valid_from || null,
+      valid_until: item.validUntil || item.valid_until || null,
       menu_date: item.menuDate || item.menu_date || null,
       title: item.title || "Cardápio do dia",
       status: item.status || "draft",

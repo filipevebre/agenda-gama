@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-11">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-12">
 </head>
 <body data-page="cardapio" data-roles="all">
   <div id="app-shell"></div>
@@ -33,36 +33,39 @@
 
     <section class="status-grid menu-status-grid">
       <article class="status-card">
-        <span>Esta semana</span>
-        <strong id="menu-stat-week">0</strong>
+        <span>Dias úteis</span>
+        <strong>5</strong>
       </article>
       <article class="status-card">
-        <span>Publicados</span>
-        <strong id="menu-stat-published">0</strong>
+        <span>Refeições por dia</span>
+        <strong>3</strong>
       </article>
       <article class="status-card">
-        <span>Próximos</span>
-        <strong id="menu-stat-upcoming">0</strong>
+        <span>Período</span>
+        <strong id="menu-stat-period">-</strong>
       </article>
     </section>
 
     <section class="panel menu-board">
-      <div class="menu-week-toolbar">
-        <button id="menu-previous-week" type="button" class="btn btn-secondary" aria-label="Semana anterior">‹</button>
-        <div class="menu-week-copy">
-          <small>Semana selecionada</small>
-          <strong id="menu-week-label"></strong>
-        </div>
-        <button id="menu-today" type="button" class="btn btn-secondary">Hoje</button>
-        <label class="menu-date-jump" aria-label="Escolher semana">
-          <input id="menu-week-date" type="date">
+      <div class="menu-period-toolbar">
+        <label class="field menu-period-field">
+          <span>Cardápio vigente</span>
+          <select id="menu-period-filter"></select>
         </label>
-        <button id="menu-next-week" type="button" class="btn btn-secondary" aria-label="Próxima semana">›</button>
+        <div class="menu-period-copy">
+          <small>Validade</small>
+          <strong id="menu-period-label"></strong>
+        </div>
+        <div id="menu-period-actions" class="action-row menu-period-actions" hidden>
+          <button id="menu-edit-period" type="button" class="btn btn-secondary btn-sm">Editar</button>
+          <button id="menu-publish-period" type="button" class="btn btn-primary btn-sm">Publicar</button>
+          <button id="menu-delete-period" type="button" class="btn btn-danger btn-sm">Excluir</button>
+        </div>
       </div>
 
       <p id="menu-feedback" class="feedback" role="status" aria-live="polite"></p>
       <div id="menu-list" class="menu-week-list"></div>
-      <p id="menu-empty" class="empty-state" hidden>Nenhum cardápio publicado para esta semana.</p>
+      <p id="menu-empty" class="empty-state" hidden>Nenhum cardápio anual ou semestral cadastrado.</p>
     </section>
 
     <div id="menu-editor-modal" class="app-modal" hidden>
@@ -71,8 +74,8 @@
         <article class="panel app-modal-panel">
           <div class="app-modal-header">
             <div>
-              <h2 id="menu-editor-title">Cardápio da semana</h2>
-              <p>Preencha as três refeições de segunda a sexta.</p>
+              <h2 id="menu-editor-title">Cardápio recorrente</h2>
+              <p>Preencha uma semana e escolha se ela valerá para o ano ou semestre.</p>
             </div>
             <button id="menu-editor-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar">x</button>
           </div>
@@ -80,8 +83,16 @@
           <form id="menu-editor" class="stack-sm">
             <div class="form-grid menu-editor-basics">
               <label class="field">
-                <span>Semana</span>
-                <input id="menu-week-start" type="date" required>
+                <span>Ano</span>
+                <input id="menu-period-year" type="number" min="2020" max="2100" required>
+              </label>
+              <label class="field">
+                <span>Validade</span>
+                <select id="menu-period-type">
+                  <option value="year">Ano inteiro</option>
+                  <option value="semester_1">1º semestre</option>
+                  <option value="semester_2">2º semestre</option>
+                </select>
               </label>
               <label class="field">
                 <span>Público</span>
@@ -177,9 +188,9 @@
   <script src="../assets/js/config.js?v=20260415-4"></script>
   <script src="../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../assets/js/auth.js?v=20260716-1"></script>
-  <script src="../assets/js/data-store.js?v=20260716-4"></script>
+  <script src="../assets/js/data-store.js?v=20260716-5"></script>
   <script src="../assets/js/app.js?v=20260716-5"></script>
-  <script src="../assets/js/school-menu.js?v=20260716-2"></script>
+  <script src="../assets/js/school-menu.js?v=20260716-3"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaSchoolMenu.mount();
