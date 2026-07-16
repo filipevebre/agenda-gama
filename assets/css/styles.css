@@ -5383,6 +5383,354 @@ body[data-page="comunicacao"] .message-central-layout {
   }
 }
 
+/* Organization pages: replace wide tables with readable mobile record cards. */
+@media (max-width: 720px) {
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-content {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-content > section,
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-hero > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-hero {
+    gap: 12px;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-hero h1 {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+    line-height: 1.08;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-actions > * {
+    min-width: 0;
+    width: 100%;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .page-actions > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-card {
+    padding: 12px;
+    overflow: visible;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-card > p {
+    display: none;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .search-box {
+    margin: 12px 0;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper {
+    width: 100%;
+    margin: 12px 0 0;
+    overflow: visible;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper table,
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tbody,
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tr,
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper table {
+    min-width: 0;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tbody tr {
+    padding: 7px 11px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 5px 16px rgba(16, 42, 67, 0.05);
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tbody td {
+    display: grid;
+    grid-template-columns: minmax(86px, 36%) minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 9px 2px;
+    border-bottom: 1px solid #edf1f5;
+    color: var(--text);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tbody td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tbody td:last-child {
+    display: block;
+    padding-top: 11px;
+    border-bottom: 0;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-wrapper tbody td:last-child::before {
+    display: block;
+    margin-bottom: 7px;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .table-actions .btn {
+    width: 100%;
+  }
+
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .form-grid,
+  body:is(
+    [data-page="turmas"],
+    [data-page="disciplinas"],
+    [data-page="equipe"],
+    [data-page="professores"],
+    [data-page="alunos"],
+    [data-page="responsaveis"]
+  ) .form-grid > * {
+    min-width: 0;
+    width: 100%;
+  }
+
+  body[data-page="turmas"] .student-selection-toolbar .action-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+}
+
 /* Communication center: focused inbox and chat flow. */
 body[data-page="comunicacao"] .message-central-layout {
   background: #ffffff;

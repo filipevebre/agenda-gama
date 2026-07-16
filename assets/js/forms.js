@@ -19,6 +19,14 @@
     submitButton.textContent = isSubmitting ? "Salvando..." : idleLabel;
   }
 
+  function escapeAttribute(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
   async function mountCrud(config) {
     const form = config.formId ? document.getElementById(config.formId) : null;
     const tableBody = config.tableBodyId ? document.getElementById(config.tableBodyId) : null;
@@ -140,10 +148,13 @@
       if (!tableBody) return;
 
       const visibleItems = getVisibleItems();
+      const headerLabels = Array.from(table?.querySelectorAll("thead th") || []).map(function (header) {
+        return header.textContent.trim();
+      });
       tableBody.innerHTML = visibleItems.map((item) => `
         <tr data-id="${item.id || ""}">
-          ${config.columns.map((column) => `<td>${renderColumn(column, item)}</td>`).join("")}
-          <td>
+          ${config.columns.map((column, index) => `<td data-label="${escapeAttribute(column.label || headerLabels[index] || column.key)}">${renderColumn(column, item)}</td>`).join("")}
+          <td data-label="${escapeAttribute(headerLabels[config.columns.length] || "Acoes")}">
             <div class="table-actions">
               <button type="button" class="btn btn-secondary btn-sm crud-edit">Editar</button>
               <button type="button" class="btn btn-secondary btn-sm crud-delete">Excluir</button>
