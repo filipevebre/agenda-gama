@@ -5510,8 +5510,87 @@ body[data-page="comunicacao"] .internal-notes-panel {
 }
 
 body[data-page="comunicacao"] .thread-composer-form {
+  position: relative;
   padding: 11px 14px 13px;
   background: #ffffff;
+}
+
+body[data-page="comunicacao"] .quick-replies-button {
+  width: 36px;
+  min-width: 36px;
+  padding: 7px;
+}
+
+body[data-page="comunicacao"] .quick-replies-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="comunicacao"] .quick-replies-button.active {
+  border-color: rgba(15, 157, 122, 0.35);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+body[data-page="comunicacao"] .quick-template-popover {
+  position: absolute;
+  right: 14px;
+  bottom: calc(100% + 10px);
+  left: 14px;
+  z-index: 20;
+  max-height: min(320px, 46vh);
+  padding: 12px;
+  overflow-y: auto;
+  border: 1px solid rgba(18, 38, 63, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(18, 38, 63, 0.2);
+}
+
+body[data-page="comunicacao"] .quick-template-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+body[data-page="comunicacao"] .quick-template-popover-header strong {
+  font-size: 0.82rem;
+}
+
+body[data-page="comunicacao"] .quick-template-close {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: #edf2f7;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+body[data-page="comunicacao"] .quick-template-popover .quick-template-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body[data-page="comunicacao"] .quick-template-popover .quick-template-chip {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
 }
 
 @media (max-width: 720px) {
@@ -5862,14 +5941,19 @@ body[data-page="comunicacao"] .thread-composer-form {
   }
 
   body[data-page="comunicacao"] .thread-templates-panel {
-    position: relative;
-    z-index: 2;
-    flex: 0 0 auto;
-    min-height: 54px;
-    padding: 7px 10px 8px;
-    overflow: visible;
-    border-top: 1px solid var(--border);
+    position: absolute;
+    right: 10px;
+    bottom: calc(100% + 7px);
+    left: 10px;
+    z-index: 20;
+    min-height: 0;
+    max-height: min(300px, 44dvh);
+    padding: 10px;
+    overflow-y: auto;
+    border: 1px solid rgba(18, 38, 63, 0.12);
+    border-radius: 14px;
     background: #ffffff;
+    box-shadow: 0 16px 38px rgba(18, 38, 63, 0.22);
   }
 
   body[data-page="comunicacao"] .thread-templates-panel .section-heading {
@@ -5888,25 +5972,23 @@ body[data-page="comunicacao"] .thread-composer-form {
   }
 
   body[data-page="comunicacao"] .quick-template-list {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    min-height: 30px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 2px;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    min-height: 0;
+    overflow: visible;
+    padding: 0;
   }
 
   body[data-page="comunicacao"] .quick-template-list::-webkit-scrollbar {
     display: none;
   }
 
-  body[data-page="comunicacao"] .quick-template-list .btn {
-    flex: 0 0 auto;
-    min-height: 30px;
-    padding: 5px 9px;
-    font-size: 0.66rem;
+  body[data-page="comunicacao"] .quick-template-list .quick-template-chip {
+    width: 100%;
+    min-height: 38px;
+    padding: 7px 8px;
+    font-size: 0.72rem;
   }
 
   body[data-page="comunicacao"] .thread-composer-form {
@@ -5921,6 +6003,11 @@ body[data-page="comunicacao"] .thread-composer-form {
 
   body[data-page="comunicacao"] .composer-toolbar {
     gap: 5px;
+    justify-content: flex-start;
+  }
+
+  body[data-page="comunicacao"] .composer-toolbar #typing-indicator {
+    margin-left: auto;
   }
 
   body[data-page="comunicacao"] .composer-toolbar .btn {

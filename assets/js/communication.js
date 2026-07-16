@@ -1311,7 +1311,10 @@
         threadBody: document.getElementById("thread-body"),
         internalNotesPanel: document.getElementById("internal-notes-panel"),
         internalNotesList: document.getElementById("internal-notes-list"),
+        quickTemplatePanel: document.getElementById("quick-template-panel"),
         quickTemplateList: document.getElementById("quick-template-list"),
+        quickRepliesButton: document.getElementById("quick-replies-button"),
+        closeQuickTemplates: document.getElementById("close-quick-templates"),
         composerForm: document.getElementById("thread-composer-form"),
         attachmentInput: document.getElementById("thread-attachment-input"),
         attachmentPreviewList: document.getElementById("attachment-preview-list"),
@@ -2216,6 +2219,7 @@
         refs.composerContext.textContent = getComposerContext(thread, session, state.internalMode);
         refs.composerInput.disabled = !canReply;
         refs.attachButton.disabled = !canReply;
+        refs.quickRepliesButton.disabled = !canReply;
         refs.attachmentInput.disabled = !canReply;
         refs.saveDraftButton.disabled = !canReply;
         refs.sendMessageButton.disabled = !canReply;
@@ -3347,13 +3351,42 @@
         });
       });
 
+      function setQuickTemplatePanel(open) {
+        if (!refs.quickTemplatePanel || !refs.quickRepliesButton) return;
+        refs.quickTemplatePanel.hidden = !open;
+        refs.quickRepliesButton.setAttribute("aria-expanded", open ? "true" : "false");
+        refs.quickRepliesButton.classList.toggle("active", open);
+      }
+
+      refs.quickRepliesButton?.addEventListener("click", function () {
+        setQuickTemplatePanel(refs.quickTemplatePanel.hidden);
+      });
+
+      refs.closeQuickTemplates?.addEventListener("click", function () {
+        setQuickTemplatePanel(false);
+      });
+
       refs.quickTemplateList?.addEventListener("click", function (event) {
         const button = event.target.closest("[data-template-id]");
         if (!button) return;
         const template = QUICK_TEMPLATES.find(function (item) { return item.id === button.dataset.templateId; });
         if (!template) return;
         refs.composerInput.value = template.text;
+        setQuickTemplatePanel(false);
         refs.composerInput.focus();
+      });
+
+      document.addEventListener("click", function (event) {
+        if (!refs.quickTemplatePanel || refs.quickTemplatePanel.hidden) return;
+        if (event.target.closest("#quick-template-panel, #quick-replies-button")) return;
+        setQuickTemplatePanel(false);
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && refs.quickTemplatePanel && !refs.quickTemplatePanel.hidden) {
+          setQuickTemplatePanel(false);
+          refs.quickRepliesButton.focus();
+        }
       });
 
       refs.attachButton?.addEventListener("click", function () {

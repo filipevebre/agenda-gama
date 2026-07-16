@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-5">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-6">
 </head>
 <body data-page="comunicacao" data-roles="all">
   <div id="app-shell"></div>
@@ -132,23 +132,27 @@
               <div id="internal-notes-list" class="internal-notes-list"></div>
             </aside>
 
-            <section class="thread-templates-panel">
-              <div class="section-heading compact-heading">
-                <div>
-                  <h2>Respostas rapidas</h2>
-                  <p>Modelos prontos para agilizar o atendimento.</p>
-                </div>
-              </div>
-              <div id="quick-template-list" class="quick-template-list"></div>
-            </section>
-
             <form id="thread-composer-form" class="thread-composer-form">
               <div class="composer-toolbar">
                 <button type="button" id="attach-message-button" class="btn btn-secondary btn-sm">Anexo</button>
+                <button type="button" id="quick-replies-button" class="btn btn-secondary btn-sm quick-replies-button" aria-label="Abrir respostas prontas" title="Respostas prontas" aria-expanded="false" aria-controls="quick-template-panel">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 5.5h16v11H9l-5 3v-14Z"></path>
+                    <path d="M8 9h8M8 13h5"></path>
+                  </svg>
+                </button>
                 <button type="button" id="internal-note-button" class="btn btn-secondary btn-sm">Obs. interna</button>
                 <button type="button" id="clear-attachments-button" class="btn btn-secondary btn-sm" hidden>Limpar anexos</button>
                 <span id="typing-indicator" class="tag" hidden>Digitando...</span>
               </div>
+
+              <section id="quick-template-panel" class="thread-templates-panel quick-template-popover" hidden>
+                <div class="quick-template-popover-header">
+                  <strong>Respostas prontas</strong>
+                  <button type="button" id="close-quick-templates" class="quick-template-close" aria-label="Fechar respostas prontas">x</button>
+                </div>
+                <div id="quick-template-list" class="quick-template-list"></div>
+              </section>
 
               <input id="thread-attachment-input" type="file" multiple hidden>
               <div id="attachment-preview-list" class="attachment-preview-list" hidden></div>
@@ -412,7 +416,7 @@
   <script src="../assets/js/auth.js?v=20260619-2"></script>
   <script src="../assets/js/app.js?v=20260716-2"></script>
   <script src="../assets/js/data-store.js?v=20260619-4"></script>
-  <script src="../assets/js/communication.js?v=20260716-1"></script>
+  <script src="../assets/js/communication.js?v=20260716-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaCommunication.mountCommunication();
