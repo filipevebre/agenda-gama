@@ -588,9 +588,11 @@
         || normalizePersonName(item.nome) === normalizePersonName(session.name);
     }) || null;
     const responsavelRecords = (directory.responsaveis || []).filter(function (item) {
-      return String(item.auth_user_id || "") === String(session.userId || "")
-        || normalizeEmail(item.email) === normalizeEmail(session.email)
-        || normalizePersonName(item.nome) === normalizePersonName(session.name);
+      const matchesUser = Boolean(session.userId)
+        && String(item.auth_user_id || "") === String(session.userId);
+      const matchesEmail = Boolean(session.email)
+        && normalizeEmail(item.email) === normalizeEmail(session.email);
+      return matchesUser || matchesEmail;
     });
     const responsavelTurmas = new Set();
 
@@ -628,16 +630,20 @@
   }
 
   function deriveChannelType(channel, directory) {
-    if (channel?.channelType) return channel.channelType;
     if (VIRTUAL_CHANNELS.some(function (item) { return item.id === channel?.id; })) {
       return VIRTUAL_CHANNELS.find(function (item) { return item.id === channel?.id; })?.channelType || "custom";
     }
 
     const isTurmaChannel = (directory?.turmas || []).some(function (turma) {
-      return turmaMatches(turma.nome, channel?.publico);
+      return turmaMatches(turma.nome, channel?.publico)
+        || turmaMatches(turma.nome, channel?.nome);
     });
 
-    return isTurmaChannel ? "turma" : "custom";
+    if (isTurmaChannel) return "turma";
+
+    const explicitType = normalizeText(channel?.channelType || channel?.channel_type || "");
+    if (["turma", "classe", "class"].includes(explicitType)) return "turma";
+    return explicitType || "custom";
   }
 
   function withDerivedChannelType(channel, directory) {
@@ -659,11 +665,16 @@
     return merged;
   }
 
+  function channelMatchesTurmas(turmas, channel) {
+    return setHasTurma(turmas, channel?.publico)
+      || setHasTurma(turmas, channel?.nome);
+  }
+
   function canSeeChannel(session, actorContext, channel) {
     if (session.role === "administrador" || session.canApprove) return true;
     if (session.role === "professores") {
       if (channel.channelType && channel.channelType !== "turma") return normalizeText(channel.nome) === "professor";
-      return setHasTurma(actorContext.professorTurmas, channel.publico);
+      return channelMatchesTurmas(actorContext.professorTurmas, channel);
     }
     if (session.role === "funcionarios") {
       if (channel.channelType && channel.channelType !== "turma") {
@@ -675,7 +686,7 @@
     }
     if (session.role === "responsaveis") {
       if (channel.channelType && channel.channelType !== "turma") return true;
-      return setHasTurma(actorContext.responsavelTurmas, channel.publico);
+      return channelMatchesTurmas(actorContext.responsavelTurmas, channel);
     }
     return false;
   }
