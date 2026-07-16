@@ -1266,6 +1266,7 @@
         items: [
           { label: "Painel", href: dashboardHref, icon: "PA", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Diário", href: inOrganization ? "../diario.html" : "diario.html", icon: "DR", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
+          { label: "Atividades", href: inOrganization ? "../atividades.html" : "atividades.html", icon: "AT", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Comunicados", href: inOrganization ? "../comunicados.html" : "comunicados.html", icon: "CM", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Comunicação", href: inOrganization ? "../comunicacao.html" : "comunicacao.html", icon: "CO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Formulários", href: inOrganization ? "../formularios.html" : "formularios.html", icon: "FO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] }
@@ -1289,6 +1290,7 @@
     const paths = {
       PA: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/>',
       DR: '<path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22.5z"/><path d="M4 5.5v17"/><path d="M8 7h8M8 11h7"/>',
+      AT: '<path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h5"/><path d="m13 16 2 2 4-5"/>',
       CM: '<path d="M4 13h3l10 4V5L7 9H4z"/><path d="m7 13 2 6h3l-2-5"/><path d="M20 9v4"/>',
       CO: '<path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
       FO: '<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h3"/><path d="m8.5 7 .7.7 1.3-1.5"/>',
@@ -1308,7 +1310,7 @@
   }
 
   function setupMobileFilterDisclosure(contentTarget) {
-    const toolbars = contentTarget.querySelectorAll(".diary-filter-toolbar, .notice-toolbar, .message-filter-grid, .school-form-toolbar");
+    const toolbars = contentTarget.querySelectorAll(".diary-filter-toolbar, .notice-toolbar, .message-filter-grid, .school-form-toolbar, .activity-toolbar");
     toolbars.forEach(function (toolbar) {
       const button = document.createElement("button");
       button.type = "button";
@@ -1412,8 +1414,10 @@
       `;
     }).join("");
 
+    const mobilePrimaryIcons = new Set(["PA", "DR", "AT", "CM", "CO"]);
     const mobileNavigation = getNavItems()[0].items
       .filter((item) => item.roles.includes(session.role))
+      .filter((item) => mobilePrimaryIcons.has(item.icon))
       .map((item) => {
         const isActive = isCurrentHref(item.href);
         return `

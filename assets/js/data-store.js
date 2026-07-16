@@ -11,11 +11,13 @@
     channels: "communication_channels",
     messages: "communication_messages",
     forms: "school_forms",
-    formResponses: "school_form_responses"
+    formResponses: "school_form_responses",
+    activities: "school_activities",
+    activityCompletions: "school_activity_completions"
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
-  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -185,6 +187,78 @@
     };
   }
 
+  function mapActivityFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      title: item.title || "",
+      subject: item.subject || "",
+      description: item.description || "",
+      status: item.status || "draft",
+      targetTurmas: normalizeArray(item.target_turmas || item.targetTurmas).filter(Boolean),
+      attachments: normalizeArray(item.attachments).filter(Boolean),
+      dueAt: item.due_at || item.dueAt || "",
+      authorUserId: item.author_user_id || item.authorUserId || null,
+      authorName: item.author_name || item.authorName || "",
+      authorEmail: item.author_email || item.authorEmail || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapActivityToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      title: item.title || "",
+      subject: item.subject || "",
+      description: item.description || "",
+      status: item.status || "draft",
+      target_turmas: normalizeArray(item.targetTurmas || item.target_turmas).filter(Boolean),
+      attachments: normalizeArray(item.attachments).filter(Boolean),
+      due_at: item.dueAt || item.due_at || null,
+      author_user_id: item.authorUserId || item.author_user_id || null,
+      author_name: item.authorName || item.author_name || "",
+      author_email: item.authorEmail || item.author_email || ""
+    };
+  }
+
+  function mapActivityCompletionFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      activityId: item.activity_id || item.activityId || null,
+      authUserId: item.auth_user_id || item.authUserId || null,
+      studentId: item.student_id || item.studentId || null,
+      studentName: item.student_name || item.studentName || "",
+      turma: item.turma || "",
+      responsibleName: item.responsible_name || item.responsibleName || "",
+      responsibleEmail: item.responsible_email || item.responsibleEmail || "",
+      completedAt: item.completed_at || item.completedAt || null,
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapActivityCompletionToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      activity_id: item.activityId || item.activity_id || null,
+      auth_user_id: item.authUserId || item.auth_user_id || null,
+      student_id: item.studentId || item.student_id || null,
+      student_name: item.studentName || item.student_name || "",
+      turma: item.turma || "",
+      responsible_name: item.responsibleName || item.responsible_name || "",
+      responsible_email: item.responsibleEmail || item.responsible_email || "",
+      completed_at: item.completedAt || item.completed_at || new Date().toISOString()
+    };
+  }
+
   function mapFromRemote(key, item) {
     if (key === "diario") {
       return mapDiaryFromRemote(item);
@@ -200,6 +274,14 @@
 
     if (key === "formResponses") {
       return mapFormResponseFromRemote(item);
+    }
+
+    if (key === "activities") {
+      return mapActivityFromRemote(item);
+    }
+
+    if (key === "activityCompletions") {
+      return mapActivityCompletionFromRemote(item);
     }
 
     return item;
@@ -220,6 +302,14 @@
 
     if (key === "formResponses") {
       return mapFormResponseToRemote(item);
+    }
+
+    if (key === "activities") {
+      return mapActivityToRemote(item);
+    }
+
+    if (key === "activityCompletions") {
+      return mapActivityCompletionToRemote(item);
     }
 
     return item;
