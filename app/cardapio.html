@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2a50">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Agenda Gama">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <title>Agenda Gama | Cardápio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-10">
+</head>
+<body data-page="cardapio" data-roles="all">
+  <div id="app-shell"></div>
+
+  <template id="page-template">
+    <section class="page-hero menu-page-hero">
+      <div>
+        <span class="pill">Alimentação</span>
+        <h1>Cardápio escolar</h1>
+        <p>Refeições planejadas para cada dia da semana.</p>
+      </div>
+      <div class="page-actions">
+        <button id="menu-new" type="button" class="btn btn-primary" hidden>Novo cardápio</button>
+      </div>
+    </section>
+
+    <section class="status-grid menu-status-grid">
+      <article class="status-card">
+        <span>Esta semana</span>
+        <strong id="menu-stat-week">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Publicados</span>
+        <strong id="menu-stat-published">0</strong>
+      </article>
+      <article class="status-card">
+        <span>Próximos</span>
+        <strong id="menu-stat-upcoming">0</strong>
+      </article>
+    </section>
+
+    <section class="panel menu-board">
+      <div class="menu-week-toolbar">
+        <button id="menu-previous-week" type="button" class="btn btn-secondary" aria-label="Semana anterior">‹</button>
+        <div class="menu-week-copy">
+          <small>Semana selecionada</small>
+          <strong id="menu-week-label"></strong>
+        </div>
+        <button id="menu-today" type="button" class="btn btn-secondary">Hoje</button>
+        <label class="menu-date-jump" aria-label="Escolher semana">
+          <input id="menu-week-date" type="date">
+        </label>
+        <button id="menu-next-week" type="button" class="btn btn-secondary" aria-label="Próxima semana">›</button>
+      </div>
+
+      <p id="menu-feedback" class="feedback" role="status" aria-live="polite"></p>
+      <div id="menu-list" class="menu-week-list"></div>
+      <p id="menu-empty" class="empty-state" hidden>Nenhum cardápio publicado para esta semana.</p>
+    </section>
+
+    <div id="menu-editor-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-menu-close-editor="true"></div>
+      <div class="app-modal-dialog app-modal-dialog-wide menu-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="menu-editor-title">
+        <article class="panel app-modal-panel">
+          <div class="app-modal-header">
+            <div>
+              <h2 id="menu-editor-title">Novo cardápio</h2>
+              <p>Cadastre somente as refeições que serão servidas.</p>
+            </div>
+            <button id="menu-editor-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar">x</button>
+          </div>
+
+          <form id="menu-editor" class="stack-sm">
+            <div class="form-grid menu-editor-basics">
+              <label class="field">
+                <span>Data</span>
+                <input id="menu-date" type="date" required>
+              </label>
+              <label class="field">
+                <span>Título</span>
+                <input id="menu-title" type="text" maxlength="100" value="Cardápio do dia" required>
+              </label>
+              <label class="field">
+                <span>Público</span>
+                <select id="menu-audience">
+                  <option value="all">Toda a escola</option>
+                  <option value="selected">Turmas específicas</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="menu-target-block" class="menu-target-block" hidden>
+              <div class="section-heading">
+                <div>
+                  <h3>Turmas</h3>
+                  <p>Selecione quem poderá visualizar.</p>
+                </div>
+                <div class="action-row menu-mini-actions">
+                  <button id="menu-select-all-turmas" type="button" class="btn btn-secondary btn-sm">Todas</button>
+                  <button id="menu-clear-turmas" type="button" class="btn btn-secondary btn-sm">Limpar</button>
+                </div>
+              </div>
+              <div id="menu-turma-list" class="menu-target-list"></div>
+              <p id="menu-turma-empty" class="empty-state" hidden>Nenhuma turma cadastrada.</p>
+            </div>
+
+            <div class="menu-meal-section">
+              <div class="section-heading">
+                <div>
+                  <h3>Refeições</h3>
+                  <p>Deixe em branco o que não for servido.</p>
+                </div>
+              </div>
+              <div class="menu-meal-grid">
+                <label class="field"><span>Café da manhã</span><textarea data-menu-meal="breakfast" rows="2" maxlength="500" placeholder="Ex.: Leite, pão com queijo e fruta"></textarea></label>
+                <label class="field"><span>Lanche da manhã</span><textarea data-menu-meal="morning_snack" rows="2" maxlength="500" placeholder="Ex.: Fruta da estação"></textarea></label>
+                <label class="field"><span>Almoço</span><textarea data-menu-meal="lunch" rows="2" maxlength="500" placeholder="Ex.: Arroz, feijão, frango e salada"></textarea></label>
+                <label class="field"><span>Lanche da tarde</span><textarea data-menu-meal="afternoon_snack" rows="2" maxlength="500" placeholder="Ex.: Bolo caseiro e suco"></textarea></label>
+                <label class="field"><span>Jantar</span><textarea data-menu-meal="dinner" rows="2" maxlength="500" placeholder="Ex.: Sopa de legumes"></textarea></label>
+              </div>
+            </div>
+
+            <div class="form-grid menu-notes-grid">
+              <label class="field">
+                <span>Alergênicos</span>
+                <textarea id="menu-allergens" rows="3" maxlength="800" placeholder="Ex.: Contém leite, ovos ou glúten"></textarea>
+              </label>
+              <label class="field">
+                <span>Observações</span>
+                <textarea id="menu-notes" rows="3" maxlength="1000" placeholder="Substituições ou orientações importantes"></textarea>
+              </label>
+            </div>
+
+            <div class="action-row menu-editor-actions">
+              <button type="submit" class="btn btn-primary" data-save-status="published">Publicar</button>
+              <button type="submit" class="btn btn-secondary" data-save-status="draft">Salvar rascunho</button>
+              <button id="menu-editor-cancel" type="button" class="btn btn-secondary">Cancelar</button>
+            </div>
+            <p id="menu-editor-feedback" class="feedback" role="status" aria-live="polite"></p>
+          </form>
+        </article>
+      </div>
+    </div>
+  </template>
+
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260507-2"></script>
+  <script src="../assets/js/auth.js?v=20260716-1"></script>
+  <script src="../assets/js/data-store.js?v=20260716-4"></script>
+  <script src="../assets/js/app.js?v=20260716-5"></script>
+  <script src="../assets/js/school-menu.js?v=20260716-1"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaSchoolMenu.mount();
+  </script>
+  <script src="/assets/js/pwa.js?v=20260716-1"></script>
+</body>
+</html>

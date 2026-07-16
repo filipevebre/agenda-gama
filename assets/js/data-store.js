@@ -13,11 +13,12 @@
     forms: "school_forms",
     formResponses: "school_form_responses",
     activities: "school_activities",
-    activityCompletions: "school_activity_completions"
+    activityCompletions: "school_activity_completions",
+    menus: "school_menus"
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
-  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -259,6 +260,44 @@
     };
   }
 
+  function mapMenuFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      menuDate: item.menu_date || item.menuDate || "",
+      title: item.title || "Cardápio do dia",
+      status: item.status || "draft",
+      targetTurmas: normalizeArray(item.target_turmas || item.targetTurmas).filter(Boolean),
+      meals: normalizeArray(item.meals).filter(Boolean),
+      notes: item.notes || "",
+      allergens: item.allergens || "",
+      authorUserId: item.author_user_id || item.authorUserId || null,
+      authorName: item.author_name || item.authorName || "",
+      authorEmail: item.author_email || item.authorEmail || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapMenuToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      menu_date: item.menuDate || item.menu_date || null,
+      title: item.title || "Cardápio do dia",
+      status: item.status || "draft",
+      target_turmas: normalizeArray(item.targetTurmas || item.target_turmas).filter(Boolean),
+      meals: normalizeArray(item.meals).filter(Boolean),
+      notes: item.notes || "",
+      allergens: item.allergens || "",
+      author_user_id: item.authorUserId || item.author_user_id || null,
+      author_name: item.authorName || item.author_name || "",
+      author_email: item.authorEmail || item.author_email || ""
+    };
+  }
+
   function mapFromRemote(key, item) {
     if (key === "diario") {
       return mapDiaryFromRemote(item);
@@ -282,6 +321,10 @@
 
     if (key === "activityCompletions") {
       return mapActivityCompletionFromRemote(item);
+    }
+
+    if (key === "menus") {
+      return mapMenuFromRemote(item);
     }
 
     return item;
@@ -310,6 +353,10 @@
 
     if (key === "activityCompletions") {
       return mapActivityCompletionToRemote(item);
+    }
+
+    if (key === "menus") {
+      return mapMenuToRemote(item);
     }
 
     return item;
