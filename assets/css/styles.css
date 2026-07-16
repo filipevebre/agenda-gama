@@ -5819,13 +5819,15 @@ body[data-page="comunicacao"] .thread-composer-form {
   }
 
   body[data-page="comunicacao"] .thread-view {
+    display: flex;
+    flex-direction: column;
     height: calc(100dvh - 184px - env(safe-area-inset-bottom, 0px));
     min-height: 0;
-    grid-template-rows: auto auto minmax(180px, 1fr) auto auto auto;
     overflow: hidden;
   }
 
   body[data-page="comunicacao"] .thread-header-panel {
+    flex: 0 0 auto;
     padding: 9px 11px;
     background: #ffffff;
   }
@@ -5836,10 +5838,12 @@ body[data-page="comunicacao"] .thread-composer-form {
   }
 
   body[data-page="comunicacao"] .thread-alerts {
+    flex: 0 0 auto;
     padding-inline: 10px;
   }
 
   body[data-page="comunicacao"] .thread-body {
+    flex: 1 1 auto;
     min-height: 0;
     padding: 11px 9px;
     overflow-y: auto;
@@ -5852,24 +5856,44 @@ body[data-page="comunicacao"] .thread-composer-form {
   }
 
   body[data-page="comunicacao"] .internal-notes-panel {
+    flex: 0 0 auto;
     max-height: 110px;
     overflow-y: auto;
   }
 
   body[data-page="comunicacao"] .thread-templates-panel {
-    padding: 7px 10px;
-    overflow: hidden;
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+    min-height: 54px;
+    padding: 7px 10px 8px;
+    overflow: visible;
+    border-top: 1px solid var(--border);
     background: #ffffff;
   }
 
   body[data-page="comunicacao"] .thread-templates-panel .section-heading {
+    display: flex;
+    margin: 0 0 5px;
+  }
+
+  body[data-page="comunicacao"] .thread-templates-panel .section-heading h2 {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  body[data-page="comunicacao"] .thread-templates-panel .section-heading p {
     display: none;
   }
 
   body[data-page="comunicacao"] .quick-template-list {
     display: flex;
+    align-items: center;
     gap: 5px;
+    min-height: 30px;
     overflow-x: auto;
+    overflow-y: hidden;
     padding-bottom: 2px;
     scrollbar-width: none;
   }
@@ -5886,9 +5910,13 @@ body[data-page="comunicacao"] .thread-composer-form {
   }
 
   body[data-page="comunicacao"] .thread-composer-form {
+    position: relative;
+    z-index: 3;
+    flex: 0 0 auto;
     gap: 7px;
     padding: 8px 10px 9px;
     border-top: 1px solid var(--border);
+    background: #ffffff;
   }
 
   body[data-page="comunicacao"] .composer-toolbar {
