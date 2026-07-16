@@ -5532,9 +5532,19 @@ body[data-page="comunicacao"] .thread-composer-form {
 
   body[data-page="comunicacao"] .message-central-layout.is-board-view .message-sidebar-column {
     display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
     max-height: none;
+    overflow: visible !important;
     border: 0;
     border-bottom: 1px solid var(--border);
+  }
+
+  body[data-page="comunicacao"] .message-sidebar-groups,
+  body[data-page="comunicacao"] .message-sidebar-section {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
   body[data-page="comunicacao"] .clean-sidebar-top {
@@ -5633,7 +5643,9 @@ body[data-page="comunicacao"] .thread-composer-form {
 
   body[data-page="comunicacao"] .message-central-layout.is-board-view .message-board-column {
     display: block !important;
+    height: auto !important;
     min-height: 0;
+    overflow: visible !important;
   }
 
   body[data-page="comunicacao"] .message-board-toolbar {
