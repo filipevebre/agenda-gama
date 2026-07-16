@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-10">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-11">
 </head>
 <body data-page="cardapio" data-roles="all">
   <div id="app-shell"></div>
@@ -24,7 +24,7 @@
       <div>
         <span class="pill">Alimentação</span>
         <h1>Cardápio escolar</h1>
-        <p>Refeições planejadas para cada dia da semana.</p>
+        <p>Café da manhã, almoço e café da tarde de segunda a sexta.</p>
       </div>
       <div class="page-actions">
         <button id="menu-new" type="button" class="btn btn-primary" hidden>Novo cardápio</button>
@@ -71,8 +71,8 @@
         <article class="panel app-modal-panel">
           <div class="app-modal-header">
             <div>
-              <h2 id="menu-editor-title">Novo cardápio</h2>
-              <p>Cadastre somente as refeições que serão servidas.</p>
+              <h2 id="menu-editor-title">Cardápio da semana</h2>
+              <p>Preencha as três refeições de segunda a sexta.</p>
             </div>
             <button id="menu-editor-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar">x</button>
           </div>
@@ -80,12 +80,8 @@
           <form id="menu-editor" class="stack-sm">
             <div class="form-grid menu-editor-basics">
               <label class="field">
-                <span>Data</span>
-                <input id="menu-date" type="date" required>
-              </label>
-              <label class="field">
-                <span>Título</span>
-                <input id="menu-title" type="text" maxlength="100" value="Cardápio do dia" required>
+                <span>Semana</span>
+                <input id="menu-week-start" type="date" required>
               </label>
               <label class="field">
                 <span>Público</span>
@@ -114,16 +110,44 @@
             <div class="menu-meal-section">
               <div class="section-heading">
                 <div>
-                  <h3>Refeições</h3>
-                  <p>Deixe em branco o que não for servido.</p>
+                  <h3>Refeições da semana</h3>
+                  <p>Os cinco dias ficam organizados no mesmo cadastro.</p>
                 </div>
               </div>
-              <div class="menu-meal-grid">
-                <label class="field"><span>Café da manhã</span><textarea data-menu-meal="breakfast" rows="2" maxlength="500" placeholder="Ex.: Leite, pão com queijo e fruta"></textarea></label>
-                <label class="field"><span>Lanche da manhã</span><textarea data-menu-meal="morning_snack" rows="2" maxlength="500" placeholder="Ex.: Fruta da estação"></textarea></label>
-                <label class="field"><span>Almoço</span><textarea data-menu-meal="lunch" rows="2" maxlength="500" placeholder="Ex.: Arroz, feijão, frango e salada"></textarea></label>
-                <label class="field"><span>Lanche da tarde</span><textarea data-menu-meal="afternoon_snack" rows="2" maxlength="500" placeholder="Ex.: Bolo caseiro e suco"></textarea></label>
-                <label class="field"><span>Jantar</span><textarea data-menu-meal="dinner" rows="2" maxlength="500" placeholder="Ex.: Sopa de legumes"></textarea></label>
+              <div class="menu-week-editor-grid">
+                <div class="menu-week-editor-head" aria-hidden="true">
+                  <span>Dia</span><span>Café da manhã</span><span>Almoço</span><span>Café da tarde</span>
+                </div>
+                <article class="menu-week-editor-day" data-menu-day="0">
+                  <strong>Segunda-feira</strong>
+                  <label class="field"><span>Café da manhã</span><textarea data-menu-meal="breakfast" rows="2" maxlength="500" placeholder="Café da manhã"></textarea></label>
+                  <label class="field"><span>Almoço</span><textarea data-menu-meal="lunch" rows="2" maxlength="500" placeholder="Almoço"></textarea></label>
+                  <label class="field"><span>Café da tarde</span><textarea data-menu-meal="afternoon_snack" rows="2" maxlength="500" placeholder="Café da tarde"></textarea></label>
+                </article>
+                <article class="menu-week-editor-day" data-menu-day="1">
+                  <strong>Terça-feira</strong>
+                  <label class="field"><span>Café da manhã</span><textarea data-menu-meal="breakfast" rows="2" maxlength="500" placeholder="Café da manhã"></textarea></label>
+                  <label class="field"><span>Almoço</span><textarea data-menu-meal="lunch" rows="2" maxlength="500" placeholder="Almoço"></textarea></label>
+                  <label class="field"><span>Café da tarde</span><textarea data-menu-meal="afternoon_snack" rows="2" maxlength="500" placeholder="Café da tarde"></textarea></label>
+                </article>
+                <article class="menu-week-editor-day" data-menu-day="2">
+                  <strong>Quarta-feira</strong>
+                  <label class="field"><span>Café da manhã</span><textarea data-menu-meal="breakfast" rows="2" maxlength="500" placeholder="Café da manhã"></textarea></label>
+                  <label class="field"><span>Almoço</span><textarea data-menu-meal="lunch" rows="2" maxlength="500" placeholder="Almoço"></textarea></label>
+                  <label class="field"><span>Café da tarde</span><textarea data-menu-meal="afternoon_snack" rows="2" maxlength="500" placeholder="Café da tarde"></textarea></label>
+                </article>
+                <article class="menu-week-editor-day" data-menu-day="3">
+                  <strong>Quinta-feira</strong>
+                  <label class="field"><span>Café da manhã</span><textarea data-menu-meal="breakfast" rows="2" maxlength="500" placeholder="Café da manhã"></textarea></label>
+                  <label class="field"><span>Almoço</span><textarea data-menu-meal="lunch" rows="2" maxlength="500" placeholder="Almoço"></textarea></label>
+                  <label class="field"><span>Café da tarde</span><textarea data-menu-meal="afternoon_snack" rows="2" maxlength="500" placeholder="Café da tarde"></textarea></label>
+                </article>
+                <article class="menu-week-editor-day" data-menu-day="4">
+                  <strong>Sexta-feira</strong>
+                  <label class="field"><span>Café da manhã</span><textarea data-menu-meal="breakfast" rows="2" maxlength="500" placeholder="Café da manhã"></textarea></label>
+                  <label class="field"><span>Almoço</span><textarea data-menu-meal="lunch" rows="2" maxlength="500" placeholder="Almoço"></textarea></label>
+                  <label class="field"><span>Café da tarde</span><textarea data-menu-meal="afternoon_snack" rows="2" maxlength="500" placeholder="Café da tarde"></textarea></label>
+                </article>
               </div>
             </div>
 
@@ -155,7 +179,7 @@
   <script src="../assets/js/auth.js?v=20260716-1"></script>
   <script src="../assets/js/data-store.js?v=20260716-4"></script>
   <script src="../assets/js/app.js?v=20260716-5"></script>
-  <script src="../assets/js/school-menu.js?v=20260716-1"></script>
+  <script src="../assets/js/school-menu.js?v=20260716-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaSchoolMenu.mount();
