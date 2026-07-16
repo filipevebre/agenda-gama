@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-gama-pwa-v22";
+const CACHE_NAME = "agenda-gama-pwa-v23";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -145,19 +145,13 @@ self.addEventListener("push", function (event) {
     let payload = normalizePushPayload({});
 
     try {
-      payload = normalizePushPayload(event.data ? await event.data.json() : {});
+      const rawPayload = event.data ? await event.data.text() : "";
+      payload = normalizePushPayload(rawPayload ? JSON.parse(rawPayload) : {});
     } catch (error) {
-      payload = normalizePushPayload({ body: event.data ? await event.data.text() : "" });
+      payload = normalizePushPayload({ body: "Abra o Agenda Gama para ver a nova atualizacao." });
     }
 
-    const windowClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
-    windowClients.forEach(function (client) {
-      client.postMessage({
-        type: "agenda-push-received",
-        payload: payload
-      });
-    });
-
+    // Display first so an unavailable window client cannot suppress background push.
     await self.registration.showNotification(payload.title, {
       body: payload.body,
       tag: payload.tag,
@@ -165,8 +159,22 @@ self.addEventListener("push", function (event) {
       badge: "/assets/icons/icon-192.png",
       icon: "/assets/icons/icon-192.png",
       renotify: true,
+      silent: false,
+      timestamp: Date.now(),
       data: payload
     });
+
+    try {
+      const windowClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      windowClients.forEach(function (client) {
+        client.postMessage({
+          type: "agenda-push-received",
+          payload: payload
+        });
+      });
+    } catch (error) {
+      // The system notification is already visible; foreground sync is optional.
+    }
   })());
 });
 
