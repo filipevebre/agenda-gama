@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260619-11">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-2">
 </head>
 <body data-page="dashboard" data-roles="all">
   <div id="app-shell"></div>
@@ -23,8 +23,37 @@
     <section class="page-hero">
       <div>
         <span id="dashboard-pill" class="pill">Painel escolar</span>
-        <h1 id="dashboard-title">Rotina escolar centralizada</h1>
-        <p id="dashboard-description">Organize os principais cadastros da escola em um so lugar, com visao clara para secretaria, direcao, professores e responsaveis.</p>
+        <h1 id="dashboard-title">O que você precisa fazer agora?</h1>
+        <p id="dashboard-description">Escolha uma área para acessar as tarefas mais usadas da escola.</p>
+      </div>
+    </section>
+
+    <section id="dashboard-admin-home" class="dashboard-admin-home" hidden>
+      <div class="grid dashboard-shortcut-grid">
+        <a class="dashboard-shortcut-card" href="diario.html">
+          <span class="dashboard-shortcut-icon">DR</span>
+          <span class="dashboard-shortcut-copy"><strong>Diário</strong><small>Registre e acompanhe a rotina dos alunos.</small></span>
+        </a>
+        <a class="dashboard-shortcut-card" href="comunicados.html">
+          <span class="dashboard-shortcut-icon">CM</span>
+          <span class="dashboard-shortcut-copy"><strong>Comunicados</strong><small>Publique avisos para famílias e equipe.</small></span>
+        </a>
+        <a class="dashboard-shortcut-card" href="comunicacao.html">
+          <span class="dashboard-shortcut-icon">CO</span>
+          <span class="dashboard-shortcut-copy"><strong>Comunicação</strong><small>Atenda conversas e mensagens da escola.</small></span>
+        </a>
+        <a class="dashboard-shortcut-card" href="organizacao/alunos.html">
+          <span class="dashboard-shortcut-icon">AL</span>
+          <span class="dashboard-shortcut-copy"><strong>Alunos</strong><small>Consulte matrículas e responsáveis.</small></span>
+        </a>
+        <a class="dashboard-shortcut-card" href="organizacao/turmas.html">
+          <span class="dashboard-shortcut-icon">TU</span>
+          <span class="dashboard-shortcut-copy"><strong>Turmas</strong><small>Organize turmas e vínculos escolares.</small></span>
+        </a>
+        <a class="dashboard-shortcut-card" href="organizacao/equipe.html">
+          <span class="dashboard-shortcut-icon">EQ</span>
+          <span class="dashboard-shortcut-copy"><strong>Equipe</strong><small>Gerencie funcionários e acessos.</small></span>
+        </a>
       </div>
     </section>
 
@@ -77,8 +106,8 @@
         <a class="dashboard-shortcut-card" href="diario.html">
           <span class="dashboard-shortcut-icon">DR</span>
           <span class="dashboard-shortcut-copy">
-            <strong>Diario</strong>
-            <small>Acompanhe os registros do dia da crianca.</small>
+            <strong>Diário</strong>
+            <small>Acompanhe os registros do dia da criança.</small>
           </span>
         </a>
         <a class="dashboard-shortcut-card" href="comunicados.html">
@@ -91,7 +120,7 @@
         <a class="dashboard-shortcut-card" href="comunicacao.html">
           <span class="dashboard-shortcut-icon">CO</span>
           <span class="dashboard-shortcut-copy">
-            <strong>Comunicacao</strong>
+            <strong>Comunicação</strong>
             <small>Abra conversas e fale com a escola.</small>
           </span>
         </a>
@@ -116,9 +145,9 @@
   <script src="../assets/js/config.js?v=20260415-4"></script>
   <script src="../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../assets/js/auth.js?v=20260619-2"></script>
-  <script src="../assets/js/data-store.js?v=20260619-3"></script>
-  <script src="../assets/js/app.js?v=20260619-7"></script>
-  <script src="../assets/js/dashboard.js?v=20260617-1"></script>
+  <script src="../assets/js/data-store.js?v=20260619-4"></script>
+  <script src="../assets/js/app.js?v=20260716-2"></script>
+  <script src="../assets/js/dashboard.js?v=20260716-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDashboard.mountDashboard();

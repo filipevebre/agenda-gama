@@ -17,27 +17,30 @@
     const description = document.getElementById("dashboard-description");
     const stats = document.getElementById("dashboard-stats");
     const adminPanels = document.getElementById("dashboard-admin-panels");
+    const adminHome = document.getElementById("dashboard-admin-home");
     const familyHome = document.getElementById("dashboard-family-home");
 
-    if (!pill || !title || !description || !stats || !adminPanels || !familyHome) {
+    if (!pill || !title || !description || !stats || !adminPanels || !adminHome || !familyHome) {
       return;
     }
 
     if (session?.role === "responsaveis") {
-      pill.textContent = "Painel da familia";
-      title.textContent = "Acesso rapido da familia";
-      description.textContent = "Entre direto no diario, nos comunicados e na comunicacao para acompanhar a rotina da crianca sem excesso de informacao.";
+      pill.textContent = "Painel da família";
+      title.textContent = "Olá, escolha o que deseja acompanhar";
+      description.textContent = "Acesse a rotina da criança, os avisos da escola ou suas conversas.";
       stats.hidden = true;
       adminPanels.hidden = true;
+      adminHome.hidden = true;
       familyHome.hidden = false;
       return;
     }
 
     pill.textContent = "Painel escolar";
-    title.textContent = "Rotina escolar centralizada";
-    description.textContent = "Organize os principais cadastros da escola em um so lugar, com visao clara para secretaria, direcao, professores e responsaveis.";
+    title.textContent = "O que você precisa fazer agora?";
+    description.textContent = "Escolha uma área para acessar as tarefas mais usadas da escola.";
     stats.hidden = false;
     adminPanels.hidden = false;
+    adminHome.hidden = false;
     familyHome.hidden = true;
   }
 

@@ -1265,29 +1265,76 @@
         section: "Geral",
         items: [
           { label: "Painel", href: dashboardHref, icon: "PA", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
-          { label: "Diario", href: inOrganization ? "../diario.html" : "diario.html", icon: "DR", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
+          { label: "Diário", href: inOrganization ? "../diario.html" : "diario.html", icon: "DR", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Comunicados", href: inOrganization ? "../comunicados.html" : "comunicados.html", icon: "CM", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
-          { label: "Comunicacao", href: inOrganization ? "../comunicacao.html" : "comunicacao.html", icon: "CO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] }
+          { label: "Comunicação", href: inOrganization ? "../comunicacao.html" : "comunicacao.html", icon: "CO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] }
         ]
       },
       {
-        section: "Organizacao",
+        section: "Organização",
         items: [
           { label: "Turmas", href: `${organizationPrefix}turmas.html`, icon: "TU", roles: ["administrador", "funcionarios"] },
           { label: "Disciplinas", href: `${organizationPrefix}disciplinas.html`, icon: "DI", roles: ["administrador", "funcionarios"] },
           { label: "Equipe", href: `${organizationPrefix}equipe.html`, icon: "EQ", roles: ["administrador", "funcionarios"] },
           { label: "Professores", href: `${organizationPrefix}professores.html`, icon: "PR", roles: ["administrador", "funcionarios"] },
           { label: "Alunos", href: `${organizationPrefix}alunos.html`, icon: "AL", roles: ["administrador", "funcionarios"] },
-          { label: "Responsaveis", href: `${organizationPrefix}responsaveis.html`, icon: "RE", roles: ["administrador", "funcionarios"] }
+          { label: "Responsáveis", href: `${organizationPrefix}responsaveis.html`, icon: "RE", roles: ["administrador", "funcionarios"] }
         ]
       }
     ];
+  }
+
+  function getNavIcon(icon) {
+    const paths = {
+      PA: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/>',
+      DR: '<path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22.5z"/><path d="M4 5.5v17"/><path d="M8 7h8M8 11h7"/>',
+      CM: '<path d="M4 13h3l10 4V5L7 9H4z"/><path d="m7 13 2 6h3l-2-5"/><path d="M20 9v4"/>',
+      CO: '<path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
+      TU: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-4 2.5-6 6-6s6 2 6 6M15 15c3.2 0 5 1.7 5 5"/>',
+      DI: '<path d="M5 3h14v18H5z"/><path d="M9 3v18M12 8h4M12 12h4"/>',
+      EQ: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 12h18M10 12v2h4v-2"/>',
+      PR: '<circle cx="9" cy="7" r="3"/><path d="M3 20c0-4 2.5-7 6-7 2 0 3.7 1 4.8 2.5"/><path d="m15 18 2 2 4-5"/>',
+      AL: '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11.5V17c3.5 2.6 8.5 2.6 12 0v-5.5M22 9v7"/>',
+      RE: '<circle cx="9" cy="7" r="3"/><path d="M3 20c0-4 2.5-7 6-7 2.2 0 4 1.1 5 2.8"/><path d="M18 14.5c-2.5-2.5-6 1-3.5 3.5L18 21l3.5-3c2.5-2.5-1-6-3.5-3.5z"/>',
+      AP: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 20h14"/>',
+      SA: '<path d="M10 4H4v16h6M14 8l4 4-4 4M8 12h10"/>',
+      NO: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+      FI: '<path d="M4 6h16M7 12h10M10 18h4"/>'
+    };
+    const path = paths[icon] || paths.PA;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+  }
+
+  function setupMobileFilterDisclosure(contentTarget) {
+    const toolbars = contentTarget.querySelectorAll(".diary-filter-toolbar, .notice-toolbar, .message-filter-grid");
+    toolbars.forEach(function (toolbar) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mobile-filter-toggle";
+      button.setAttribute("aria-expanded", "false");
+      button.innerHTML = `<span>${getNavIcon("FI")}</span><strong>Filtros</strong><small>Mostrar opções</small>`;
+      toolbar.before(button);
+      button.addEventListener("click", function () {
+        const isOpen = toolbar.classList.toggle("is-mobile-open");
+        button.classList.toggle("is-open", isOpen);
+        button.setAttribute("aria-expanded", String(isOpen));
+        button.querySelector("small").textContent = isOpen ? "Ocultar opções" : "Mostrar opções";
+      });
+    });
   }
 
   function normalizeHref(href) {
     const link = document.createElement("a");
     link.href = href;
     return link.href;
+  }
+
+  function isCurrentHref(href) {
+    try {
+      return new URL(normalizeHref(href)).pathname === window.location.pathname;
+    } catch (error) {
+      return normalizeHref(href) === window.location.href;
+    }
   }
 
   function getCollapsedState() {
@@ -1306,11 +1353,10 @@
 
   function getPageContext() {
     const navSections = getNavItems();
-    const currentPath = window.location.href;
 
     for (const section of navSections) {
       const matchedItem = section.items.find(function (item) {
-        return normalizeHref(item.href) === currentPath;
+        return isCurrentHref(item.href);
       });
 
       if (matchedItem) {
@@ -1323,7 +1369,7 @@
 
     const rawTitle = String(document.title || "Agenda Gama").split("|").pop() || "Agenda Gama";
     return {
-      section: isOrganizationPage() ? "Organizacao" : "Area atual",
+      section: isOrganizationPage() ? "Organização" : "Área atual",
       label: rawTitle.trim()
     };
   }
@@ -1337,7 +1383,6 @@
 
     const appShell = document.getElementById("app-shell");
     appShell.className = "app-shell";
-    const currentPath = window.location.href;
     const collapsed = getCollapsedState();
     const pageContext = getPageContext();
 
@@ -1345,10 +1390,10 @@
       const items = section.items
         .filter((item) => item.roles.includes(session.role))
         .map((item) => {
-          const isActive = normalizeHref(item.href) === currentPath;
+          const isActive = isCurrentHref(item.href);
           return `
             <a class="sidebar-link ${isActive ? "active" : ""}" href="${item.href}" title="${item.label}">
-              <span class="sidebar-link-icon">${item.icon}</span>
+              <span class="sidebar-link-icon">${getNavIcon(item.icon)}</span>
               <span class="sidebar-link-label">${item.label}</span>
             </a>
           `;
@@ -1365,6 +1410,19 @@
       `;
     }).join("");
 
+    const mobileNavigation = getNavItems()[0].items
+      .filter((item) => item.roles.includes(session.role))
+      .map((item) => {
+        const isActive = isCurrentHref(item.href);
+        return `
+          <a class="mobile-tabbar-link ${isActive ? "active" : ""}" href="${item.href}">
+            <span>${getNavIcon(item.icon)}</span>
+            <small>${item.label}</small>
+          </a>
+        `;
+      })
+      .join("");
+
     appShell.innerHTML = `
       <aside class="sidebar ${collapsed ? "collapsed" : ""}" id="sidebar">
         <div class="sidebar-header">
@@ -1374,7 +1432,7 @@
             </span>
             <div class="sidebar-brand-text">
               <strong>Agenda Gama</strong>
-              <span>Gestao escolar</span>
+              <span>Gestão escolar</span>
             </div>
           </div>
           <button id="sidebar-collapse" class="btn sidebar-collapse" aria-label="Recolher menu" title="Recolher menu">${collapsed ? ">" : "<"}</button>
@@ -1392,11 +1450,11 @@
 
         <div class="sidebar-footer">
           <button id="install-app-button" type="button" class="btn install-app-button" title="Instalar app" hidden>
-            <span class="sidebar-link-icon">AP</span>
+            <span class="sidebar-link-icon">${getNavIcon("AP")}</span>
             <span class="sidebar-footer-text">Instalar app</span>
           </button>
           <button id="logout-button" class="btn" title="Sair e trocar conta">
-            <span class="sidebar-link-icon">SA</span>
+            <span class="sidebar-link-icon">${getNavIcon("SA")}</span>
             <span class="sidebar-footer-text">Sair e trocar conta</span>
           </button>
         </div>
@@ -1408,33 +1466,36 @@
         <div class="main-stack" id="main-stack">
           <div class="topbar">
             <button id="menu-toggle" class="menu-toggle btn" aria-label="Abrir menu">${collapsed ? ">" : "="}</button>
-            <div class="topbar-context" aria-label="Pagina atual">
+            <div class="topbar-context" aria-label="Página atual">
               <small>${pageContext.section}</small>
               <strong>${pageContext.label}</strong>
             </div>
             <div class="action-row topbar-actions" style="margin-top: 0;">
               <div class="notification-center" id="notification-center">
-                <button id="notification-toggle" class="btn btn-secondary notification-toggle" aria-label="Abrir notificacoes" aria-expanded="false">
-                  <span class="notification-toggle-icon">SI</span>
+                <button id="notification-toggle" class="btn btn-secondary notification-toggle" aria-label="Abrir notificações" aria-expanded="false">
+                  <span class="notification-toggle-icon" aria-hidden="true">${getNavIcon("NO")}</span>
                   <span id="notification-badge" class="notification-badge" hidden>0</span>
                 </button>
                 <div id="notification-panel" class="notification-panel" hidden>
                   <div class="notification-panel-head">
                     <div>
-                      <strong>Notificacoes</strong>
-                      <span>Acompanhe mensagens novas e pendencias.</span>
+                      <strong>Notificações</strong>
+                      <span>Acompanhe mensagens novas e pendências.</span>
                     </div>
                     <div class="notification-panel-actions">
                       <button id="notification-enable-device" type="button" class="btn btn-secondary btn-sm" hidden>Ativar no celular</button>
                       <button id="notification-mark-all" type="button" class="btn btn-secondary btn-sm">Marcar lidas</button>
-                      <button id="notification-close" type="button" class="btn btn-secondary btn-sm notification-close" data-notification-close="true" aria-label="Fechar notificacoes">x</button>
+                      <button id="notification-close" type="button" class="btn btn-secondary btn-sm notification-close" data-notification-close="true" aria-label="Fechar notificações">x</button>
                     </div>
                   </div>
                   <div id="notification-list" class="notification-list"></div>
-                  <p id="notification-empty" class="notification-empty">Sem notificacoes no momento.</p>
+                  <p id="notification-empty" class="notification-empty">Sem notificações no momento.</p>
                 </div>
               </div>
-              <span class="pill">${session.roleLabel}</span>
+              <div class="topbar-user" title="${session.name} - ${session.roleLabel}">
+                <span class="topbar-user-avatar">${getInitials(session.name)}</span>
+                <span class="topbar-user-copy"><strong>${session.name}</strong><small>${session.roleLabel}</small></span>
+              </div>
               <button id="logout-button-mobile" class="btn btn-secondary">Sair</button>
             </div>
           </div>
@@ -1449,6 +1510,9 @@
           </button>
         </div>
       </main>
+      <nav class="mobile-tabbar" aria-label="Navegação principal">
+        ${mobileNavigation}
+      </nav>
     `;
 
     const mainContent = document.getElementById("main-content");
@@ -1460,6 +1524,7 @@
       contentTarget.id = "page-content";
       contentTarget.appendChild(pageTemplate.content.cloneNode(true));
       mainStack?.appendChild(contentTarget);
+      setupMobileFilterDisclosure(contentTarget);
 
       function resetAllScroll() {
         contentTarget.scrollTop = 0;

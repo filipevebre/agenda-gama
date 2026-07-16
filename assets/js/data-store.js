@@ -13,6 +13,7 @@
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["notices"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -231,6 +232,9 @@
           return mapFromRemote(key, item);
         });
       } catch (error) {
+        if (REMOTE_REQUIRED_KEYS.has(key)) {
+          throw error;
+        }
         if (MIGRATABLE_KEYS.has(key)) {
           console.warn(`[Agenda Gama] Fallback local ativado para ${key}.`, error);
           return readLocal(key, seedData);
@@ -249,6 +253,9 @@
       try {
         return mapFromRemote(key, await window.AgendaGamaSupabase.fetchById(getTableName(key), id));
       } catch (error) {
+        if (REMOTE_REQUIRED_KEYS.has(key)) {
+          throw error;
+        }
         if (MIGRATABLE_KEYS.has(key)) {
           console.warn(`[Agenda Gama] Fallback local ativado para ${key}.`, error);
           return readLocal(key, seedData).find((item) => item.id === id) || null;
@@ -265,6 +272,9 @@
       try {
         return mapFromRemote(key, await window.AgendaGamaSupabase.saveRow(getTableName(key), mapToRemote(key, item)));
       } catch (error) {
+        if (REMOTE_REQUIRED_KEYS.has(key)) {
+          throw error;
+        }
         if (!MIGRATABLE_KEYS.has(key)) {
           throw error;
         }
@@ -292,6 +302,9 @@
         await window.AgendaGamaSupabase.deleteRow(getTableName(key), id);
         return;
       } catch (error) {
+        if (REMOTE_REQUIRED_KEYS.has(key)) {
+          throw error;
+        }
         if (!MIGRATABLE_KEYS.has(key)) {
           throw error;
         }

@@ -542,8 +542,17 @@
       const directory = await loadDirectory();
       const context = buildSessionContext(session, directory);
 
+      async function loadNoticesSafely() {
+        try {
+          return await loadNotices();
+        } catch (error) {
+          console.warn("[Agenda Gama] Nao foi possivel carregar os comunicados compartilhados.", error);
+          return [];
+        }
+      }
+
       const state = {
-        notices: await loadNotices(),
+        notices: await loadNoticesSafely(),
         editingId: null,
         searchTerm: "",
         audienceFilter: "all",
@@ -718,7 +727,7 @@
       }
 
       async function reloadNotices() {
-        state.notices = await loadNotices();
+        state.notices = await loadNoticesSafely();
         render();
       }
 
@@ -825,11 +834,16 @@
           return;
         }
 
-        await saveNoticeRecord(nextNotice);
-        dispatchNoticesUpdated();
-        await reloadNotices();
-        setBoardFeedback(state.editingId ? "Comunicado atualizado com sucesso." : "Comunicado publicado com sucesso.", "success");
-        closeEditor();
+        try {
+          await saveNoticeRecord(nextNotice);
+          dispatchNoticesUpdated();
+          await reloadNotices();
+          setBoardFeedback(state.editingId ? "Comunicado atualizado com sucesso." : "Comunicado publicado com sucesso.", "success");
+          closeEditor();
+        } catch (error) {
+          refs.feedback.textContent = "Nao foi possivel publicar o comunicado no sistema compartilhado. Rode a migration dos comunicados no Supabase e tente novamente.";
+          refs.feedback.className = "feedback error";
+        }
       });
 
       refs.list?.addEventListener("click", async function (event) {
@@ -844,17 +858,21 @@
         if (archiveButton) {
           const noticeIndex = state.notices.findIndex(function (item) { return item.id === archiveButton.dataset.noticeArchiveId; });
           if (noticeIndex >= 0) {
-            await saveNoticeRecord({
-              ...state.notices[noticeIndex],
-              archiveDate: getTodayDateKey(),
-              updatedAt: new Date().toISOString()
-            });
-            dispatchNoticesUpdated();
-            if (state.editingId === archiveButton.dataset.noticeArchiveId) {
-              closeEditor();
+            try {
+              await saveNoticeRecord({
+                ...state.notices[noticeIndex],
+                archiveDate: getTodayDateKey(),
+                updatedAt: new Date().toISOString()
+              });
+              dispatchNoticesUpdated();
+              if (state.editingId === archiveButton.dataset.noticeArchiveId) {
+                closeEditor();
+              }
+              setBoardFeedback("Comunicado arquivado com sucesso.", "success");
+              await reloadNotices();
+            } catch (error) {
+              setBoardFeedback("Nao foi possivel arquivar o comunicado no sistema compartilhado.", "error");
             }
-            setBoardFeedback("Comunicado arquivado com sucesso.", "success");
-            await reloadNotices();
           }
           return;
         }
@@ -863,13 +881,17 @@
         if (restoreButton) {
           const noticeIndex = state.notices.findIndex(function (item) { return item.id === restoreButton.dataset.noticeRestoreId; });
           if (noticeIndex >= 0) {
-            await saveNoticeRecord({
-              ...state.notices[noticeIndex],
-              archiveDate: ""
-            });
-            dispatchNoticesUpdated();
-            setBoardFeedback("Comunicado restaurado com sucesso.", "success");
-            await reloadNotices();
+            try {
+              await saveNoticeRecord({
+                ...state.notices[noticeIndex],
+                archiveDate: ""
+              });
+              dispatchNoticesUpdated();
+              setBoardFeedback("Comunicado restaurado com sucesso.", "success");
+              await reloadNotices();
+            } catch (error) {
+              setBoardFeedback("Nao foi possivel restaurar o comunicado no sistema compartilhado.", "error");
+            }
           }
           return;
         }
@@ -877,13 +899,17 @@
         const removeButton = event.target.closest("[data-notice-remove-id]");
         if (!removeButton) return;
 
-        await removeNoticeRecord(removeButton.dataset.noticeRemoveId);
-        dispatchNoticesUpdated();
-        if (state.editingId === removeButton.dataset.noticeRemoveId) {
-          closeEditor();
+        try {
+          await removeNoticeRecord(removeButton.dataset.noticeRemoveId);
+          dispatchNoticesUpdated();
+          if (state.editingId === removeButton.dataset.noticeRemoveId) {
+            closeEditor();
+          }
+          setBoardFeedback("Comunicado excluido com sucesso.", "success");
+          await reloadNotices();
+        } catch (error) {
+          setBoardFeedback("Nao foi possivel excluir o comunicado do sistema compartilhado.", "error");
         }
-        setBoardFeedback("Comunicado excluido com sucesso.", "success");
-        await reloadNotices();
       });
 
       refs.search?.addEventListener("input", function () {
@@ -924,6 +950,19 @@
         if (event.key !== STORAGE_KEY) return;
         await reloadNotices();
       });
+
+      window.addEventListener("focus", function () {
+        void reloadNotices();
+      });
+
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState !== "visible") return;
+        void reloadNotices();
+      });
+
+      window.setInterval(function () {
+        void reloadNotices();
+      }, 12000);
 
       render();
     }
