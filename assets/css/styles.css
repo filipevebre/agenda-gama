@@ -5013,7 +5013,8 @@ body[data-page="comunicacao"] .message-central-layout {
 
   .diary-filter-toolbar,
   .notice-toolbar,
-  .message-filter-grid {
+  .message-filter-grid,
+  .school-form-toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -5212,7 +5213,8 @@ body[data-page="comunicacao"] .message-central-layout {
 
   .diary-filter-toolbar.is-mobile-open,
   .notice-toolbar.is-mobile-open,
-  .message-filter-grid.is-mobile-open {
+  .message-filter-grid.is-mobile-open,
+  .school-form-toolbar.is-mobile-open {
     display: grid;
   }
 
@@ -5269,7 +5271,7 @@ body[data-page="comunicacao"] .message-central-layout {
     bottom: max(8px, env(safe-area-inset-bottom, 0px));
     z-index: 65;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 3px;
     min-height: 62px;
     padding: 5px;
@@ -6391,5 +6393,516 @@ body[data-page="comunicacao"] .quick-template-popover .quick-template-chip {
   body[data-page="comunicacao"] #send-message-button {
     width: 100%;
     min-height: 38px;
+  }
+}
+/* School forms */
+body[data-page="formularios"] .page-content {
+  max-width: 1280px;
+}
+
+.school-form-status-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.school-form-board {
+  padding: 22px;
+}
+
+.school-form-toolbar {
+  align-items: end;
+  margin: 18px 0;
+}
+
+.school-form-toolbar .search-field {
+  flex: 1 1 320px;
+}
+
+.school-form-list {
+  gap: 12px;
+}
+
+.school-form-card {
+  width: 100%;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 34px rgba(25, 50, 77, 0.06);
+  color: var(--text);
+  text-align: left;
+}
+
+.school-form-card-top,
+.school-form-family-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.school-form-category-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 15px;
+  background: linear-gradient(145deg, rgba(15, 157, 122, 0.16), rgba(103, 183, 255, 0.2));
+  color: var(--primary-dark);
+  font-family: "Outfit", sans-serif;
+  font-weight: 800;
+}
+
+.school-form-card-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.school-form-card-copy p,
+.school-form-card-description {
+  display: block;
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.school-form-card-tags {
+  margin-top: 12px;
+}
+
+.school-form-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 14px;
+  margin-top: 14px;
+  margin-left: 60px;
+  border-top: 1px solid var(--border);
+}
+
+.school-form-card-metrics {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 0 6px;
+}
+
+.school-form-card-metrics strong {
+  color: var(--title);
+  font: 800 1.45rem/1 "Outfit", sans-serif;
+}
+
+.school-form-card-metrics small {
+  grid-column: 1 / -1;
+  margin-top: 5px;
+  color: var(--text-muted);
+}
+
+.school-form-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.school-form-status-draft {
+  color: #51647a;
+  background: #edf2f7;
+}
+
+.school-form-status-published,
+.school-form-status-answered {
+  color: #08795e;
+  background: #e5f6ef;
+}
+
+.school-form-status-closed {
+  color: #6b7280;
+  background: #eef0f3;
+}
+
+.school-form-status-pending {
+  color: #9a6500;
+  background: #fff1cf;
+}
+
+.school-form-family-card {
+  cursor: pointer;
+  align-items: center;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.school-form-family-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(15, 157, 122, 0.35);
+  box-shadow: 0 16px 38px rgba(25, 50, 77, 0.1);
+}
+
+.school-form-family-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.school-form-family-head > strong {
+  color: var(--title);
+  font: 700 1.08rem/1.25 "Outfit", sans-serif;
+}
+
+.school-form-family-meta {
+  display: block;
+  margin-top: 9px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.school-form-card-arrow {
+  color: var(--primary-dark);
+  font: 500 2rem/1 "Outfit", sans-serif;
+}
+
+.school-form-editor-dialog {
+  width: min(880px, 100%);
+}
+
+.school-form-basics {
+  grid-template-columns: minmax(0, 1fr) 220px;
+}
+
+.school-form-description-field {
+  grid-column: 1 / -1;
+}
+
+.school-form-target-block,
+.school-form-question-section {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(246, 250, 253, 0.75);
+}
+
+.school-form-target-block .section-heading,
+.school-form-question-section .section-heading {
+  margin-bottom: 12px;
+}
+
+.school-form-mini-actions {
+  margin-top: 0;
+}
+
+.school-form-target-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.school-form-target-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.school-form-target-option:has(input:checked) {
+  border-color: rgba(15, 157, 122, 0.42);
+  background: rgba(15, 157, 122, 0.08);
+}
+
+.school-form-target-option input {
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.school-form-target-option span {
+  display: grid;
+  min-width: 0;
+}
+
+.school-form-target-option small {
+  color: var(--text-muted);
+}
+
+.school-form-question-list {
+  display: grid;
+  gap: 10px;
+}
+
+.school-form-question-editor {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.school-form-question-number {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  background: #e8f2f8;
+  color: var(--title);
+  font-weight: 800;
+}
+
+.school-form-question-fields,
+.school-form-question-actions {
+  display: grid;
+  gap: 9px;
+}
+
+.school-form-question-config {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.school-form-required-option {
+  min-height: 46px;
+  align-self: end;
+  justify-content: center;
+}
+
+.school-form-question-actions .btn {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.school-form-editor-actions {
+  position: sticky;
+  bottom: -20px;
+  z-index: 2;
+  margin: 0 -20px -20px;
+  padding: 14px 20px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.97);
+}
+
+.school-form-answer-panel {
+  padding-bottom: 18px;
+}
+
+.school-form-answer-panel .app-modal-header h2 {
+  margin: 8px 0 4px;
+}
+
+.school-form-answer-questions {
+  display: grid;
+  gap: 12px;
+}
+
+.school-form-answer-question {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(247, 250, 252, 0.78);
+}
+
+.school-form-answer-question legend {
+  padding: 0 6px;
+  color: var(--title);
+  font-weight: 700;
+}
+
+.school-form-answer-question > input,
+.school-form-answer-question > textarea {
+  margin-top: 8px;
+}
+
+.school-form-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.school-form-choice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.school-form-choice:has(input:checked) {
+  border-color: rgba(15, 157, 122, 0.42);
+  background: rgba(15, 157, 122, 0.08);
+}
+
+.school-form-choice input {
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.school-form-response-list {
+  display: grid;
+  gap: 12px;
+}
+
+.school-form-response-card {
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(247, 250, 252, 0.78);
+}
+
+.school-form-response-card h3,
+.school-form-response-card p {
+  margin: 0;
+}
+
+.school-form-response-card p,
+.school-form-response-card small {
+  color: var(--text-muted);
+}
+
+.school-form-response-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 13px 0 0;
+}
+
+.school-form-response-card dl > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.45fr) minmax(0, 1fr);
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.school-form-response-card dt {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.school-form-response-card dd {
+  margin: 0;
+  color: var(--title);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .school-form-target-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .school-form-status-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .school-form-status-grid .status-card {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .school-form-status-grid .status-card span {
+    font-size: 0.72rem;
+  }
+
+  .school-form-status-grid .status-card strong {
+    font-size: 1.35rem;
+  }
+
+  .school-form-board {
+    padding: 14px;
+  }
+
+  .school-form-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .school-form-toolbar .search-field {
+    grid-column: 1 / -1;
+  }
+
+  .school-form-card {
+    padding: 14px;
+    border-radius: 17px;
+  }
+
+  .school-form-category-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 13px;
+  }
+
+  .school-form-card-footer {
+    display: grid;
+    margin-left: 0;
+  }
+
+  .school-form-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .school-form-card-actions .btn {
+    width: 100%;
+  }
+
+  .school-form-family-head {
+    align-items: flex-start;
+  }
+
+  .school-form-family-meta {
+    line-height: 1.45;
+  }
+
+  .school-form-basics,
+  .school-form-question-config,
+  .school-form-target-list,
+  .school-form-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .school-form-question-editor {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .school-form-question-number {
+    width: 28px;
+    height: 28px;
+  }
+
+  .school-form-question-actions {
+    grid-column: 2;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .school-form-editor-actions {
+    bottom: -16px;
+    margin: 0 -14px -16px;
+    padding: 12px 14px 16px;
+  }
+
+  .school-form-editor-actions .btn {
+    flex: 1 1 100%;
+  }
+
+  .school-form-response-card dl > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
   }
 }

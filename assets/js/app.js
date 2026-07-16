@@ -1267,7 +1267,8 @@
           { label: "Painel", href: dashboardHref, icon: "PA", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Diário", href: inOrganization ? "../diario.html" : "diario.html", icon: "DR", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Comunicados", href: inOrganization ? "../comunicados.html" : "comunicados.html", icon: "CM", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
-          { label: "Comunicação", href: inOrganization ? "../comunicacao.html" : "comunicacao.html", icon: "CO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] }
+          { label: "Comunicação", href: inOrganization ? "../comunicacao.html" : "comunicacao.html", icon: "CO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
+          { label: "Formulários", href: inOrganization ? "../formularios.html" : "formularios.html", icon: "FO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] }
         ]
       },
       {
@@ -1290,6 +1291,7 @@
       DR: '<path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22.5z"/><path d="M4 5.5v17"/><path d="M8 7h8M8 11h7"/>',
       CM: '<path d="M4 13h3l10 4V5L7 9H4z"/><path d="m7 13 2 6h3l-2-5"/><path d="M20 9v4"/>',
       CO: '<path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
+      FO: '<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h3"/><path d="m8.5 7 .7.7 1.3-1.5"/>',
       TU: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-4 2.5-6 6-6s6 2 6 6M15 15c3.2 0 5 1.7 5 5"/>',
       DI: '<path d="M5 3h14v18H5z"/><path d="M9 3v18M12 8h4M12 12h4"/>',
       EQ: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 12h18M10 12v2h4v-2"/>',
@@ -1306,7 +1308,7 @@
   }
 
   function setupMobileFilterDisclosure(contentTarget) {
-    const toolbars = contentTarget.querySelectorAll(".diary-filter-toolbar, .notice-toolbar, .message-filter-grid");
+    const toolbars = contentTarget.querySelectorAll(".diary-filter-toolbar, .notice-toolbar, .message-filter-grid, .school-form-toolbar");
     toolbars.forEach(function (toolbar) {
       const button = document.createElement("button");
       button.type = "button";

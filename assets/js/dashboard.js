@@ -27,7 +27,7 @@
     if (session?.role === "responsaveis") {
       pill.textContent = "Painel da família";
       title.textContent = "Olá, escolha o que deseja acompanhar";
-      description.textContent = "Acesse a rotina da criança, os avisos da escola ou suas conversas.";
+      description.textContent = "Acesse a rotina da criança, os avisos, formulários e conversas da escola.";
       stats.hidden = true;
       adminPanels.hidden = true;
       adminHome.hidden = true;

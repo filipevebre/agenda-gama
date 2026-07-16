@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-7">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-8">
 </head>
 <body data-page="dashboard" data-roles="all">
   <div id="app-shell"></div>
@@ -41,6 +41,10 @@
         <a class="dashboard-shortcut-card" href="comunicacao.html">
           <span class="dashboard-shortcut-icon">CO</span>
           <span class="dashboard-shortcut-copy"><strong>Comunicação</strong><small>Atenda conversas e mensagens da escola.</small></span>
+        </a>
+        <a class="dashboard-shortcut-card" href="formularios.html">
+          <span class="dashboard-shortcut-icon">FO</span>
+          <span class="dashboard-shortcut-copy"><strong>Formulários</strong><small>Crie autorizações, pesquisas e confirmações.</small></span>
         </a>
         <a class="dashboard-shortcut-card" href="organizacao/alunos.html">
           <span class="dashboard-shortcut-icon">AL</span>
@@ -124,6 +128,13 @@
             <small>Abra conversas e fale com a escola.</small>
           </span>
         </a>
+        <a class="dashboard-shortcut-card" href="formularios.html">
+          <span class="dashboard-shortcut-icon">FO</span>
+          <span class="dashboard-shortcut-copy">
+            <strong>Formulários</strong>
+            <small>Responda autorizações e solicitações da escola.</small>
+          </span>
+        </a>
       </div>
 
       <article class="panel dashboard-family-panel">
@@ -137,6 +148,7 @@
           <li>Abra o Diario para ver novos registros enviados pela escola.</li>
           <li>Confira os Comunicados para ver avisos gerais e recados importantes.</li>
           <li>Use Comunicacao para falar com a escola e acompanhar conversas abertas.</li>
+          <li>Abra Formularios para responder autorizacoes e solicitacoes.</li>
         </ul>
       </article>
     </section>
@@ -146,8 +158,8 @@
   <script src="../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../assets/js/auth.js?v=20260716-1"></script>
   <script src="../assets/js/data-store.js?v=20260619-4"></script>
-  <script src="../assets/js/app.js?v=20260716-2"></script>
-  <script src="../assets/js/dashboard.js?v=20260716-1"></script>
+  <script src="../assets/js/app.js?v=20260716-3"></script>
+  <script src="../assets/js/dashboard.js?v=20260716-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDashboard.mountDashboard();
