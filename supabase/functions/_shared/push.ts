@@ -192,7 +192,7 @@ export async function sendPushToUserIds(
         body: payload.body,
         href: buildAppUrl(payload.href)
       }), {
-        TTL: 60,
+        TTL: 60 * 60 * 24,
         urgency: "high"
       })
       sentCount += 1

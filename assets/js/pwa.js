@@ -35,6 +35,21 @@
     return bytes;
   }
 
+  function pushKeysMatch(subscription, expectedKey) {
+    const currentKey = subscription?.options?.applicationServerKey;
+    if (!currentKey || !expectedKey || currentKey.byteLength !== expectedKey.byteLength) {
+      return false;
+    }
+
+    const currentBytes = new Uint8Array(currentKey);
+    for (let index = 0; index < expectedKey.byteLength; index += 1) {
+      if (currentBytes[index] !== expectedKey[index]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function buildDeviceLabel() {
     const platform = String(window.navigator.platform || "");
     const standalone = isStandaloneMode() ? "App instalado" : "Navegador";
@@ -154,11 +169,34 @@
       return null;
     }
 
+    const applicationServerKey = toBase64UrlUint8Array(pushConfig.publicKey);
     let subscription = await registration.pushManager.getSubscription();
+
+    // A subscription created with an old VAPID key cannot receive background pushes.
+    if (subscription && !pushKeysMatch(subscription, applicationServerKey)) {
+      const staleEndpoint = String(subscription.endpoint || "");
+      try {
+        await subscription.unsubscribe();
+      } catch (error) {
+        console.warn("[Agenda Gama] Nao foi possivel renovar a assinatura antiga de push.", error);
+      }
+
+      if (window.AgendaGamaSupabase?.invokeFunction && staleEndpoint) {
+        try {
+          await window.AgendaGamaSupabase.invokeFunction("remove-push-subscription", {
+            endpoint: staleEndpoint
+          });
+        } catch (error) {
+          console.warn("[Agenda Gama] Nao foi possivel remover a assinatura antiga do servidor.", error);
+        }
+      }
+      subscription = null;
+    }
+
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: toBase64UrlUint8Array(pushConfig.publicKey)
+        applicationServerKey: applicationServerKey
       });
     }
 

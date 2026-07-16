@@ -1170,7 +1170,7 @@
         state.entries = sortEntries(savedEntries.concat(state.entries.filter(function (entry) {
           return !savedIds.has(entry.id);
         })));
-        void notifyDiaryRecipients(savedEntries);
+        await notifyDiaryRecipients(savedEntries);
 
         const successMessage = state.editingId
           ? "Registro atualizado com sucesso."

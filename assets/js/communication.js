@@ -2447,7 +2447,7 @@
         savedMessages.forEach(function (savedMessage) {
           appendSavedMessage(savedMessage);
         });
-        void notifyCommunicationMessages(savedMessages);
+        await notifyCommunicationMessages(savedMessages);
 
         return createdThreads;
       }
@@ -2543,7 +2543,7 @@
         });
         appendSavedMessage(savedMessage);
         if (workflowStatus === "sent" || workflowStatus === "pending_approval") {
-          void notifyCommunicationMessages([savedMessage]);
+          await notifyCommunicationMessages([savedMessage]);
         }
 
         refs.composerInput.value = "";
@@ -3494,7 +3494,7 @@
         }
 
         if (nextStatus === "sent") {
-          void notifyCommunicationMessages([updatedPendingMessage]);
+          await notifyCommunicationMessages([updatedPendingMessage]);
         }
 
         await refreshAll();
