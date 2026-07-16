@@ -70,12 +70,13 @@
   }
 
   function getLocalSession() {
-    return readJson(LOCAL_SESSION_KEY, null);
+    return enforceSessionPermissions(readJson(LOCAL_SESSION_KEY, null));
   }
 
   function saveLocalSession(user) {
-    writeJson(LOCAL_SESSION_KEY, user);
-    cachedSession = user;
+    const safeSession = enforceSessionPermissions(user);
+    writeJson(LOCAL_SESSION_KEY, safeSession);
+    cachedSession = safeSession;
   }
 
   function clearLocalSession() {
@@ -101,28 +102,38 @@
   }
 
   function mapProfileToSession(user, profile) {
+    const role = profile?.role || user.user_metadata?.role || "responsaveis";
     return {
       userId: user.id,
       name: profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email,
       email: normalizeEmail(profile?.email || user.email),
-      role: profile?.role || user.user_metadata?.role || "responsaveis",
+      role: role,
       roleLabel: profile?.role_label || user.user_metadata?.role_label || "Responsavel",
-      canApprove: Boolean(profile?.can_approve ?? user.user_metadata?.can_approve ?? false),
+      canApprove: role !== "responsaveis" && Boolean(profile?.can_approve ?? user.user_metadata?.can_approve ?? false),
       firstAccessPending: Boolean(profile?.first_access_pending ?? user.user_metadata?.first_access_pending ?? false),
       authProvider: "supabase"
     };
   }
 
   function mapProfileToUser(profile) {
+    const role = profile.role || "responsaveis";
     return {
       userId: profile.id,
       name: profile.full_name,
       email: normalizeEmail(profile.email),
-      role: profile.role,
+      role: role,
       roleLabel: profile.role_label,
-      canApprove: Boolean(profile.can_approve),
+      canApprove: role !== "responsaveis" && Boolean(profile.can_approve),
       firstAccessPending: Boolean(profile.first_access_pending)
     };
+  }
+
+  function enforceSessionPermissions(session) {
+    if (!session || session.role !== "responsaveis" || !session.canApprove) {
+      return session;
+    }
+
+    return { ...session, canApprove: false };
   }
 
   async function isSupabaseEnabled() {
@@ -186,7 +197,7 @@
   }
 
   function getSession() {
-    return cachedSession || getLocalSession();
+    return enforceSessionPermissions(cachedSession || getLocalSession());
   }
 
   function getUsers() {

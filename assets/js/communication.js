@@ -671,6 +671,10 @@
   }
 
   function canSeeChannel(session, actorContext, channel) {
+    if (session.role === "responsaveis") {
+      if (channel.channelType && channel.channelType !== "turma") return true;
+      return channelMatchesTurmas(actorContext.responsavelTurmas, channel);
+    }
     if (session.role === "administrador" || session.canApprove) return true;
     if (session.role === "professores") {
       if (channel.channelType && channel.channelType !== "turma") return normalizeText(channel.nome) === "professor";
@@ -683,10 +687,6 @@
         }) || normalizeText(channel.nome) === "secretaria";
       }
       return true;
-    }
-    if (session.role === "responsaveis") {
-      if (channel.channelType && channel.channelType !== "turma") return true;
-      return channelMatchesTurmas(actorContext.responsavelTurmas, channel);
     }
     return false;
   }
@@ -782,7 +782,6 @@
   }
 
   function canViewThread(thread, session, actorContext) {
-    if (session.role === "administrador" || session.canApprove) return true;
     if (session.role === "responsaveis") {
       if (thread.type === "broadcast") {
         return setHasTurma(actorContext.responsavelTurmas, thread.turma);
@@ -790,6 +789,7 @@
 
       return normalizeEmail(thread.responsibleEmail) === normalizeEmail(session.email);
     }
+    if (session.role === "administrador" || session.canApprove) return true;
 
     if (session.role === "professores") {
       return setHasTurma(actorContext.professorTurmas, thread.turma)
@@ -1451,6 +1451,10 @@
       function getVisibleResponsavelPool() {
         const responsaveis = state.directory?.responsaveis || [];
 
+        if (session.role === "responsaveis") {
+          return state.actorContext.responsavelRecords || [];
+        }
+
         if (session.role === "administrador" || session.canApprove || session.role === "funcionarios") {
           return responsaveis;
         }
@@ -1460,10 +1464,6 @@
             const student = getStudentForResponsavelRecord(responsavel);
             return Boolean(student?.turma) && setHasTurma(state.actorContext.professorTurmas, student.turma);
           });
-        }
-
-        if (session.role === "responsaveis") {
-          return state.actorContext.responsavelRecords || [];
         }
 
         return responsaveis;
@@ -1690,6 +1690,7 @@
       }
 
       function canManageChannels() {
+        if (session.role === "responsaveis") return false;
         return session.role === "administrador" || session.role === "funcionarios" || session.canApprove;
       }
 
