@@ -5382,3 +5382,539 @@ body[data-page="comunicacao"] .message-central-layout {
     grid-template-columns: 36px minmax(0, 1fr);
   }
 }
+
+/* Communication center: focused inbox and chat flow. */
+body[data-page="comunicacao"] .message-central-layout {
+  background: #ffffff;
+}
+
+body[data-page="comunicacao"] .message-sidebar-title h1 {
+  font-size: 1.08rem;
+}
+
+body[data-page="comunicacao"] .message-sidebar-title p,
+body[data-page="comunicacao"] .message-board-summary,
+body[data-page="comunicacao"] .thread-action-bar {
+  display: none !important;
+}
+
+body[data-page="comunicacao"] .clean-sidebar-top,
+body[data-page="comunicacao"] .message-board-toolbar,
+body[data-page="comunicacao"] .message-board-header,
+body[data-page="comunicacao"] .clean-filter-grid {
+  padding: 12px 14px;
+}
+
+body[data-page="comunicacao"] .clean-sidebar-top {
+  gap: 10px;
+}
+
+body[data-page="comunicacao"] .compact-search-field > span {
+  display: none;
+}
+
+body[data-page="comunicacao"] .compact-search-field input {
+  min-height: 40px;
+}
+
+body[data-page="comunicacao"] .message-sidebar-groups {
+  padding: 0 8px 10px;
+}
+
+body[data-page="comunicacao"] .message-sidebar-section > .section-heading {
+  padding: 0 6px;
+}
+
+body[data-page="comunicacao"] .message-channel-card {
+  min-height: 54px;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+body[data-page="comunicacao"] .message-board-toolbar {
+  min-height: 58px;
+  border-bottom: 1px solid var(--border);
+}
+
+body[data-page="comunicacao"] .message-tab-bar {
+  gap: 4px;
+}
+
+body[data-page="comunicacao"] .message-tab {
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+}
+
+body[data-page="comunicacao"] .message-tab.active {
+  background: #e3f4ef;
+  color: var(--primary-dark);
+}
+
+body[data-page="comunicacao"] .clean-filter-grid {
+  gap: 8px;
+  background: #f7f9fc;
+}
+
+body[data-page="comunicacao"] .message-board-list {
+  gap: 0;
+  background: #ffffff;
+}
+
+body[data-page="comunicacao"] .message-board-card {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: #ffffff;
+}
+
+body[data-page="comunicacao"] .message-board-card:hover,
+body[data-page="comunicacao"] .message-board-card.active {
+  background: #f7fbfa;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+body[data-page="comunicacao"] .message-board-open {
+  padding: 13px 14px 10px;
+}
+
+body[data-page="comunicacao"] .message-board-actions {
+  margin: 0;
+  padding: 0 14px 12px 62px;
+}
+
+body[data-page="comunicacao"] .message-board-actions-toggle {
+  display: none;
+}
+
+body[data-page="comunicacao"] .thread-panel-topbar {
+  min-height: 54px;
+  padding: 10px 14px;
+  align-items: center;
+}
+
+body[data-page="comunicacao"] .thread-header-panel {
+  padding: 12px 14px;
+}
+
+body[data-page="comunicacao"] .thread-body {
+  background: #eef3f7;
+}
+
+body[data-page="comunicacao"] .thread-templates-panel,
+body[data-page="comunicacao"] .internal-notes-panel {
+  padding: 10px 14px;
+}
+
+body[data-page="comunicacao"] .thread-composer-form {
+  padding: 11px 14px 13px;
+  background: #ffffff;
+}
+
+@media (max-width: 720px) {
+  body[data-page="comunicacao"] .page-content {
+    padding: 0 0 calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body[data-page="comunicacao"] .message-central-shell {
+    min-height: 0;
+    padding: 0;
+  }
+
+  body[data-page="comunicacao"] .message-central-layout {
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  body[data-page="comunicacao"] .message-central-layout.is-board-view .message-sidebar-column {
+    display: block !important;
+    max-height: none;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  body[data-page="comunicacao"] .clean-sidebar-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 9px 10px 7px;
+  }
+
+  body[data-page="comunicacao"] .message-sidebar-title {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .compact-search-field {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  body[data-page="comunicacao"] .compact-search-field input {
+    min-height: 40px;
+    padding-left: 12px;
+  }
+
+  body[data-page="comunicacao"] .message-sidebar-actions {
+    grid-column: 2;
+    align-self: end;
+  }
+
+  body[data-page="comunicacao"] .message-sidebar-actions .btn {
+    min-height: 40px;
+  }
+
+  body[data-page="comunicacao"] .message-sidebar-groups {
+    padding: 0 10px 9px;
+  }
+
+  body[data-page="comunicacao"] .message-sidebar-section > .section-heading {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .message-channel-list {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 2px;
+    scrollbar-width: none;
+  }
+
+  body[data-page="comunicacao"] .message-channel-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .message-channel-card {
+    flex: 0 0 auto;
+    grid-template-columns: 30px minmax(64px, auto) auto;
+    gap: 7px;
+    width: auto;
+    min-width: 118px;
+    min-height: 44px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  body[data-page="comunicacao"] .message-channel-card.active {
+    border-color: #9fd6c7;
+    background: #e8f6f2;
+  }
+
+  body[data-page="comunicacao"] .message-channel-card .message-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+  }
+
+  body[data-page="comunicacao"] .message-channel-copy strong {
+    max-width: 105px;
+    overflow: hidden;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="comunicacao"] .message-channel-copy small {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .message-pill-count {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    font-size: 0.62rem;
+  }
+
+  body[data-page="comunicacao"] .message-central-layout.is-board-view .message-board-column {
+    display: block !important;
+    min-height: 0;
+  }
+
+  body[data-page="comunicacao"] .message-board-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    min-height: 54px;
+    padding: 8px 10px;
+  }
+
+  body[data-page="comunicacao"] #toggle-new-thread {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  body[data-page="comunicacao"] .message-toolbar-compact-actions {
+    width: auto;
+  }
+
+  body[data-page="comunicacao"] #open-message-highlights {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .message-help-trigger {
+    width: 40px;
+    height: 40px;
+  }
+
+  body[data-page="comunicacao"] .message-view-switcher {
+    display: none !important;
+  }
+
+  body[data-page="comunicacao"] .message-board-header {
+    padding: 7px 10px;
+    overflow: hidden;
+  }
+
+  body[data-page="comunicacao"] .message-tab-bar {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 0;
+    scrollbar-width: none;
+  }
+
+  body[data-page="comunicacao"] .message-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .message-tab {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 10px;
+  }
+
+  body[data-page="comunicacao"] .message-board-column > .mobile-filter-toggle {
+    width: calc(100% - 20px);
+    margin: 2px 10px 8px;
+  }
+
+  body[data-page="comunicacao"] .clean-filter-grid {
+    margin: 0 10px 9px;
+    padding: 9px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  body[data-page="comunicacao"] .message-board-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  body[data-page="comunicacao"] .message-board-open {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 9px;
+    padding: 11px 10px 9px;
+    text-align: left;
+  }
+
+  body[data-page="comunicacao"] .message-board-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    font-size: 0.72rem;
+  }
+
+  body[data-page="comunicacao"] .message-board-headline strong {
+    font-size: 0.86rem;
+  }
+
+  body[data-page="comunicacao"] .message-board-headline p,
+  body[data-page="comunicacao"] .message-board-subject,
+  body[data-page="comunicacao"] .message-board-preview {
+    margin: 2px 0 0;
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  body[data-page="comunicacao"] .message-board-preview {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="comunicacao"] .message-board-tags {
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  body[data-page="comunicacao"] .message-board-tags .tag:nth-child(n + 3) {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .message-board-actions-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-height: 30px;
+    margin: 0 10px 9px 59px;
+    padding: 5px 9px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #edf2f7;
+    color: var(--title);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  body[data-page="comunicacao"] .message-board-actions {
+    display: none !important;
+    gap: 5px;
+    margin: 0;
+    padding: 0 10px 10px 59px;
+  }
+
+  body[data-page="comunicacao"] .message-board-card.is-actions-open .message-board-actions {
+    display: flex !important;
+  }
+
+  body[data-page="comunicacao"] .message-board-actions .btn {
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 0.65rem;
+  }
+
+  body[data-page="comunicacao"] .message-central-layout.is-thread-view .message-thread-column {
+    min-height: 0;
+    height: calc(100dvh - 134px - env(safe-area-inset-bottom, 0px));
+    background: #eef3f7;
+  }
+
+  body[data-page="comunicacao"] .thread-panel-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    display: flex;
+    min-height: 50px;
+    padding: 7px 10px;
+    background: #ffffff;
+  }
+
+  body[data-page="comunicacao"] .thread-topbar-copy {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .thread-back-button {
+    min-height: 36px;
+    padding: 7px 11px;
+  }
+
+  body[data-page="comunicacao"] .thread-view {
+    height: calc(100dvh - 184px - env(safe-area-inset-bottom, 0px));
+    min-height: 0;
+    grid-template-rows: auto auto minmax(180px, 1fr) auto auto auto;
+    overflow: hidden;
+  }
+
+  body[data-page="comunicacao"] .thread-header-panel {
+    padding: 9px 11px;
+    background: #ffffff;
+  }
+
+  body[data-page="comunicacao"] .thread-header-panel .thread-header-copy h2,
+  body[data-page="comunicacao"] .thread-header-panel .thread-title-row strong {
+    font-size: 0.9rem;
+  }
+
+  body[data-page="comunicacao"] .thread-alerts {
+    padding-inline: 10px;
+  }
+
+  body[data-page="comunicacao"] .thread-body {
+    min-height: 0;
+    padding: 11px 9px;
+    overflow-y: auto;
+  }
+
+  body[data-page="comunicacao"] .thread-bubble {
+    max-width: 88%;
+    padding: 9px 10px;
+    border-radius: 12px;
+  }
+
+  body[data-page="comunicacao"] .internal-notes-panel {
+    max-height: 110px;
+    overflow-y: auto;
+  }
+
+  body[data-page="comunicacao"] .thread-templates-panel {
+    padding: 7px 10px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  body[data-page="comunicacao"] .thread-templates-panel .section-heading {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .quick-template-list {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  body[data-page="comunicacao"] .quick-template-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .quick-template-list .btn {
+    flex: 0 0 auto;
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 0.66rem;
+  }
+
+  body[data-page="comunicacao"] .thread-composer-form {
+    gap: 7px;
+    padding: 8px 10px 9px;
+    border-top: 1px solid var(--border);
+  }
+
+  body[data-page="comunicacao"] .composer-toolbar {
+    gap: 5px;
+  }
+
+  body[data-page="comunicacao"] .composer-toolbar .btn {
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 0.65rem;
+  }
+
+  body[data-page="comunicacao"] .thread-composer-form .field > span {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .message-thread-column .field textarea {
+    min-height: 58px;
+    max-height: 110px;
+    padding: 9px 10px;
+    border-radius: 10px;
+  }
+
+  body[data-page="comunicacao"] .composer-footer {
+    display: block;
+  }
+
+  body[data-page="comunicacao"] #composer-context,
+  body[data-page="comunicacao"] #save-draft-button {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .composer-footer .toolbar {
+    width: 100%;
+  }
+
+  body[data-page="comunicacao"] #send-message-button {
+    width: 100%;
+    min-height: 38px;
+  }
+}

@@ -1348,7 +1348,7 @@
         threadState: readThreadState(),
         viewState: readJson(THREAD_VIEW_KEY, {}),
         selectedChannelId: null,
-        activeTab: "responder",
+        activeTab: session.role === "responsaveis" ? "todas" : "responder",
         leftFilter: localStorage.getItem(CHANNEL_FILTER_KEY) || "all",
         searchTerm: "",
         filters: {
@@ -1956,6 +1956,8 @@
         refs.tabCountNaoLidas.textContent = String(counts["nao-lidas"]);
 
         refs.tabBar.forEach(function (button) {
+          const isFamilyOnlyTab = ["todas", "nao-lidas"].includes(button.dataset.tab);
+          button.hidden = session.role === "responsaveis" && !isFamilyOnlyTab;
           button.classList.toggle("active", button.dataset.tab === state.activeTab);
         });
       }
@@ -2034,6 +2036,7 @@
             thread.local.pinned ? '<span class="tag">Fixada</span>' : ""
           ].filter(Boolean).join("");
           const actions = session.role === "responsaveis" ? "" : `
+            <button type="button" class="message-board-actions-toggle" aria-expanded="false">Ações</button>
             <div class="message-board-actions">
               <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="assign">${thread.local.assignedEmail ? "Reassumir" : "Assumir"}</button>
               <button type="button" class="message-board-action btn btn-secondary btn-sm" data-action="pin">${thread.local.pinned ? "Desafixar" : "Fixar"}</button>
@@ -3263,6 +3266,7 @@
         closeMessageHighlightsModal();
         renderAll();
         if (refs.threadBody) refs.threadBody.scrollTop = refs.threadBody.scrollHeight;
+        if (window.innerWidth <= 720) window.scrollTo(0, 0);
       }
 
       refs.sidebarThreadList?.addEventListener("click", handleThreadSelection);
@@ -3270,6 +3274,7 @@
       refs.threadBackButton?.addEventListener("click", function () {
         setViewMode("board");
         renderAll();
+        if (window.innerWidth <= 720) window.scrollTo(0, 0);
       });
 
       async function runThreadAction(thread, action) {
@@ -3316,6 +3321,17 @@
       }
 
       refs.boardList?.addEventListener("click", function (event) {
+        const actionsToggle = event.target.closest(".message-board-actions-toggle");
+        if (actionsToggle) {
+          const card = actionsToggle.closest("[data-thread-card]");
+          const isOpen = card?.classList.toggle("is-actions-open") || false;
+          actionsToggle.setAttribute("aria-expanded", String(isOpen));
+          actionsToggle.textContent = isOpen ? "Fechar ações" : "Ações";
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
         const actionButton = event.target.closest(".message-board-action");
         if (!actionButton) return;
         const card = actionButton.closest("[data-thread-card]");
