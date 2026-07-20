@@ -14,11 +14,14 @@
     formResponses: "school_form_responses",
     activities: "school_activities",
     activityCompletions: "school_activity_completions",
-    menus: "school_menus"
+    menus: "school_menus",
+    calendarEvents: "school_calendar_events",
+    attendanceSessions: "attendance_sessions",
+    attendanceRecords: "attendance_records"
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
-  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -260,6 +263,110 @@
     };
   }
 
+  function mapCalendarEventFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      title: item.title || "",
+      description: item.description || "",
+      eventType: item.event_type || item.eventType || "evento",
+      status: item.status || "published",
+      eventDate: item.event_date || item.eventDate || "",
+      endDate: item.end_date || item.endDate || "",
+      allDay: item.all_day !== false,
+      startTime: item.start_time || item.startTime || "",
+      endTime: item.end_time || item.endTime || "",
+      location: item.location || "",
+      targetTurmas: normalizeArray(item.target_turmas || item.targetTurmas).filter(Boolean),
+      important: Boolean(item.important),
+      authorUserId: item.author_user_id || item.authorUserId || null,
+      authorName: item.author_name || item.authorName || "",
+      authorEmail: item.author_email || item.authorEmail || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapCalendarEventToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      title: item.title || "",
+      description: item.description || "",
+      event_type: item.eventType || item.event_type || "evento",
+      status: item.status || "published",
+      event_date: item.eventDate || item.event_date || null,
+      end_date: item.endDate || item.end_date || null,
+      all_day: item.allDay !== false,
+      start_time: item.startTime || item.start_time || null,
+      end_time: item.endTime || item.end_time || null,
+      location: item.location || "",
+      target_turmas: normalizeArray(item.targetTurmas || item.target_turmas).filter(Boolean),
+      important: Boolean(item.important),
+      author_user_id: item.authorUserId || item.author_user_id || null,
+      author_name: item.authorName || item.author_name || "",
+      author_email: item.authorEmail || item.author_email || ""
+    };
+  }
+
+  function mapAttendanceSessionFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      attendanceDate: item.attendance_date || item.attendanceDate || "",
+      turma: item.turma || "",
+      status: item.status || "open",
+      notes: item.notes || "",
+      teacherUserId: item.teacher_user_id || item.teacherUserId || null,
+      teacherName: item.teacher_name || item.teacherName || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapAttendanceSessionToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      attendance_date: item.attendanceDate || item.attendance_date || null,
+      turma: item.turma || "",
+      status: item.status || "open",
+      notes: item.notes || "",
+      teacher_user_id: item.teacherUserId || item.teacher_user_id || null,
+      teacher_name: item.teacherName || item.teacher_name || ""
+    };
+  }
+
+  function mapAttendanceRecordFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      sessionId: item.session_id || item.sessionId || null,
+      studentId: item.student_id || item.studentId || null,
+      studentName: item.student_name || item.studentName || "",
+      status: item.status || "present",
+      note: item.note || "",
+      recordedByUserId: item.recorded_by_user_id || item.recordedByUserId || null,
+      recordedByName: item.recorded_by_name || item.recordedByName || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapAttendanceRecordToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      session_id: item.sessionId || item.session_id || null,
+      student_id: item.studentId || item.student_id || null,
+      student_name: item.studentName || item.student_name || "",
+      status: item.status || "present",
+      note: item.note || "",
+      recorded_by_user_id: item.recordedByUserId || item.recorded_by_user_id || null,
+      recorded_by_name: item.recordedByName || item.recorded_by_name || ""
+    };
+  }
+
   function mapMenuFromRemote(item) {
     if (!item || typeof item !== "object") return item;
 
@@ -339,6 +446,18 @@
       return mapMenuFromRemote(item);
     }
 
+    if (key === "calendarEvents") {
+      return mapCalendarEventFromRemote(item);
+    }
+
+    if (key === "attendanceSessions") {
+      return mapAttendanceSessionFromRemote(item);
+    }
+
+    if (key === "attendanceRecords") {
+      return mapAttendanceRecordFromRemote(item);
+    }
+
     return item;
   }
 
@@ -369,6 +488,18 @@
 
     if (key === "menus") {
       return mapMenuToRemote(item);
+    }
+
+    if (key === "calendarEvents") {
+      return mapCalendarEventToRemote(item);
+    }
+
+    if (key === "attendanceSessions") {
+      return mapAttendanceSessionToRemote(item);
+    }
+
+    if (key === "attendanceRecords") {
+      return mapAttendanceRecordToRemote(item);
     }
 
     return item;

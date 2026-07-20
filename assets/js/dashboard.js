@@ -169,6 +169,21 @@
       });
     });
 
+    data.calendarEvents.filter(function (calendarEvent) {
+      const eventDate = parseDate(calendarEvent.eventDate);
+      return calendarEvent.status === "published" && eventDate && eventDate >= new Date(`${today}T00:00:00`) && eventDate <= inSevenDays;
+    }).slice(0, 2).forEach(function (calendarEvent) {
+      priorities.push({
+        icon: "CA",
+        label: calendarEvent.important ? "Data importante" : "Próximo evento",
+        title: calendarEvent.title,
+        meta: `${SHORT_DATE_FORMATTER.format(parseDate(calendarEvent.eventDate))}${calendarEvent.location ? ` · ${calendarEvent.location}` : ""}`,
+        href: `calendario.html?event=${encodeURIComponent(calendarEvent.id)}`,
+        urgent: Boolean(calendarEvent.important),
+        rank: calendarEvent.important ? 1 : 3
+      });
+    });
+
     if (session?.role === "responsaveis") {
       const answeredFormIds = new Set(data.formResponses.map(function (response) { return response.formId; }));
       data.forms.filter(function (form) {
@@ -242,6 +257,10 @@
     const urgentNotices = data.notices.filter(function (notice) {
       return notice.urgent && (!notice.archiveDate || notice.archiveDate >= today);
     }).length;
+    const todayEvents = data.calendarEvents.filter(function (calendarEvent) {
+      const endDate = calendarEvent.endDate || calendarEvent.eventDate;
+      return calendarEvent.status === "published" && calendarEvent.eventDate <= today && endDate >= today;
+    }).length;
     let pending = 0;
     if (session?.role === "responsaveis") {
       const answered = new Set(data.formResponses.map(function (response) { return response.formId; }));
@@ -252,21 +271,22 @@
     } else {
       pending = data.forms.concat(data.activities).filter(function (item) { return item.status === "draft"; }).length;
     }
-    return { today: todayDiary + todayActivities + urgentNotices, pending: pending };
+    return { today: todayDiary + todayActivities + urgentNotices + todayEvents, pending: pending };
   }
 
   async function renderDashboard(session) {
     if (!session || !window.AgendaGamaDataStore) return;
-    const [students, diary, notices, activities, forms, formResponses, menus] = await Promise.all([
+    const [students, diary, notices, activities, forms, formResponses, menus, calendarEvents] = await Promise.all([
       safeList("alunos"),
       safeList("diario"),
       safeList("notices"),
       safeList("activities"),
       safeList("forms"),
       safeList("formResponses"),
-      safeList("menus")
+      safeList("menus"),
+      safeList("calendarEvents")
     ]);
-    const data = { diary, notices, activities, forms, formResponses, menus };
+    const data = { diary, notices, activities, forms, formResponses, menus, calendarEvents };
     const copy = roleCopy(session);
     const name = firstName(session);
 

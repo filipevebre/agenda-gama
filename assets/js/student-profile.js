@@ -127,6 +127,22 @@
     }).join("");
   }
 
+  function attendanceMarkup(records, sessions) {
+    if (!records.length) return emptyMarkup("Nenhum registro de presença para este aluno.");
+    const labels = { present: "Presente", absent: "Falta", late: "Atraso", excused: "Justificada" };
+    return records.slice(0, 5).map(function (record) {
+      const attendanceSession = sessions.find(function (item) { return String(item.id) === String(record.sessionId); });
+      const status = labels[record.status] || record.status;
+      return `
+        <a class="student-profile-feed-item" href="presenca.html">
+          <span class="student-profile-feed-status ${["present", "late"].includes(record.status) ? "is-done" : ""}">${escapeHtml(status)}</span>
+          <strong>${escapeHtml(formatDate(attendanceSession?.attendanceDate || record.createdAt))}</strong>
+          <p>${escapeHtml(attendanceSession?.turma || "Frequência escolar")}</p>
+        </a>
+      `;
+    }).join("");
+  }
+
   function noticeMarkup(notices) {
     if (!notices.length) return emptyMarkup("Nenhum comunicado recente para esta turma.");
     return notices.slice(0, 3).map(function (notice) {
@@ -145,7 +161,7 @@
     const feedback = document.getElementById("student-profile-feedback");
     feedback.textContent = "Carregando perfil do aluno...";
 
-    const [students, guardians, diary, activities, completions, forms, responses, notices] = await Promise.all([
+    const [students, guardians, diary, activities, completions, forms, responses, notices, attendanceSessions, attendanceRecords] = await Promise.all([
       safeList("alunos"),
       safeList("responsaveis"),
       safeList("diario"),
@@ -153,7 +169,9 @@
       safeList("activityCompletions"),
       safeList("forms"),
       safeList("formResponses"),
-      safeList("notices")
+      safeList("notices"),
+      safeList("attendanceSessions"),
+      safeList("attendanceRecords")
     ]);
 
     const requestedId = new URLSearchParams(window.location.search).get("id");
@@ -184,6 +202,13 @@
       if (Boolean(left.urgent) !== Boolean(right.urgent)) return left.urgent ? -1 : 1;
       return new Date(right.createdAt || 0) - new Date(left.createdAt || 0);
     });
+    const studentAttendance = attendanceRecords.filter(function (record) {
+      return matchesStudent(record, student);
+    }).sort(function (left, right) {
+      const leftSession = attendanceSessions.find(function (item) { return String(item.id) === String(left.sessionId); });
+      const rightSession = attendanceSessions.find(function (item) { return String(item.id) === String(right.sessionId); });
+      return String(rightSession?.attendanceDate || right.createdAt || "").localeCompare(String(leftSession?.attendanceDate || left.createdAt || ""));
+    });
 
     const switchField = document.getElementById("student-profile-switch-field");
     const switchSelect = document.getElementById("student-profile-switch");
@@ -212,9 +237,14 @@
     document.getElementById("student-profile-activity-note").textContent = `${completedActivities.length} concluída(s)`;
     document.getElementById("student-profile-form-count").textContent = studentForms.length;
     document.getElementById("student-profile-form-note").textContent = `${answeredForms.length} respondido(s)`;
+    const attended = studentAttendance.filter(function (record) { return ["present", "late"].includes(record.status); }).length;
+    const attendanceRate = studentAttendance.length ? Math.round((attended / studentAttendance.length) * 100) : null;
+    document.getElementById("student-profile-attendance-rate").textContent = attendanceRate === null ? "--" : `${attendanceRate}%`;
+    document.getElementById("student-profile-attendance-note").textContent = studentAttendance.length ? `${studentAttendance.length} chamada(s)` : "sem registros";
 
     document.getElementById("student-profile-diary").innerHTML = diaryMarkup(studentDiary);
     document.getElementById("student-profile-activities").innerHTML = activityMarkup(studentActivities, completions, student);
+    document.getElementById("student-profile-attendance").innerHTML = attendanceMarkup(studentAttendance, attendanceSessions);
     document.getElementById("student-profile-forms").innerHTML = formMarkup(studentForms, responses, student);
     document.getElementById("student-profile-guardians").innerHTML = guardianMarkup(studentGuardians);
     document.getElementById("student-profile-notices").innerHTML = noticeMarkup(studentNotices);

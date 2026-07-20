@@ -322,7 +322,7 @@ body[data-page="perfil-aluno"] .page-content {
 
 .dashboard-compact-shortcuts {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -397,7 +397,7 @@ body[data-page="perfil-aluno"] .page-content {
 
 .student-profile-summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 11px;
   margin-top: 14px;
 }
@@ -591,8 +591,13 @@ body[data-page="perfil-aluno"] .page-content {
   }
 
   .dashboard-today-stats,
-  .student-profile-summary-grid {
+  .dashboard-today-stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .student-profile-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
   }
 

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta name="theme-color" content="#0b2147"><meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><title>Agenda Gama | Presença</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/css/styles.css?v=20260720-2"><link rel="stylesheet" href="../assets/css/calendar-attendance.css?v=20260720-1">
+</head>
+<body data-page="presenca" data-roles="all">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero attendance-page-hero"><div><span class="pill">Frequência</span><h1>Presença escolar</h1><p id="attendance-description">Registre a chamada da turma e acompanhe o histórico.</p></div></section>
+    <section class="attendance-stats"><article><span>Presentes</span><strong id="attendance-stat-present">0</strong><small>no período exibido</small></article><article><span>Faltas</span><strong id="attendance-stat-absent">0</strong><small>no período exibido</small></article><article><span>Atrasos</span><strong id="attendance-stat-late">0</strong><small>no período exibido</small></article></section>
+
+    <section id="attendance-manager" class="panel attendance-manager" hidden>
+      <div class="attendance-toolbar"><label class="field"><span>Data da chamada</span><input id="attendance-date" type="date"></label><label class="field"><span>Turma</span><select id="attendance-turma"></select></label><button id="attendance-load" class="btn btn-primary" type="button">Abrir chamada</button></div>
+      <p id="attendance-feedback" class="feedback" role="status" aria-live="polite"></p>
+      <div id="attendance-call" hidden>
+        <div class="attendance-call-head"><div><span id="attendance-call-status" class="status-badge">Nova chamada</span><h2 id="attendance-call-title">Chamada</h2><p id="attendance-call-summary"></p></div><div class="action-row"><button id="attendance-all-present" class="btn btn-secondary btn-sm" type="button">Todos presentes</button><button id="attendance-save" class="btn btn-primary btn-sm" type="button">Salvar chamada</button></div></div>
+        <div id="attendance-student-list" class="attendance-student-list"></div>
+        <label class="field"><span>Observação da turma</span><textarea id="attendance-notes" rows="3" maxlength="1000" placeholder="Observação opcional sobre a chamada"></textarea></label>
+      </div>
+      <p id="attendance-no-students" class="empty-state" hidden>Nenhum aluno encontrado nesta turma.</p>
+    </section>
+
+    <section id="attendance-history-section" class="panel attendance-history-panel">
+      <div class="attendance-history-head"><div><span>Histórico</span><h2 id="attendance-history-title">Registros de frequência</h2></div><label class="field"><span>Aluno</span><select id="attendance-student-filter"><option value="all">Todos os alunos</option></select></label></div>
+      <div id="attendance-history" class="attendance-history"></div><p id="attendance-history-empty" class="empty-state" hidden>Nenhum registro de presença disponível.</p>
+    </section>
+  </template>
+  <script src="../assets/js/config.js?v=20260415-4"></script><script src="../assets/js/supabase.js?v=20260507-2"></script><script src="../assets/js/auth.js?v=20260716-1"></script><script src="../assets/js/data-store.js?v=20260720-1"></script><script src="../assets/js/app.js?v=20260720-1"></script><script src="../assets/js/attendance.js?v=20260720-1"></script>
+  <script>window.AgendaGamaApp.mountShell(); window.AgendaGamaAttendance.mount();</script><script src="/assets/js/pwa.js?v=20260716-1"></script>
+</body>
+</html>

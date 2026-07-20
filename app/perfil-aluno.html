@@ -57,6 +57,11 @@
           <strong id="student-profile-form-count">0</strong>
           <small id="student-profile-form-note">disponíveis</small>
         </article>
+        <article class="student-profile-summary-card">
+          <span>Frequência</span>
+          <strong id="student-profile-attendance-rate">--</strong>
+          <small id="student-profile-attendance-note">sem registros</small>
+        </article>
       </div>
 
       <div class="student-profile-layout">
@@ -75,6 +80,14 @@
               <a href="atividades.html">Ver atividades</a>
             </div>
             <div id="student-profile-activities" class="student-profile-feed"></div>
+          </article>
+
+          <article class="panel student-profile-section">
+            <div class="dashboard-section-heading">
+              <div><span>Frequência</span><h2>Presença recente</h2></div>
+              <a href="presenca.html">Ver histórico</a>
+            </div>
+            <div id="student-profile-attendance" class="student-profile-feed"></div>
           </article>
 
           <article class="panel student-profile-section">
@@ -115,9 +128,9 @@
   <script src="../assets/js/config.js?v=20260415-4"></script>
   <script src="../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../assets/js/auth.js?v=20260716-1"></script>
-  <script src="../assets/js/data-store.js?v=20260716-5"></script>
-  <script src="../assets/js/app.js?v=20260716-5"></script>
-  <script src="../assets/js/student-profile.js?v=20260720-1"></script>
+  <script src="../assets/js/data-store.js?v=20260720-1"></script>
+  <script src="../assets/js/app.js?v=20260720-1"></script>
+  <script src="../assets/js/student-profile.js?v=20260720-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaStudentProfile.mount();
