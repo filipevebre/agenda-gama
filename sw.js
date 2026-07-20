@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-gama-pwa-v28";
+const CACHE_NAME = "agenda-gama-pwa-v29";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -11,6 +11,7 @@ const PRECACHE_URLS = [
   "/assets/js/app.js",
   "/assets/js/data-store.js",
   "/assets/js/dashboard.js",
+  "/assets/js/student-profile.js",
   "/assets/js/communication.js",
   "/assets/js/comunicados.js",
   "/assets/js/diario.js",
@@ -27,6 +28,7 @@ const PRECACHE_URLS = [
   "/assets/icons/icon-512.png",
   "/assets/icons/apple-touch-icon.png",
   "/app/dashboard.html",
+  "/app/perfil-aluno.html",
   "/app/comunicacao.html",
   "/app/comunicados.html",
   "/app/comunicados-arquivados.html",

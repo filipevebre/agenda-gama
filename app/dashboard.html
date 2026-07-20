@@ -14,174 +14,103 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-10">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260720-1">
 </head>
 <body data-page="dashboard" data-roles="all">
   <div id="app-shell"></div>
 
   <template id="page-template">
-    <section class="page-hero">
+    <section class="page-hero dashboard-today-hero">
       <div>
-        <span id="dashboard-pill" class="pill">Painel escolar</span>
-        <h1 id="dashboard-title">O que você precisa fazer agora?</h1>
-        <p id="dashboard-description">Escolha uma área para acessar as tarefas mais usadas da escola.</p>
+        <span id="dashboard-pill" class="pill">Hoje</span>
+        <h1 id="dashboard-title">Seu dia na escola</h1>
+        <p id="dashboard-description">Carregando as informações mais importantes...</p>
       </div>
+      <time id="dashboard-date" class="dashboard-date-card"></time>
     </section>
 
-    <section id="dashboard-admin-home" class="dashboard-admin-home" hidden>
-      <div class="grid dashboard-shortcut-grid">
+    <section id="dashboard-students" class="dashboard-student-section" hidden>
+      <div class="dashboard-section-heading">
+        <div><span>Alunos</span><h2 id="dashboard-students-title">Acompanhamento</h2></div>
+      </div>
+      <div id="dashboard-student-list" class="dashboard-student-list"></div>
+    </section>
+
+    <section id="dashboard-stats" class="dashboard-today-stats">
+      <article class="dashboard-today-stat is-primary">
+        <span>Para hoje</span>
+        <strong id="dashboard-stat-today">0</strong>
+        <small>itens importantes</small>
+      </article>
+      <article class="dashboard-today-stat">
+        <span>Pendências</span>
+        <strong id="dashboard-stat-pending">0</strong>
+        <small>precisam de atenção</small>
+      </article>
+      <article class="dashboard-today-stat">
+        <span id="dashboard-stat-context-label">Alunos visíveis</span>
+        <strong id="dashboard-stat-context">0</strong>
+        <small id="dashboard-stat-context-note">no seu perfil</small>
+      </article>
+    </section>
+
+    <section class="dashboard-today-grid">
+      <article class="panel dashboard-priority-panel">
+        <div class="dashboard-section-heading">
+          <div><span>Prioridades</span><h2>O que merece atenção</h2></div>
+        </div>
+        <div id="dashboard-priority-list" class="dashboard-priority-list"></div>
+        <p id="dashboard-priority-empty" class="dashboard-calm-state" hidden>Tudo em ordem por aqui.</p>
+      </article>
+
+      <article class="panel dashboard-menu-panel">
+        <div class="dashboard-section-heading">
+          <div><span>Alimentação</span><h2>Cardápio de hoje</h2></div>
+          <a href="cardapio.html">Ver semana</a>
+        </div>
+        <div id="dashboard-menu-today" class="dashboard-menu-today"></div>
+      </article>
+    </section>
+
+    <section class="dashboard-quick-section">
+      <div class="dashboard-section-heading">
+        <div><span>Navegação</span><h2>Acessos rápidos</h2></div>
+      </div>
+      <div id="dashboard-shortcuts" class="dashboard-compact-shortcuts">
         <a class="dashboard-shortcut-card" href="diario.html">
           <span class="dashboard-shortcut-icon">DR</span>
-          <span class="dashboard-shortcut-copy"><strong>Diário</strong><small>Registre e acompanhe a rotina dos alunos.</small></span>
-        </a>
-        <a class="dashboard-shortcut-card" href="comunicados.html">
-          <span class="dashboard-shortcut-icon">CM</span>
-          <span class="dashboard-shortcut-copy"><strong>Comunicados</strong><small>Publique avisos para famílias e equipe.</small></span>
-        </a>
-        <a class="dashboard-shortcut-card" href="comunicacao.html">
-          <span class="dashboard-shortcut-icon">CO</span>
-          <span class="dashboard-shortcut-copy"><strong>Comunicação</strong><small>Atenda conversas e mensagens da escola.</small></span>
+          <span class="dashboard-shortcut-copy"><strong>Diário</strong><small>Rotina dos alunos</small></span>
         </a>
         <a class="dashboard-shortcut-card" href="atividades.html">
           <span class="dashboard-shortcut-icon">AT</span>
-          <span class="dashboard-shortcut-copy"><strong>Atividades</strong><small>Publique tarefas, prazos e materiais para as turmas.</small></span>
+          <span class="dashboard-shortcut-copy"><strong>Atividades</strong><small>Tarefas e prazos</small></span>
         </a>
-        <a class="dashboard-shortcut-card" href="cardapio.html">
-          <span class="dashboard-shortcut-icon">CD</span>
-          <span class="dashboard-shortcut-copy"><strong>Cardápio</strong><small>Cadastre e publique as refeições da escola.</small></span>
+        <a class="dashboard-shortcut-card" href="comunicacao.html">
+          <span class="dashboard-shortcut-icon">CO</span>
+          <span class="dashboard-shortcut-copy"><strong>Comunicação</strong><small>Mensagens da escola</small></span>
+        </a>
+        <a class="dashboard-shortcut-card" href="comunicados.html">
+          <span class="dashboard-shortcut-icon">CM</span>
+          <span class="dashboard-shortcut-copy"><strong>Comunicados</strong><small>Avisos importantes</small></span>
         </a>
         <a class="dashboard-shortcut-card" href="formularios.html">
           <span class="dashboard-shortcut-icon">FO</span>
-          <span class="dashboard-shortcut-copy"><strong>Formulários</strong><small>Crie autorizações, pesquisas e confirmações.</small></span>
+          <span class="dashboard-shortcut-copy"><strong>Formulários</strong><small>Autorizações e respostas</small></span>
         </a>
-        <a class="dashboard-shortcut-card" href="organizacao/alunos.html">
+        <a class="dashboard-shortcut-card dashboard-staff-shortcut" href="organizacao/alunos.html">
           <span class="dashboard-shortcut-icon">AL</span>
-          <span class="dashboard-shortcut-copy"><strong>Alunos</strong><small>Consulte matrículas e responsáveis.</small></span>
-        </a>
-        <a class="dashboard-shortcut-card" href="organizacao/turmas.html">
-          <span class="dashboard-shortcut-icon">TU</span>
-          <span class="dashboard-shortcut-copy"><strong>Turmas</strong><small>Organize turmas e vínculos escolares.</small></span>
-        </a>
-        <a class="dashboard-shortcut-card" href="organizacao/equipe.html">
-          <span class="dashboard-shortcut-icon">EQ</span>
-          <span class="dashboard-shortcut-copy"><strong>Equipe</strong><small>Gerencie funcionários e acessos.</small></span>
+          <span class="dashboard-shortcut-copy"><strong>Alunos</strong><small>Perfis e matrículas</small></span>
         </a>
       </div>
-    </section>
-
-    <section id="dashboard-stats" class="grid grid-3">
-      <article class="stat-card">
-        <span>Cadastros organizacionais</span>
-        <strong>6 modulos</strong>
-      </article>
-      <article class="stat-card">
-        <span>Perfis do sistema</span>
-        <strong>4 acessos</strong>
-      </article>
-      <article class="stat-card">
-        <span>Experiencia</span>
-        <strong>Responsiva</strong>
-      </article>
-    </section>
-
-    <section id="dashboard-admin-panels" class="grid grid-2" style="margin-top: 20px;">
-      <article class="panel">
-        <div class="section-heading">
-          <div>
-            <h2>Visao geral</h2>
-            <p>Base pronta para uso escolar com paginas separadas e navegacao lateral.</p>
-          </div>
-        </div>
-        <ul class="feature-list">
-          <li>Autenticacao com perfis para administrador, funcionarios, professores e responsaveis.</li>
-          <li>Area de organizacao com cadastros independentes para cada tipo de registro.</li>
-          <li>Interface moderna com cards, formularios objetivos e leitura confortavel.</li>
-        </ul>
-      </article>
-
-      <article class="widget">
-        <h3>Acessos rapidos</h3>
-        <p>Entre diretamente nas telas mais usadas da secretaria, incluindo os formularios de cadastro.</p>
-        <ul class="quick-links">
-          <li><a href="comunicacao.html">Abrir central de comunicacao</a></li>
-          <li><a href="comunicados.html">Abrir pagina de comunicados</a></li>
-          <li><a href="organizacao/cadastro-turmas.html">Abrir tela de nova turma</a></li>
-          <li><a href="organizacao/cadastro-equipe.html">Abrir tela de novo funcionário</a></li>
-          <li><a href="organizacao/cadastro-alunos.html">Abrir tela de novo aluno</a></li>
-          <li><a href="organizacao/alunos.html">Abrir visualização de alunos</a></li>
-        </ul>
-      </article>
-    </section>
-
-    <section id="dashboard-family-home" class="dashboard-family-home" hidden>
-      <div class="grid grid-3 dashboard-shortcut-grid">
-        <a class="dashboard-shortcut-card" href="diario.html">
-          <span class="dashboard-shortcut-icon">DR</span>
-          <span class="dashboard-shortcut-copy">
-            <strong>Diário</strong>
-            <small>Acompanhe os registros do dia da criança.</small>
-          </span>
-        </a>
-        <a class="dashboard-shortcut-card" href="comunicados.html">
-          <span class="dashboard-shortcut-icon">CM</span>
-          <span class="dashboard-shortcut-copy">
-            <strong>Comunicados</strong>
-            <small>Veja os avisos e recados da escola.</small>
-          </span>
-        </a>
-        <a class="dashboard-shortcut-card" href="comunicacao.html">
-          <span class="dashboard-shortcut-icon">CO</span>
-          <span class="dashboard-shortcut-copy">
-            <strong>Comunicação</strong>
-            <small>Abra conversas e fale com a escola.</small>
-          </span>
-        </a>
-        <a class="dashboard-shortcut-card" href="atividades.html">
-          <span class="dashboard-shortcut-icon">AT</span>
-          <span class="dashboard-shortcut-copy">
-            <strong>Atividades</strong>
-            <small>Veja tarefas, prazos e materiais enviados pelos professores.</small>
-          </span>
-        </a>
-        <a class="dashboard-shortcut-card" href="cardapio.html">
-          <span class="dashboard-shortcut-icon">CD</span>
-          <span class="dashboard-shortcut-copy">
-            <strong>Cardápio</strong>
-            <small>Consulte as refeições planejadas para a semana.</small>
-          </span>
-        </a>
-        <a class="dashboard-shortcut-card" href="formularios.html">
-          <span class="dashboard-shortcut-icon">FO</span>
-          <span class="dashboard-shortcut-copy">
-            <strong>Formulários</strong>
-            <small>Responda autorizações e solicitações da escola.</small>
-          </span>
-        </a>
-      </div>
-
-      <article class="panel dashboard-family-panel">
-        <div class="section-heading">
-          <div>
-            <h2>Atalhos da familia</h2>
-            <p>Use estes acessos para acompanhar a rotina e os recados sem se perder nas outras telas.</p>
-          </div>
-        </div>
-        <ul class="feature-list">
-          <li>Abra o Diario para ver novos registros enviados pela escola.</li>
-          <li>Confira os Comunicados para ver avisos gerais e recados importantes.</li>
-          <li>Use Comunicacao para falar com a escola e acompanhar conversas abertas.</li>
-          <li>Abra Formularios para responder autorizacoes e solicitacoes.</li>
-        </ul>
-      </article>
     </section>
   </template>
 
   <script src="../assets/js/config.js?v=20260415-4"></script>
   <script src="../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../assets/js/auth.js?v=20260716-1"></script>
-  <script src="../assets/js/data-store.js?v=20260619-4"></script>
+  <script src="../assets/js/data-store.js?v=20260716-5"></script>
   <script src="../assets/js/app.js?v=20260716-5"></script>
-  <script src="../assets/js/dashboard.js?v=20260716-2"></script>
+  <script src="../assets/js/dashboard.js?v=20260720-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDashboard.mountDashboard();

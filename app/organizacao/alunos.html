@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260716-10">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260720-1">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -63,8 +63,8 @@
   <script src="../../assets/js/supabase.js?v=20260507-2"></script>
   <script src="../../assets/js/auth.js?v=20260716-1"></script>
   <script src="../../assets/js/app.js?v=20260716-5"></script>
-  <script src="../../assets/js/data-store.js?v=20260619-4"></script>
-  <script src="../../assets/js/forms.js?v=20260716-1"></script>
+  <script src="../../assets/js/data-store.js?v=20260716-5"></script>
+  <script src="../../assets/js/forms.js?v=20260720-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
 
@@ -116,6 +116,7 @@
         searchInputId: "alunos-search",
         searchKeys: ["nome", "matricula", "turma", "turno"],
         editPageUrl: "cadastro-alunos.html",
+        viewPageUrl: "../perfil-aluno.html",
         emptyMessage: "Nenhum aluno cadastrado ainda.",
         columns: [
           { key: "nome" },

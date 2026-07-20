@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2147">
+  <meta name="application-name" content="Agenda Gama">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Agenda Gama">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <title>Agenda Gama | Perfil do aluno</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260720-1">
+</head>
+<body data-page="perfil-aluno" data-roles="all">
+  <div id="app-shell"></div>
+
+  <template id="page-template">
+    <section class="student-profile-topbar">
+      <a class="btn btn-secondary btn-sm" href="dashboard.html">← Voltar</a>
+      <label id="student-profile-switch-field" class="field student-profile-switch" hidden>
+        <span>Trocar aluno</span>
+        <select id="student-profile-switch"></select>
+      </label>
+    </section>
+
+    <section id="student-profile-hero" class="student-profile-hero" hidden>
+      <div id="student-profile-avatar" class="student-profile-avatar">A</div>
+      <div class="student-profile-identity">
+        <span class="pill">Perfil do aluno</span>
+        <h1 id="student-profile-name"></h1>
+        <div id="student-profile-tags" class="student-profile-tags"></div>
+      </div>
+      <a id="student-profile-edit" class="btn btn-secondary" href="#" hidden>Editar cadastro</a>
+    </section>
+
+    <p id="student-profile-feedback" class="feedback" role="status" aria-live="polite"></p>
+
+    <section id="student-profile-content" hidden>
+      <div class="student-profile-summary-grid">
+        <article class="student-profile-summary-card">
+          <span>Registros no diário</span>
+          <strong id="student-profile-diary-count">0</strong>
+          <small>histórico disponível</small>
+        </article>
+        <article class="student-profile-summary-card">
+          <span>Atividades</span>
+          <strong id="student-profile-activity-count">0</strong>
+          <small id="student-profile-activity-note">publicadas para a turma</small>
+        </article>
+        <article class="student-profile-summary-card">
+          <span>Formulários</span>
+          <strong id="student-profile-form-count">0</strong>
+          <small id="student-profile-form-note">disponíveis</small>
+        </article>
+      </div>
+
+      <div class="student-profile-layout">
+        <div class="student-profile-main">
+          <article class="panel student-profile-section">
+            <div class="dashboard-section-heading">
+              <div><span>Rotina</span><h2>Diário recente</h2></div>
+              <a href="diario.html">Abrir diário</a>
+            </div>
+            <div id="student-profile-diary" class="student-profile-feed"></div>
+          </article>
+
+          <article class="panel student-profile-section">
+            <div class="dashboard-section-heading">
+              <div><span>Aprendizado</span><h2>Atividades da turma</h2></div>
+              <a href="atividades.html">Ver atividades</a>
+            </div>
+            <div id="student-profile-activities" class="student-profile-feed"></div>
+          </article>
+
+          <article class="panel student-profile-section">
+            <div class="dashboard-section-heading">
+              <div><span>Autorizações</span><h2>Formulários</h2></div>
+              <a href="formularios.html">Ver formulários</a>
+            </div>
+            <div id="student-profile-forms" class="student-profile-feed"></div>
+          </article>
+        </div>
+
+        <aside class="student-profile-aside">
+          <article class="panel student-profile-section">
+            <div class="dashboard-section-heading">
+              <div><span>Família</span><h2>Responsáveis</h2></div>
+            </div>
+            <div id="student-profile-guardians" class="student-profile-contact-list"></div>
+          </article>
+
+          <article class="panel student-profile-section">
+            <div class="dashboard-section-heading">
+              <div><span>Escola</span><h2>Comunicados recentes</h2></div>
+              <a href="comunicados.html">Ver mural</a>
+            </div>
+            <div id="student-profile-notices" class="student-profile-feed"></div>
+          </article>
+
+          <a class="student-profile-message-action" href="comunicacao.html">
+            <span>CO</span>
+            <div><strong>Falar com a escola</strong><small>Abra uma conversa vinculada ao aluno.</small></div>
+            <b>›</b>
+          </a>
+        </aside>
+      </div>
+    </section>
+  </template>
+
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260507-2"></script>
+  <script src="../assets/js/auth.js?v=20260716-1"></script>
+  <script src="../assets/js/data-store.js?v=20260716-5"></script>
+  <script src="../assets/js/app.js?v=20260716-5"></script>
+  <script src="../assets/js/student-profile.js?v=20260720-1"></script>
+  <script>
+    window.AgendaGamaApp.mountShell();
+    window.AgendaGamaStudentProfile.mount();
+  </script>
+  <script src="/assets/js/pwa.js?v=20260716-1"></script>
+</body>
+</html>

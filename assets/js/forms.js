@@ -156,6 +156,7 @@
           ${config.columns.map((column, index) => `<td data-label="${escapeAttribute(column.label || headerLabels[index] || column.key)}">${renderColumn(column, item)}</td>`).join("")}
           <td data-label="${escapeAttribute(headerLabels[config.columns.length] || "Acoes")}">
             <div class="table-actions">
+              ${config.viewPageUrl ? '<button type="button" class="btn btn-primary btn-sm crud-view">Ver perfil</button>' : ""}
               <button type="button" class="btn btn-secondary btn-sm crud-edit">Editar</button>
               <button type="button" class="btn btn-secondary btn-sm crud-delete">Excluir</button>
             </div>
@@ -315,6 +316,11 @@
       if (!id) return;
       const item = items.find((currentItem) => currentItem.id === id);
       if (!item) return;
+
+      if (event.target.closest(".crud-view") && config.viewPageUrl) {
+        window.location.href = `${config.viewPageUrl}?id=${encodeURIComponent(id)}`;
+        return;
+      }
 
       if (event.target.closest(".crud-delete")) {
         setFeedback(feedbackEl, "", "");
