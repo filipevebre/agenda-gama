@@ -1,0 +1,185 @@
+body[data-page="notas"] .page-content { max-width: 1280px; }
+
+.grades-tabs {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 5px;
+  margin-bottom: 16px;
+  padding: 5px;
+  border-radius: 16px;
+  background: #eaf0f5;
+}
+
+.grades-tabs button {
+  min-height: 42px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  font: 700 0.88rem/1 "Manrope", sans-serif;
+  cursor: pointer;
+}
+
+.grades-tabs button.is-active { background: #fff; color: var(--title); box-shadow: 0 7px 18px rgba(25, 50, 77, 0.09); }
+.grades-view { width: 100%; min-width: 0; max-width: 100%; }
+.grades-view[hidden] { display: none !important; }
+.grades-entry-panel,
+.grades-report-controls { padding: 0; overflow: hidden; }
+
+.grades-toolbar {
+  display: grid;
+  grid-template-columns: 130px 150px minmax(170px, 1fr) minmax(190px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.grades-toolbar .field,
+.grades-report-toolbar .field { margin: 0; }
+.grades-entry-panel > .feedback { margin: 10px 20px 0; }
+
+.grades-register-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: end;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.grades-register-head h2 { margin: 6px 0 3px; font-size: 1.22rem; }
+.grades-register-head p { margin: 0; color: var(--text-muted); }
+.grades-table-head,
+.grades-student-row {
+  display: grid;
+  grid-template-columns: minmax(210px, 1.2fr) 100px 120px 82px minmax(180px, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.grades-table-head { padding: 9px 20px; border-bottom: 1px solid var(--border); background: #f7fafc; color: var(--text-muted); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+.grades-student-list { display: grid; }
+.grades-student-row { padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.grades-student-row:last-child { border-bottom: 0; }
+.grades-student-identity { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.grades-student-identity > b { display: grid; flex: 0 0 auto; width: 39px; height: 39px; border-radius: 13px; background: #dff2ec; color: var(--primary-dark); place-items: center; }
+.grades-student-identity > span { display: grid; min-width: 0; gap: 2px; }
+.grades-student-identity strong { overflow: hidden; color: var(--title); text-overflow: ellipsis; white-space: nowrap; }
+.grades-student-identity small { color: var(--text-muted); }
+.grades-student-row label { display: grid; gap: 4px; min-width: 0; }
+.grades-student-row label > span { display: none; color: var(--text-muted); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; }
+.grades-student-row input { width: 100%; min-width: 0; min-height: 42px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 11px; background: #fff; color: var(--text); font: 600 0.86rem/1 "Manrope", sans-serif; }
+.grades-student-row input:focus { outline: 3px solid rgba(15, 157, 122, 0.13); border-color: rgba(15, 157, 122, 0.55); }
+
+.grades-report-controls { margin-bottom: 16px; }
+.grades-report-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 150px auto auto; gap: 12px; align-items: end; padding: 18px 20px; }
+.grades-report-controls > .feedback { margin: 0 20px 12px; }
+
+.grades-report-sheet {
+  width: 100%;
+  min-width: 0;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 34px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(25, 50, 77, 0.09);
+  color: #172d43;
+}
+
+.grades-report-header { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding-bottom: 22px; border-bottom: 2px solid #183c5b; }
+.grades-report-header img { width: 62px; height: 62px; object-fit: contain; }
+.grades-report-header span { color: #0b7c61; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+.grades-report-header h1 { margin: 2px 0; font-size: 1.8rem; }
+.grades-report-header p { margin: 0; color: #667789; }
+.grades-report-header > strong { display: grid; min-width: 76px; height: 54px; border-radius: 15px; background: #edf4f7; color: #183c5b; font-size: 1.2rem; place-items: center; }
+
+.grades-report-student { display: grid; grid-template-columns: 1.7fr 1fr 1fr; gap: 10px; margin: 18px 0; }
+.grades-report-student > span { display: grid; gap: 3px; padding: 12px 14px; border-radius: 12px; background: #f4f7f9; }
+.grades-report-student small { color: #6a7a89; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+.grades-report-student strong { font-size: 0.9rem; }
+
+.grades-report-table-wrap { display: block; width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; border: 1px solid #dbe3e9; border-radius: 13px; }
+.grades-report-table { width: 100%; min-width: 780px; border-collapse: collapse; }
+.grades-report-table th,
+.grades-report-table td { padding: 11px 9px; border-bottom: 1px solid #e2e8ed; text-align: center; font-size: 0.78rem; }
+.grades-report-table thead th { background: #183c5b; color: #fff; font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.grades-report-table tbody th { color: #172d43; text-align: left; }
+.grades-report-table tbody tr:last-child > * { border-bottom: 0; }
+.report-situation { display: inline-block; padding: 5px 7px; border-radius: 999px; background: #eef2f5; color: #5d6f80; font-size: 0.65rem; font-weight: 800; white-space: nowrap; }
+.report-situation.is-approved { background: #e6f5ed; color: #147047; }
+.report-situation.is-recovery { background: #fff0d9; color: #8b5a0b; }
+.grades-report-empty { margin: 14px 0; padding: 20px; border-radius: 13px; background: #f5f8fa; color: #687a8c; text-align: center; }
+
+.grades-report-notes { display: grid; gap: 7px; margin-top: 18px; }
+.grades-report-notes:empty { display: none; }
+.grades-report-notes h2 { margin: 0 0 3px; font-size: 1rem; }
+.grades-report-notes p { margin: 0; padding: 9px 11px; border-left: 3px solid #9dcbbb; background: #f6faf8; font-size: 0.77rem; line-height: 1.5; }
+.grades-report-footer { margin-top: 24px; color: #637486; }
+.grades-report-footer > p { font-size: 0.72rem; }
+.grades-report-signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 35px; margin: 50px 0 16px; }
+.grades-report-signatures span { padding-top: 7px; border-top: 1px solid #83909d; font-size: 0.7rem; text-align: center; }
+.grades-report-footer > small { display: block; text-align: right; }
+
+@media (max-width: 900px) {
+  .grades-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 14px; }
+  .grades-toolbar .btn { grid-column: 1 / -1; }
+  .grades-table-head { display: none; }
+  .grades-student-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 15px; }
+  .grades-student-identity { grid-column: 1 / -1; padding-bottom: 4px; }
+  .grades-student-row label > span { display: block; }
+  .grades-note-field { grid-column: 1 / -1; }
+  .grades-report-toolbar { grid-template-columns: minmax(0, 1fr) 120px; padding: 14px; }
+  .grades-report-toolbar .btn { width: 100%; }
+  .grades-report-sheet { padding: 22px; border-radius: 19px; }
+}
+
+@media (max-width: 600px) {
+  .grades-page-hero h1 { font-size: 2rem; }
+  .grades-tabs { display: grid; width: 100%; }
+  .grades-register-head { align-items: stretch; flex-direction: column; padding: 15px; }
+  .grades-register-head .action-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grades-register-head .btn { width: 100%; padding-inline: 8px; }
+  .grades-student-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grades-note-field { grid-column: 1 / -1; }
+  .grades-report-toolbar { grid-template-columns: 1fr; }
+  .grades-report-toolbar > * { grid-column: 1; }
+  .grades-report-sheet { margin-inline: -3px; padding: 16px; border-radius: 16px; }
+  .grades-report-header { grid-template-columns: 46px minmax(0, 1fr) auto; gap: 10px; }
+  .grades-report-header img { width: 44px; height: 44px; }
+  .grades-report-header h1 { font-size: 1.25rem; }
+  .grades-report-header p { display: none; }
+  .grades-report-header > strong { min-width: 56px; height: 44px; font-size: 0.9rem; }
+  .grades-report-student { grid-template-columns: 1fr 1fr; }
+  .grades-report-student > span:first-child { grid-column: 1 / -1; }
+  .grades-report-signatures { gap: 12px; margin-top: 42px; }
+}
+
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body { background: #fff !important; }
+  .sidebar,
+  .topbar,
+  .mobile-tabbar,
+  .notice-marquee,
+  .app-overlay,
+  .no-print { display: none !important; }
+  .app-shell,
+  .main-content,
+  .main-stack,
+  .page-content,
+  #grades-report-view { display: block !important; width: auto !important; max-width: none !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; background: #fff !important; }
+  .grades-report-sheet { display: block !important; width: 100%; max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .grades-report-table-wrap { overflow: visible; }
+  .grades-report-table { min-width: 0; }
+  .grades-report-table th,
+  .grades-report-table td { padding: 7px 6px; font-size: 9pt; }
+  .grades-report-table thead th { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .grades-report-header,
+  .grades-report-student,
+  .grades-report-table tr,
+  .grades-report-footer { break-inside: avoid; }
+}

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2147">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <title>Agenda Gama | Notas e boletins</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260720-3">
+  <link rel="stylesheet" href="../assets/css/grades.css?v=20260720-1">
+</head>
+<body data-page="notas" data-roles="all">
+  <div id="app-shell"></div>
+  <template id="page-template">
+    <section class="page-hero grades-page-hero no-print">
+      <div>
+        <span class="pill">Desempenho escolar</span>
+        <h1>Notas e boletins</h1>
+        <p id="grades-description">Lance notas e acompanhe o desenvolvimento dos alunos.</p>
+      </div>
+    </section>
+
+    <nav id="grades-tabs" class="grades-tabs no-print" hidden>
+      <button class="is-active" type="button" data-grades-view="entry">Lançar notas</button>
+      <button type="button" data-grades-view="report">Boletins</button>
+    </nav>
+
+    <section id="grades-entry-view" class="grades-view no-print" hidden>
+      <article class="panel grades-entry-panel">
+        <div class="grades-toolbar">
+          <label class="field"><span>Ano letivo</span><select id="grades-year"></select></label>
+          <label class="field"><span>Bimestre</span><select id="grades-period"><option value="1">1º bimestre</option><option value="2">2º bimestre</option><option value="3">3º bimestre</option><option value="4">4º bimestre</option></select></label>
+          <label class="field"><span>Turma</span><select id="grades-turma"></select></label>
+          <label class="field"><span>Disciplina</span><select id="grades-subject"></select></label>
+          <button id="grades-load" class="btn btn-primary" type="button">Abrir turma</button>
+        </div>
+        <p id="grades-feedback" class="feedback" role="status" aria-live="polite"></p>
+
+        <div id="grades-register" hidden>
+          <div class="grades-register-head">
+            <div><span id="grades-register-status" class="status-badge">Rascunho</span><h2 id="grades-register-title">Notas da turma</h2><p id="grades-register-summary"></p></div>
+            <div class="action-row"><button id="grades-save-draft" class="btn btn-secondary btn-sm" type="button">Salvar rascunho</button><button id="grades-publish" class="btn btn-primary btn-sm" type="button">Publicar notas</button></div>
+          </div>
+          <div class="grades-table-head" aria-hidden="true"><span>Aluno</span><span>Nota</span><span>Recuperação</span><span>Faltas</span><span>Observação</span></div>
+          <div id="grades-student-list" class="grades-student-list"></div>
+        </div>
+        <p id="grades-entry-empty" class="empty-state" hidden>Nenhum aluno disponível para esta turma.</p>
+      </article>
+    </section>
+
+    <section id="grades-report-view" class="grades-view" hidden>
+      <article class="panel grades-report-controls no-print">
+        <div class="grades-report-toolbar">
+          <label class="field"><span>Aluno</span><select id="report-student"></select></label>
+          <label class="field"><span>Ano letivo</span><select id="report-year"></select></label>
+          <button id="report-open" class="btn btn-secondary" type="button">Gerar boletim</button>
+          <button id="report-print" class="btn btn-primary" type="button">Imprimir boletim</button>
+        </div>
+        <p id="report-feedback" class="feedback" role="status" aria-live="polite"></p>
+      </article>
+
+      <article id="report-sheet" class="grades-report-sheet" hidden>
+        <header class="grades-report-header">
+          <img src="../assets/images/logo-gama.png" alt="Agenda Gama">
+          <div><span>Agenda Gama</span><h1>Boletim escolar</h1><p>Acompanhamento de desempenho acadêmico</p></div>
+          <strong id="report-year-label"></strong>
+        </header>
+        <div class="grades-report-student">
+          <span><small>Aluno</small><strong id="report-student-name"></strong></span>
+          <span><small>Turma</small><strong id="report-student-turma"></strong></span>
+          <span><small>Matrícula</small><strong id="report-student-registration"></strong></span>
+        </div>
+        <div class="grades-report-table-wrap">
+          <table class="grades-report-table">
+            <thead><tr><th>Disciplina</th><th>1º bim.</th><th>2º bim.</th><th>3º bim.</th><th>4º bim.</th><th>Média</th><th>Faltas</th><th>Situação</th></tr></thead>
+            <tbody id="report-table-body"></tbody>
+          </table>
+        </div>
+        <p id="report-empty" class="grades-report-empty" hidden>Nenhuma nota publicada para este aluno no ano selecionado.</p>
+        <div id="report-notes" class="grades-report-notes"></div>
+        <footer class="grades-report-footer">
+          <p><strong>Critério:</strong> média anual igual ou superior a 6,0. Resultados incompletos aparecem como “Em andamento”.</p>
+          <div class="grades-report-signatures"><span>Responsável</span><span>Professor(a)</span><span>Direção</span></div>
+          <small id="report-issued-at"></small>
+        </footer>
+      </article>
+    </section>
+  </template>
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260507-2"></script>
+  <script src="../assets/js/auth.js?v=20260716-1"></script>
+  <script src="../assets/js/data-store.js?v=20260720-2"></script>
+  <script src="../assets/js/app.js?v=20260720-2"></script>
+  <script src="../assets/js/gradebook.js?v=20260720-1"></script>
+  <script>window.AgendaGamaApp.mountShell(); window.AgendaGamaGradebook.mount();</script>
+  <script src="/assets/js/pwa.js?v=20260716-1"></script>
+</body>
+</html>

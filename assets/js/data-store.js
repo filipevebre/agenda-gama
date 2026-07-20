@@ -17,11 +17,12 @@
     menus: "school_menus",
     calendarEvents: "school_calendar_events",
     attendanceSessions: "attendance_sessions",
-    attendanceRecords: "attendance_records"
+    attendanceRecords: "attendance_records",
+    grades: "student_grades"
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
-  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords", "grades"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -367,6 +368,50 @@
     };
   }
 
+  function mapGradeFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      academicYear: Number(item.academic_year || item.academicYear || new Date().getFullYear()),
+      period: Number(item.period || 1),
+      turma: item.turma || "",
+      subject: item.subject || "",
+      studentId: item.student_id || item.studentId || null,
+      studentName: item.student_name || item.studentName || "",
+      grade: item.grade === null || item.grade === undefined || item.grade === "" ? null : Number(item.grade),
+      recoveryGrade: item.recovery_grade === null || item.recovery_grade === undefined || item.recovery_grade === "" ? null : Number(item.recovery_grade),
+      absences: Number(item.absences || 0),
+      note: item.note || "",
+      status: item.status || "draft",
+      teacherUserId: item.teacher_user_id || item.teacherUserId || null,
+      teacherName: item.teacher_name || item.teacherName || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapGradeToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    const grade = item.grade;
+    const recoveryGrade = item.recoveryGrade ?? item.recovery_grade;
+    return {
+      id: item.id || null,
+      academic_year: Number(item.academicYear || item.academic_year || new Date().getFullYear()),
+      period: Number(item.period || 1),
+      turma: item.turma || "",
+      subject: item.subject || "",
+      student_id: item.studentId || item.student_id || null,
+      student_name: item.studentName || item.student_name || "",
+      grade: grade === null || grade === undefined || grade === "" ? null : Number(grade),
+      recovery_grade: recoveryGrade === null || recoveryGrade === undefined || recoveryGrade === "" ? null : Number(recoveryGrade),
+      absences: Number(item.absences || 0),
+      note: item.note || "",
+      status: item.status || "draft",
+      teacher_user_id: item.teacherUserId || item.teacher_user_id || null,
+      teacher_name: item.teacherName || item.teacher_name || ""
+    };
+  }
+
   function mapMenuFromRemote(item) {
     if (!item || typeof item !== "object") return item;
 
@@ -458,6 +503,10 @@
       return mapAttendanceRecordFromRemote(item);
     }
 
+    if (key === "grades") {
+      return mapGradeFromRemote(item);
+    }
+
     return item;
   }
 
@@ -500,6 +549,10 @@
 
     if (key === "attendanceRecords") {
       return mapAttendanceRecordToRemote(item);
+    }
+
+    if (key === "grades") {
+      return mapGradeToRemote(item);
     }
 
     return item;

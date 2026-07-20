@@ -1270,6 +1270,7 @@
           { label: "Cardápio", href: inOrganization ? "../cardapio.html" : "cardapio.html", icon: "CD", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Calendário", href: inOrganization ? "../calendario.html" : "calendario.html", icon: "CA", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Presença", href: inOrganization ? "../presenca.html" : "presenca.html", icon: "FR", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
+          { label: "Notas e boletins", href: inOrganization ? "../notas.html" : "notas.html", icon: "NT", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Comunicados", href: inOrganization ? "../comunicados.html" : "comunicados.html", icon: "CM", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Comunicação", href: inOrganization ? "../comunicacao.html" : "comunicacao.html", icon: "CO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] },
           { label: "Formulários", href: inOrganization ? "../formularios.html" : "formularios.html", icon: "FO", roles: ["administrador", "funcionarios", "professores", "responsaveis"] }
@@ -1297,6 +1298,7 @@
       CD: '<path d="M7 3v7a3 3 0 0 0 3-3V3M7 3v18M15 3v18M15 3c4 2 4 8 0 10"/>',
       CA: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M8 14h2M14 14h2M8 18h2"/>',
       FR: '<path d="M5 4h14v16H5z"/><path d="m8 9 2 2 4-4M8 15h8"/>',
+      NT: '<path d="M5 3h14v18H5z"/><path d="M8 7h8M8 11h4M8 15h3"/><path d="m14 16 1.5 1.5L19 14"/>',
       CM: '<path d="M4 13h3l10 4V5L7 9H4z"/><path d="m7 13 2 6h3l-2-5"/><path d="M20 9v4"/>',
       CO: '<path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
       FO: '<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h3"/><path d="m8.5 7 .7.7 1.3-1.5"/>',
