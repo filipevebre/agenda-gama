@@ -23,7 +23,7 @@
       <div>
         <span class="pill">Organização</span>
         <h1>Cadastro de disciplinas</h1>
-        <p>Cadastre componentes curriculares em uma página separada da visualização.</p>
+        <p>Cadastre as matérias usadas por professores, atividades, notas e boletins.</p>
       </div>
       <div class="page-actions">
         <article class="info-card">
@@ -35,12 +35,13 @@
     </section>
     <section>
       <article class="panel">
-        <div class="section-heading"><div><h2>Nova disciplina</h2><p>Cadastre componentes curriculares com carga horária e etapa.</p></div></div>
+        <div class="section-heading"><div><h2>Nova matéria</h2><p>Informe o nome da matéria. Os demais campos são opcionais.</p></div></div>
         <form id="disciplinas-form" class="form-grid">
-          <label class="field"><span>Disciplina</span><input name="nome" placeholder="Ex.: Matemática" required></label>
-          <label class="field"><span>Carga horária</span><input name="carga" placeholder="Ex.: 4 aulas/semana" required></label>
-          <label class="field"><span>Etapa</span><select name="etapa" required><option value="">Selecione</option><option>Educação Infantil</option><option>Ensino Fundamental</option><option>Ensino Médio</option></select></label>
-          <button type="submit" class="btn btn-primary full">Salvar disciplina</button>
+          <label class="field full"><span>Nome da matéria</span><input name="nome" placeholder="Ex.: Matemática" maxlength="100" autocomplete="off" required></label>
+          <label class="field"><span>Carga horária <small>(opcional)</small></span><input name="carga" placeholder="Ex.: 4 aulas por semana" maxlength="80"></label>
+          <label class="field"><span>Etapa <small>(opcional)</small></span><select name="etapa"><option value="">Todas as etapas</option><option>Educação Infantil</option><option>Ensino Fundamental</option><option>Ensino Médio</option></select></label>
+          <p id="disciplinas-feedback" class="feedback full" role="status" aria-live="polite" hidden></p>
+          <button type="submit" class="btn btn-primary full">Salvar matéria</button>
         </form>
       </article>
     </section>
@@ -50,20 +51,39 @@
   <script src="../../assets/js/auth.js?v=20260716-1"></script>
   <script src="../../assets/js/app.js?v=20260716-5"></script>
   <script src="../../assets/js/data-store.js?v=20260619-4"></script>
-  <script src="../../assets/js/forms.js?v=20260716-1"></script>
+  <script src="../../assets/js/forms.js?v=20260727-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaForms.mountCrud({
       storageKey: "disciplinas",
       formId: "disciplinas-form",
       totalId: "total-disciplinas",
+      feedbackId: "disciplinas-feedback",
       redirectAfterSubmit: "disciplinas.html",
       cancelRedirect: "disciplinas.html",
       columns: [{ key: "nome" }, { key: "carga" }, { key: "etapa", type: "tag" }],
-      seedData: [
-        { nome: "Matemática", carga: "4 aulas/semana", etapa: "Ensino Fundamental" },
-        { nome: "História", carga: "2 aulas/semana", etapa: "Ensino Fundamental" }
-      ]
+      seedData: [],
+      beforeSave: function ({ data, editingId, items }) {
+        const nome = String(data.nome || "").trim();
+        if (!nome) return { error: "Informe o nome da matéria." };
+
+        const normalizar = function (value) {
+          return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+        };
+        const duplicada = items.some(function (item) {
+          return item.id !== editingId && normalizar(item.nome) === normalizar(nome);
+        });
+        if (duplicada) return { error: "Essa matéria já está cadastrada." };
+
+        return {
+          data: {
+            ...data,
+            nome: nome,
+            carga: String(data.carga || "").trim() || "Não informada",
+            etapa: String(data.etapa || "").trim() || "Todas as etapas"
+          }
+        };
+      }
     });
   </script>
   <script src="/assets/js/pwa.js?v=20260716-1"></script>

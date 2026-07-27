@@ -33,6 +33,10 @@
     return state.session?.role === "professores";
   }
 
+  function canManageSubjects() {
+    return ["administrador", "funcionarios"].includes(state.session?.role);
+  }
+
   function setFeedback(id, message, type) {
     const element = document.getElementById(id);
     if (!element) return;
@@ -326,6 +330,7 @@
     const manager = isManager();
     document.getElementById("grades-description").textContent = manager ? "Lance notas por turma e gere boletins prontos para impressão." : "Consulte e imprima os boletins dos seus filhos.";
     document.getElementById("grades-tabs").hidden = !manager;
+    document.getElementById("grades-new-subject").hidden = !canManageSubjects();
     try {
       const results = await Promise.all([safeList("alunos"), safeList("turmas"), safeList("disciplinas"), safeList("professores"), safeList("grades")]);
       state.students = results[0] || [];

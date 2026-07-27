@@ -29,7 +29,7 @@ body[data-page="notas"] .page-content { max-width: 1280px; }
 
 .grades-toolbar {
   display: grid;
-  grid-template-columns: 130px 150px minmax(170px, 1fr) minmax(190px, 1fr) auto;
+  grid-template-columns: 130px 150px minmax(170px, 1fr) minmax(190px, 1fr) auto auto;
   gap: 12px;
   align-items: end;
   padding: 18px 20px;

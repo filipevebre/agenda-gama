@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260720-3">
-  <link rel="stylesheet" href="../assets/css/grades.css?v=20260720-1">
+  <link rel="stylesheet" href="../assets/css/grades.css?v=20260727-1">
 </head>
 <body data-page="notas" data-roles="all">
   <div id="app-shell"></div>
@@ -38,6 +38,7 @@
           <label class="field"><span>Turma</span><select id="grades-turma"></select></label>
           <label class="field"><span>Disciplina</span><select id="grades-subject"></select></label>
           <button id="grades-load" class="btn btn-primary" type="button">Abrir turma</button>
+          <a id="grades-new-subject" class="btn btn-secondary" href="organizacao/cadastro-disciplinas.html" hidden>Nova matéria</a>
         </div>
         <p id="grades-feedback" class="feedback" role="status" aria-live="polite"></p>
 
@@ -96,7 +97,7 @@
   <script src="../assets/js/auth.js?v=20260716-1"></script>
   <script src="../assets/js/data-store.js?v=20260720-2"></script>
   <script src="../assets/js/app.js?v=20260720-2"></script>
-  <script src="../assets/js/gradebook.js?v=20260720-1"></script>
+  <script src="../assets/js/gradebook.js?v=20260727-1"></script>
   <script>window.AgendaGamaApp.mountShell(); window.AgendaGamaGradebook.mount();</script>
   <script src="/assets/js/pwa.js?v=20260716-1"></script>
 </body>
