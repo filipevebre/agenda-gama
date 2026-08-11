@@ -275,7 +275,7 @@
   }
 
   async function mountSupabaseLogin(form, feedback) {
-    const session = await loadSupabaseSession({ timeoutMs: 8000 });
+    const session = await loadSupabaseSession({ timeoutMs: 8000, allowFallback: false });
     if (session) {
       feedback.textContent = "Sessao encontrada. Redirecionando...";
       feedback.className = "feedback success";
@@ -505,7 +505,7 @@
   }
 
   async function protectPage() {
-    const session = await loadSupabaseSession({ timeoutMs: 8000 });
+    const session = await loadSupabaseSession({ timeoutMs: 8000, allowFallback: false });
     if (!session) {
       window.location.href = loginPath();
       return null;
