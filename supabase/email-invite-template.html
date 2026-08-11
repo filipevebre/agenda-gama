@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="margin:0;padding:0;background:#f3f7f6;font-family:Arial,Helvetica,sans-serif;color:#142b43;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f7f6;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #dfe9e6;border-radius:18px;overflow:hidden;box-shadow:0 12px 36px rgba(20,43,67,0.10);">
+            <tr>
+              <td style="background:#0b2b52;padding:28px 32px;text-align:center;">
+                <p style="margin:0 0 7px;font-size:13px;font-weight:bold;letter-spacing:1.4px;text-transform:uppercase;color:#a9ded2;">Colégio Gamaliel</p>
+                <h1 style="margin:0;font-size:28px;line-height:1.2;color:#ffffff;">Bem-vindo(a) ao Agenda Gama</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <p style="margin:0 0 18px;font-size:17px;line-height:1.65;color:#29465f;">
+                  {{ if .Data.full_name }}Olá, <strong>{{ .Data.full_name }}</strong>!{{ else }}Olá!{{ end }}
+                </p>
+
+                {{ if eq .Data.role "responsaveis" }}
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#486176;">
+                  Seu acesso como <strong>responsável</strong> foi criado. Pelo Agenda Gama, você poderá acompanhar o diário da criança, receber comunicados e conversar com a escola em um só lugar.
+                </p>
+                {{ else if eq .Data.role "professores" }}
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#486176;">
+                  Seu acesso como <strong>professor(a)</strong> foi criado. Pelo Agenda Gama, você poderá acompanhar suas turmas, registrar a rotina escolar e manter a comunicação com as famílias e a equipe.
+                </p>
+                {{ else if eq .Data.role "funcionarios" }}
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#486176;">
+                  Seu acesso como integrante da <strong>equipe escolar</strong> foi criado. Pelo Agenda Gama, você terá acesso às rotinas e ferramentas liberadas para a sua função.
+                </p>
+                {{ else }}
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#486176;">
+                  Seu acesso ao Agenda Gama foi criado. Nele, você encontrará as ferramentas escolares disponíveis para o seu perfil.
+                </p>
+                {{ end }}
+
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#486176;">
+                  Para concluir o cadastro, clique no botão abaixo e escolha uma senha pessoal. Esse será o seu primeiro acesso ao aplicativo.
+                </p>
+
+                <div style="text-align:center;padding:4px 0 26px;">
+                  <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#0b9877;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:15px 30px;border-radius:11px;">Criar minha senha</a>
+                </div>
+
+                <div style="background:#f4f8f7;border:1px solid #dfe9e6;border-radius:12px;padding:17px 19px;margin-bottom:22px;">
+                  <p style="margin:0 0 7px;font-size:14px;line-height:1.6;color:#29465f;"><strong>Para sua segurança</strong></p>
+                  <p style="margin:0;font-size:14px;line-height:1.6;color:#5b7183;">Este convite é pessoal, pode ser utilizado somente uma vez e pode expirar. Não compartilhe este e-mail ou sua senha com outras pessoas.</p>
+                </div>
+
+                <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#5b7183;">Se o botão não abrir, copie e cole este endereço no navegador:</p>
+                <p style="margin:0 0 22px;font-size:13px;line-height:1.6;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#0b6f88;">{{ .ConfirmationURL }}</a></p>
+
+                <p style="margin:0;font-size:14px;line-height:1.7;color:#5b7183;">Se você não esperava este convite, pode ignorar esta mensagem ou entrar em contato com a escola.</p>
+                <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#29465f;">Atenciosamente,<br><strong>Equipe do Colégio Gamaliel</strong></p>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#f4f8f7;padding:18px 24px;text-align:center;border-top:1px solid #dfe9e6;">
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#718392;">Mensagem automática enviada pelo Agenda Gama.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
