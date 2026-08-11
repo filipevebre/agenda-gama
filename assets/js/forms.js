@@ -9,7 +9,18 @@
   function getErrorMessage(error, fallbackMessage) {
     if (!error) return fallbackMessage;
     if (typeof error === "string") return error;
-    if (error.message) return error.message;
+    const message = String(error.message || "");
+    const normalizedMessage = message.toLowerCase();
+
+    if (error.code === "42501" || normalizedMessage.includes("row-level security") || normalizedMessage.includes("permission denied")) {
+      return "Sua conta não tem permissão para concluir este cadastro. Saia, entre novamente e confira se o perfil é Administrador ou Funcionário.";
+    }
+
+    if (normalizedMessage.includes("failed to fetch") || normalizedMessage.includes("network") || normalizedMessage.includes("timeout")) {
+      return "Não foi possível conectar ao banco agora. Confira a internet e tente novamente em alguns instantes.";
+    }
+
+    if (message) return message;
     return fallbackMessage;
   }
 
@@ -280,13 +291,14 @@
 
         const redirectAfterSubmit = meta?.redirectAfterSubmit || config.redirectAfterSubmit;
         resetEditingState();
-        await refreshItems();
-        render();
 
         if (redirectAfterSubmit) {
           window.location.href = redirectAfterSubmit;
           return;
         }
+
+        await refreshItems();
+        render();
 
         if (config.successMessage) {
           setFeedback(feedbackEl, config.successMessage, "success");

@@ -35,13 +35,14 @@
     </section>
     <section>
       <article class="panel">
-        <div class="section-heading"><div><h2>Nova turma</h2><p>Cadastre turmas com turno, sala e ano letivo.</p></div></div>
+        <div class="section-heading"><div><h2>Nova turma</h2><p>Cadastre a turma com turno, sala e ano letivo.</p></div></div>
         <form id="turmas-form" class="form-grid">
-          <label class="field"><span>Nome da turma</span><input name="nome" placeholder="Ex.: 7º Ano A" required></label>
+          <label class="field"><span>Nome da turma</span><input name="nome" placeholder="Ex.: 7º Ano A" maxlength="100" autocomplete="off" required></label>
           <label class="field"><span>Turno</span><select name="turno" required><option value="">Selecione</option><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></label>
-          <label class="field"><span>Sala</span><input name="sala" placeholder="Ex.: Sala 05" required></label>
-          <label class="field"><span>Ano letivo</span><input name="ano" placeholder="2026" required></label>
-          <button type="submit" class="btn btn-primary full">Salvar turma</button>
+          <label class="field"><span>Sala</span><input name="sala" placeholder="Ex.: Sala 05" maxlength="80" required></label>
+          <label class="field"><span>Ano letivo</span><input name="ano" type="number" min="2000" max="2100" inputmode="numeric" placeholder="2026" required></label>
+          <p id="turmas-feedback" class="feedback full" role="status" aria-live="polite" hidden></p>
+          <button type="submit" class="btn btn-primary full">Criar turma</button>
         </form>
       </article>
     </section>
@@ -51,20 +52,47 @@
   <script src="../../assets/js/auth.js?v=20260716-1"></script>
   <script src="../../assets/js/app.js?v=20260716-5"></script>
   <script src="../../assets/js/data-store.js?v=20260619-4"></script>
-  <script src="../../assets/js/forms.js?v=20260716-1"></script>
+  <script src="../../assets/js/forms.js?v=20260811-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaForms.mountCrud({
       storageKey: "turmas",
       formId: "turmas-form",
       totalId: "total-turmas",
+      feedbackId: "turmas-feedback",
       redirectAfterSubmit: "turmas.html",
       cancelRedirect: "turmas.html",
       columns: [{ key: "nome" }, { key: "turno", type: "tag" }, { key: "sala" }, { key: "ano" }],
-      seedData: [
-        { nome: "1º Ano A", turno: "Manhã", sala: "Sala 01", ano: "2026" },
-        { nome: "5º Ano B", turno: "Tarde", sala: "Sala 08", ano: "2026" }
-      ]
+      seedData: [],
+      beforeSave: function ({ data, editingId, items }) {
+        const nome = String(data.nome || "").trim();
+        const turno = String(data.turno || "").trim();
+        const sala = String(data.sala || "").trim();
+        const ano = String(data.ano || "").trim();
+        const anoNumero = Number(ano);
+
+        if (!nome || !turno || !sala || !ano) {
+          return { error: "Preencha todos os dados da turma." };
+        }
+        if (!Number.isInteger(anoNumero) || anoNumero < 2000 || anoNumero > 2100) {
+          return { error: "Informe um ano letivo válido com quatro números." };
+        }
+
+        const normalizar = function (value) {
+          return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+        };
+        const duplicada = items.some(function (item) {
+          return item.id !== editingId
+            && normalizar(item.nome) === normalizar(nome)
+            && normalizar(item.turno) === normalizar(turno)
+            && String(item.ano || "").trim() === ano;
+        });
+        if (duplicada) {
+          return { error: "Essa turma já está cadastrada nesse turno e ano letivo." };
+        }
+
+        return { data: { ...data, nome: nome, turno: turno, sala: sala, ano: ano } };
+      }
     });
   </script>
   <script src="/assets/js/pwa.js?v=20260716-1"></script>
