@@ -89,6 +89,7 @@
 .calendar-type.type-passeio { background: #e4f7ed; color: #14764b; }
 .calendar-event-pill.is-important { box-shadow: inset 3px 0 #e5624d; }
 .calendar-more { padding-left: 5px; color: var(--text-muted); font-size: 0.68rem; font-weight: 700; }
+.calendar-day-event-count { display: none; }
 
 .calendar-agenda-heading { display: flex; justify-content: space-between; padding: 18px 20px 10px; font-size: 0.82rem; }
 .calendar-agenda-heading span { color: var(--title); font-weight: 800; }
@@ -275,7 +276,11 @@
   .calendar-month-nav,
   .attendance-toolbar .btn { grid-column: 1 / -1; }
   .calendar-weekdays,
-  .calendar-grid { display: none; }
+  .calendar-grid { display: grid; }
+  .calendar-weekdays span { padding: 8px 2px; font-size: 0.62rem; letter-spacing: 0; }
+  .calendar-day { min-height: 82px; padding: 5px; }
+  .calendar-day-number { width: 27px; height: 27px; font-size: 0.75rem; }
+  .calendar-event-pill { padding: 4px 5px; font-size: 0.58rem; }
   .calendar-agenda-heading { padding: 16px 14px 8px; }
   .calendar-agenda { padding: 0 14px 14px; }
   .calendar-agenda-card { grid-template-columns: 46px minmax(0, 1fr) auto; gap: 10px; }
@@ -328,6 +333,50 @@
   .attendance-toolbar { grid-template-columns: 1fr; }
   .calendar-toolbar > *,
   .attendance-toolbar > * { grid-column: 1; }
+  .calendar-weekdays span { padding: 8px 0; font-size: 0.56rem; }
+  .calendar-grid { border-bottom: 1px solid var(--border); }
+  .calendar-day {
+    position: relative;
+    min-height: 62px;
+    padding: 3px;
+  }
+  .calendar-day-number { width: 25px; height: 25px; font-size: 0.7rem; }
+  .calendar-day-events {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    min-height: 18px;
+    margin-top: 4px;
+  }
+  .calendar-event-pill {
+    width: 12px;
+    min-width: 12px;
+    height: 12px;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.92);
+    border-radius: 50%;
+    font-size: 0;
+    box-shadow: 0 0 0 1px rgba(18, 54, 82, 0.1);
+  }
+  .calendar-event-pill.is-important { box-shadow: 0 0 0 2px #e5624d; }
+  .calendar-more { display: none; }
+  .calendar-day-event-count {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    display: grid;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 999px;
+    color: #fff;
+    background: #315e7e;
+    font-size: 0.55rem;
+    font-weight: 800;
+    place-items: center;
+  }
+  .calendar-agenda-heading { margin-top: 4px; border-top: 1px solid var(--border); }
   .calendar-editor-grid { grid-template-columns: 1fr; }
   .calendar-editor-grid > .field { grid-column: 1; }
   .calendar-options-row { display: grid; grid-template-columns: 1fr; }

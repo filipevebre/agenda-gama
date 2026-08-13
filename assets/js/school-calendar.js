@@ -134,10 +134,14 @@
       const visibleEvents = dateEvents.slice(0, 3).map(function (event) {
         return `<button class="calendar-event-pill type-${escapeHtml(event.eventType)} ${event.important ? "is-important" : ""}" type="button" data-calendar-event="${escapeHtml(event.id)}" title="${escapeHtml(eventLabel(event))}">${escapeHtml(eventLabel(event))}</button>`;
       }).join("");
+      const dayDescription = dateEvents.length
+        ? `${date.getDate()} de ${new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(date)}, ${dateEvents.length} evento(s)`
+        : `${date.getDate()} de ${new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(date)}, sem eventos`;
       cells.push(`
-        <article class="calendar-day ${date.getMonth() === month ? "" : "is-outside"} ${key === localDateKey(new Date()) ? "is-today" : ""}" data-calendar-date="${key}">
+        <article class="calendar-day ${date.getMonth() === month ? "" : "is-outside"} ${key === localDateKey(new Date()) ? "is-today" : ""} ${dateEvents.length ? "has-events" : ""}" data-calendar-date="${key}" aria-label="${escapeHtml(dayDescription)}">
           <button class="calendar-day-number" type="button" data-calendar-new-date="${key}" ${isManager() ? "" : "disabled"}>${date.getDate()}</button>
           <div class="calendar-day-events">${visibleEvents}${dateEvents.length > 3 ? `<span class="calendar-more">+${dateEvents.length - 3}</span>` : ""}</div>
+          ${dateEvents.length ? `<span class="calendar-day-event-count" aria-hidden="true">${dateEvents.length}</span>` : ""}
         </article>`);
     }
     grid.innerHTML = cells.join("");
