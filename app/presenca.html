@@ -3,13 +3,24 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta name="theme-color" content="#0b2147"><meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><title>Agenda Gama | Presença</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/css/styles.css?v=20260720-2"><link rel="stylesheet" href="../assets/css/calendar-attendance.css?v=20260720-1">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/css/styles.css?v=20260720-2"><link rel="stylesheet" href="../assets/css/calendar-attendance.css?v=20260813-2">
 </head>
 <body data-page="presenca" data-roles="all">
   <div id="app-shell"></div>
   <template id="page-template">
     <section class="page-hero attendance-page-hero"><div><span class="pill">Frequência</span><h1>Presença escolar</h1><p id="attendance-description">Registre a chamada da turma e acompanhe o histórico.</p></div></section>
-    <section class="attendance-stats"><article><span>Presentes</span><strong id="attendance-stat-present">0</strong><small>no período exibido</small></article><article><span>Faltas</span><strong id="attendance-stat-absent">0</strong><small>no período exibido</small></article><article><span>Atrasos</span><strong id="attendance-stat-late">0</strong><small>no período exibido</small></article></section>
+    <section class="attendance-stats">
+      <article><span>Chamadas</span><strong id="attendance-stat-sessions">0</strong><small>no período</small></article>
+      <article><span>Presenças</span><strong id="attendance-stat-present">0</strong><small>no período</small></article>
+      <article><span>Faltas</span><strong id="attendance-stat-absent">0</strong><small>não justificadas</small></article>
+      <article><span>Atrasos</span><strong id="attendance-stat-late">0</strong><small>no período</small></article>
+      <article class="attendance-rate-card"><span>Frequência</span><strong id="attendance-stat-rate">0%</strong><small>presenças e atrasos</small></article>
+    </section>
+
+    <nav id="attendance-view-switch" class="attendance-view-switch" aria-label="Escolher área de presença" hidden>
+      <button class="is-active" type="button" data-attendance-view="call">Chamada do dia</button>
+      <button type="button" data-attendance-view="report">Relatórios</button>
+    </nav>
 
     <section id="attendance-manager" class="panel attendance-manager" hidden>
       <div class="attendance-toolbar"><label class="field"><span>Data da chamada</span><input id="attendance-date" type="date"></label><label class="field"><span>Turma</span><select id="attendance-turma"></select></label><button id="attendance-load" class="btn btn-primary" type="button">Abrir chamada</button></div>
@@ -23,11 +34,36 @@
     </section>
 
     <section id="attendance-history-section" class="panel attendance-history-panel">
-      <div class="attendance-history-head"><div><span>Histórico</span><h2 id="attendance-history-title">Registros de frequência</h2></div><label class="field"><span>Aluno</span><select id="attendance-student-filter"><option value="all">Todos os alunos</option></select></label></div>
+      <div class="attendance-history-head">
+        <div><span>Relatório</span><h2 id="attendance-history-title">Frequência por período</h2><p>Consulte o total e os registros detalhados das chamadas.</p></div>
+      </div>
+      <div class="attendance-report-filters">
+        <label class="field"><span>Período</span><select id="attendance-period-filter"><option value="month">Mês</option><option value="bimester">Bimestre</option><option value="semester">Semestre</option><option value="year">Ano completo</option><option value="custom">Datas personalizadas</option></select></label>
+        <label class="field"><span>Ano</span><select id="attendance-year-filter"></select></label>
+        <label id="attendance-month-field" class="field"><span>Mês</span><select id="attendance-month-filter"><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select></label>
+        <label id="attendance-bimester-field" class="field" hidden><span>Bimestre</span><select id="attendance-bimester-filter"><option value="1">1º · janeiro a março</option><option value="2">2º · abril a junho</option><option value="3">3º · julho a setembro</option><option value="4">4º · outubro a dezembro</option></select></label>
+        <label id="attendance-semester-field" class="field" hidden><span>Semestre</span><select id="attendance-semester-filter"><option value="1">1º · janeiro a junho</option><option value="2">2º · julho a dezembro</option></select></label>
+        <label id="attendance-start-field" class="field" hidden><span>Data inicial</span><input id="attendance-start-filter" type="date"></label>
+        <label id="attendance-end-field" class="field" hidden><span>Data final</span><input id="attendance-end-filter" type="date"></label>
+        <label class="field"><span>Turma</span><select id="attendance-turma-filter"><option value="all">Todas as turmas</option></select></label>
+        <label class="field"><span>Aluno</span><select id="attendance-student-filter"><option value="all">Todos os alunos</option></select></label>
+      </div>
+      <div class="attendance-report-period"><span>Período exibido</span><strong id="attendance-period-label"></strong></div>
+
+      <div class="attendance-summary-wrap">
+        <div class="attendance-section-title"><div><span>Resumo por aluno</span><strong id="attendance-summary-count">0 aluno(s)</strong></div></div>
+        <div class="attendance-summary-table" role="table" aria-label="Resumo de frequência por aluno">
+          <div class="attendance-summary-header" role="row"><span>Aluno</span><span>Chamadas</span><span>Presenças</span><span>Faltas</span><span>Justificadas</span><span>Atrasos</span><span>Frequência</span></div>
+          <div id="attendance-summary" class="attendance-summary" role="rowgroup"></div>
+        </div>
+        <p id="attendance-summary-empty" class="empty-state" hidden>Nenhuma frequência encontrada neste período.</p>
+      </div>
+
+      <div class="attendance-section-title attendance-detail-title"><div><span>Registros do período</span><strong id="attendance-record-count">0 registro(s)</strong></div></div>
       <div id="attendance-history" class="attendance-history"></div><p id="attendance-history-empty" class="empty-state" hidden>Nenhum registro de presença disponível.</p>
     </section>
   </template>
-  <script src="../assets/js/config.js?v=20260415-4"></script><script src="../assets/js/supabase.js?v=20260813-1"></script><script src="../assets/js/auth.js?v=20260813-1"></script><script src="../assets/js/data-store.js?v=20260720-1"></script><script src="../assets/js/app.js?v=20260813-1"></script><script src="../assets/js/attendance.js?v=20260720-1"></script>
+  <script src="../assets/js/config.js?v=20260415-4"></script><script src="../assets/js/supabase.js?v=20260813-1"></script><script src="../assets/js/auth.js?v=20260813-1"></script><script src="../assets/js/data-store.js?v=20260720-1"></script><script src="../assets/js/app.js?v=20260813-1"></script><script src="../assets/js/attendance.js?v=20260813-2"></script>
   <script>window.AgendaGamaApp.mountShell(); window.AgendaGamaAttendance.mount();</script><script src="/assets/js/pwa.js?v=20260716-1"></script>
 </body>
 </html>
