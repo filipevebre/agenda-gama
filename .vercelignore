@@ -1,0 +1,11 @@
+.agents/
+.git/
+arquivo-gama/
+arquivo-gama-hosted/
+chaveamento-campeonato/
+docs/
+fluent-minds-independent/
+output/
+supabase/
+tmp/
+tools/
