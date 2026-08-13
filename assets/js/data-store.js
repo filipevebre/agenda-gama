@@ -18,11 +18,12 @@
     calendarEvents: "school_calendar_events",
     attendanceSessions: "attendance_sessions",
     attendanceRecords: "attendance_records",
-    grades: "student_grades"
+    grades: "student_grades",
+    classJournal: "class_journal_entries"
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
-  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords", "grades"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords", "grades", "classJournal"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -412,6 +413,38 @@
     };
   }
 
+  function mapClassJournalFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      lessonDate: item.lesson_date || item.lessonDate || "",
+      turma: item.turma || "",
+      subject: item.subject || "",
+      topic: item.topic || "",
+      summary: item.summary || "",
+      homework: item.homework || "",
+      teacherUserId: item.teacher_user_id || item.teacherUserId || null,
+      teacherName: item.teacher_name || item.teacherName || "",
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapClassJournalToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: item.id || null,
+      lesson_date: item.lessonDate || item.lesson_date || null,
+      turma: item.turma || "",
+      subject: item.subject || "",
+      topic: item.topic || "",
+      summary: item.summary || "",
+      homework: item.homework || "",
+      teacher_user_id: item.teacherUserId || item.teacher_user_id || null,
+      teacher_name: item.teacherName || item.teacher_name || ""
+    };
+  }
+
   function mapMenuFromRemote(item) {
     if (!item || typeof item !== "object") return item;
 
@@ -507,6 +540,10 @@
       return mapGradeFromRemote(item);
     }
 
+    if (key === "classJournal") {
+      return mapClassJournalFromRemote(item);
+    }
+
     return item;
   }
 
@@ -553,6 +590,10 @@
 
     if (key === "grades") {
       return mapGradeToRemote(item);
+    }
+
+    if (key === "classJournal") {
+      return mapClassJournalToRemote(item);
     }
 
     return item;

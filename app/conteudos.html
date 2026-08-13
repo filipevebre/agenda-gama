@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2147">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <title>Agenda Gama | Conteúdo de aula</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260720-2">
+  <link rel="stylesheet" href="../assets/css/class-journal.css?v=20260813-1">
+</head>
+<body data-page="conteudos" data-roles="administrador,funcionarios,professores">
+  <div id="app-shell"></div>
+
+  <template id="page-template">
+    <section class="page-hero class-journal-hero">
+      <div>
+        <span class="pill">Pedagógico</span>
+        <h1>Conteúdo de aula</h1>
+        <p>Registre o que foi trabalhado em cada turma.</p>
+      </div>
+      <button id="class-journal-open" class="btn btn-primary" type="button">Novo conteúdo</button>
+    </section>
+
+    <section class="class-journal-stats" aria-label="Resumo dos conteúdos">
+      <article><span>Registros</span><strong id="class-journal-total">0</strong></article>
+      <article><span>Hoje</span><strong id="class-journal-today">0</strong></article>
+      <article><span>Turmas</span><strong id="class-journal-classes">0</strong></article>
+    </section>
+
+    <section class="panel class-journal-board">
+      <div class="class-journal-board-head">
+        <div><span>Histórico</span><h2>Aulas registradas</h2></div>
+        <button id="class-journal-filter-toggle" class="btn btn-secondary btn-sm" type="button" aria-expanded="false">Filtros</button>
+      </div>
+      <div id="class-journal-filters" class="class-journal-filters" hidden>
+        <label class="field class-journal-search"><span>Buscar</span><input id="class-journal-search" type="search" placeholder="Conteúdo, resumo ou professora"></label>
+        <label class="field"><span>Mês</span><input id="class-journal-month" type="month"></label>
+        <label class="field"><span>Turma</span><select id="class-journal-filter-class"><option value="all">Todas</option></select></label>
+        <label class="field"><span>Matéria</span><select id="class-journal-filter-subject"><option value="all">Todas</option></select></label>
+      </div>
+      <p id="class-journal-board-feedback" class="feedback" role="status" aria-live="polite"></p>
+      <div id="class-journal-list" class="class-journal-list"></div>
+      <p id="class-journal-empty" class="empty-state" hidden>Nenhum conteúdo encontrado.</p>
+    </section>
+
+    <div id="class-journal-modal" class="app-modal" hidden>
+      <div class="app-modal-backdrop" data-class-journal-close="true"></div>
+      <div class="app-modal-dialog app-modal-dialog-wide" role="dialog" aria-modal="true" aria-labelledby="class-journal-modal-title">
+        <article class="panel app-modal-panel class-journal-editor">
+          <div class="app-modal-header">
+            <div class="section-heading"><div><span>Lançamento</span><h2 id="class-journal-modal-title">Novo conteúdo</h2><p>Informe o que foi ministrado na aula.</p></div></div>
+            <button id="class-journal-close" class="btn btn-secondary app-modal-close" type="button" aria-label="Fechar">x</button>
+          </div>
+          <form id="class-journal-form" class="class-journal-form">
+            <div class="class-journal-form-grid">
+              <label class="field"><span>Data da aula</span><input id="class-journal-date" name="lessonDate" type="date" required></label>
+              <label class="field"><span>Turma</span><select id="class-journal-class" name="turma" required></select></label>
+              <label class="field class-journal-subject-field"><span>Matéria lecionada</span><select id="class-journal-subject" name="subject" required></select></label>
+            </div>
+            <label class="field"><span>Conteúdo ministrado</span><input id="class-journal-topic" name="topic" type="text" maxlength="160" placeholder="Ex.: Frações equivalentes" required></label>
+            <label class="field"><span>Resumo da aula</span><textarea id="class-journal-summary" name="summary" rows="6" maxlength="3000" placeholder="Resuma o que foi explicado e trabalhado com a turma neste dia." required></textarea></label>
+            <label class="field"><span>Atividade ou tarefa (opcional)</span><textarea id="class-journal-homework" name="homework" rows="3" maxlength="1000" placeholder="Ex.: Exercícios 1 a 5 da página 32."></textarea></label>
+            <p id="class-journal-feedback" class="feedback" role="status" aria-live="polite"></p>
+            <div class="action-row class-journal-form-actions">
+              <button id="class-journal-cancel" class="btn btn-secondary" type="button">Cancelar</button>
+              <button id="class-journal-save" class="btn btn-primary" type="submit">Salvar conteúdo</button>
+            </div>
+          </form>
+        </article>
+      </div>
+    </div>
+  </template>
+
+  <script src="../assets/js/config.js?v=20260415-4"></script>
+  <script src="../assets/js/supabase.js?v=20260813-1"></script>
+  <script src="../assets/js/auth.js?v=20260813-1"></script>
+  <script src="../assets/js/data-store.js?v=20260813-2"></script>
+  <script src="../assets/js/app.js?v=20260813-2"></script>
+  <script src="../assets/js/class-journal.js?v=20260813-1"></script>
+  <script>window.AgendaGamaApp.mountShell(); window.AgendaGamaClassJournal.mount();</script>
+  <script src="/assets/js/pwa.js?v=20260716-1"></script>
+</body>
+</html>
