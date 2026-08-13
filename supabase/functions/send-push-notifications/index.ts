@@ -21,8 +21,36 @@ type Directory = {
   profiles: Array<Record<string, unknown>>
 }
 
+type CommunicationEmailJob = {
+  messageId: string
+  to: string
+  subject: string
+  html: string
+  text: string
+}
+
 function uniqueIds(items: string[]) {
   return [...new Set((items || []).filter(Boolean))]
+}
+
+function isEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value))
+}
+
+function escapeHtml(value: string) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
+async function buildIdempotencyKey(jobs: CommunicationEmailJob[]) {
+  const source = jobs.map((job) => `${job.messageId}:${normalizeEmail(job.to)}`).sort().join("|")
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source))
+  const hash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("")
+  return `agenda-gama-communication-${hash}`
 }
 
 function getProfessorTurmas(record: Record<string, unknown>) {
@@ -170,6 +198,48 @@ function resolveStaffUserIds(directory: Directory, thread: Record<string, unknow
   return uniqueIds([...userIds])
 }
 
+function resolveRecipientEmails(
+  directory: Directory,
+  userIds: string[],
+  message: Record<string, unknown>,
+  thread: Record<string, unknown> | null,
+  senderEmail: string
+) {
+  const targetUserIds = new Set(uniqueIds(userIds))
+  const directoryRows = [
+    ...(directory.profiles || []).map((item) => ({ userId: item.id, email: item.email })),
+    ...(directory.responsaveis || []).map((item) => ({ userId: item.auth_user_id, email: item.email })),
+    ...(directory.professores || []).map((item) => ({ userId: item.auth_user_id, email: item.email })),
+    ...(directory.equipe || []).map((item) => ({ userId: item.auth_user_id, email: item.email }))
+  ]
+  const allowedEmails = new Set(directoryRows.map((item) => normalizeEmail(String(item.email || ""))).filter(isEmail))
+  const emails = new Set<string>()
+  const normalizedSender = normalizeEmail(senderEmail)
+
+  const addEmail = (value: unknown, requireDirectoryMatch = true) => {
+    const email = normalizeEmail(String(value || ""))
+    if (!isEmail(email) || email === normalizedSender) return
+    if (requireDirectoryMatch && !allowedEmails.has(email)) return
+    emails.add(email)
+  }
+
+  directoryRows.forEach((item) => {
+    if (item.userId && targetUserIds.has(String(item.userId))) {
+      addEmail(item.email)
+    }
+  })
+
+  if (String(message.sender_role || "") !== "responsaveis") {
+    addEmail(thread?.responsibleEmail)
+    const targets = Array.isArray(thread?.targetResponsaveis) ? thread?.targetResponsaveis as Array<Record<string, unknown>> : []
+    targets.forEach((item) => addEmail(item.responsibleEmail))
+    const recipients = Array.isArray(message.recipients) ? message.recipients as unknown[] : []
+    recipients.forEach((item) => addEmail(item))
+  }
+
+  return [...emails]
+}
+
 function buildCommunicationPayload(message: Record<string, unknown>, thread: Record<string, unknown> | null, text: string) {
   const status = String(message?.status || "")
   const threadKey = String(thread?.key || "")
@@ -197,6 +267,115 @@ function buildCommunicationPayload(message: Record<string, unknown>, thread: Rec
     body: [context, preview].filter(Boolean).join(" - "),
     href: threadKey ? `/app/comunicacao.html?thread=${encodeURIComponent(threadKey)}` : buildAppUrl("/app/comunicacao.html")
   }
+}
+
+function buildCommunicationEmail(
+  message: Record<string, unknown>,
+  thread: Record<string, unknown> | null,
+  text: string,
+  recipientEmail: string
+): CommunicationEmailJob {
+  const payload = buildCommunicationPayload(message, thread, text)
+  const senderName = String(message.sender_name || (message.sender_role === "responsaveis" ? thread?.responsibleName : "Equipe escolar") || "Agenda Gama")
+  const context = String(thread?.studentName || thread?.turma || thread?.sector || thread?.channelName || "Comunicacao escolar")
+  const preview = previewText(text || "Abra o Agenda Gama para acompanhar esta conversa.", 240)
+  const href = buildAppUrl(payload.href)
+  const subject = `Agenda Gama | ${payload.title}`
+  const safeTitle = escapeHtml(payload.title)
+  const safeSender = escapeHtml(senderName)
+  const safeContext = escapeHtml(context)
+  const safePreview = escapeHtml(preview)
+  const safeHref = escapeHtml(href)
+
+  return {
+    messageId: String(message.id || "message"),
+    to: recipientEmail,
+    subject,
+    html: `<!doctype html>
+<html lang="pt-BR">
+  <body style="margin:0;background:#f2f6f8;font-family:Arial,sans-serif;color:#17314d">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px;background:#f2f6f8">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;overflow:hidden;border:1px solid #dce6ec;border-radius:18px;background:#ffffff">
+          <tr><td style="padding:24px 28px 16px;background:#0d315a;color:#ffffff">
+            <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a9e3d4">Agenda Gama</div>
+            <h1 style="margin:8px 0 0;font-size:24px;line-height:1.25">${safeTitle}</h1>
+          </td></tr>
+          <tr><td style="padding:26px 28px">
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.55">Uma nova mensagem foi publicada na comunicacao escolar.</p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:20px;border-radius:14px;background:#f5f8fa">
+              <tr><td style="padding:18px 20px">
+                <p style="margin:0 0 7px;font-size:13px;color:#667b8f"><strong>Enviada por:</strong> ${safeSender}</p>
+                <p style="margin:0 0 12px;font-size:13px;color:#667b8f"><strong>Referencia:</strong> ${safeContext}</p>
+                <p style="margin:0;font-size:16px;line-height:1.55;color:#17314d">${safePreview}</p>
+              </td></tr>
+            </table>
+            <a href="${safeHref}" style="display:inline-block;padding:13px 20px;border-radius:10px;background:#079879;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">Abrir conversa</a>
+            <p style="margin:22px 0 0;font-size:12px;line-height:1.5;color:#7b8d9e">Este e um aviso automatico. Para responder, abra a conversa no Agenda Gama.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`,
+    text: `${payload.title}\n\nEnviada por: ${senderName}\nReferencia: ${context}\n\n${preview}\n\nAbra a conversa: ${href}\n\nEste e um aviso automatico do Agenda Gama.`
+  }
+}
+
+async function sendCommunicationEmails(jobs: CommunicationEmailJob[]) {
+  const apiKey = String(Deno.env.get("RESEND_API_KEY") || "").trim()
+  const from = String(Deno.env.get("EMAIL_FROM") || Deno.env.get("RESEND_FROM_EMAIL") || "").trim()
+  const replyTo = String(Deno.env.get("EMAIL_REPLY_TO") || "").trim()
+  const uniqueJobs = [...new Map(jobs.map((job) => [`${job.messageId}:${normalizeEmail(job.to)}`, job])).values()]
+
+  if (!apiKey || !from) {
+    return {
+      configured: false,
+      queued: uniqueJobs.length,
+      sent: 0,
+      errors: uniqueJobs.length ? ["Configure RESEND_API_KEY e EMAIL_FROM nas secrets do Supabase."] : []
+    }
+  }
+
+  let sent = 0
+  const errors: string[] = []
+  for (let index = 0; index < uniqueJobs.length; index += 100) {
+    const chunk = uniqueJobs.slice(index, index + 100)
+    try {
+      const idempotencyKey = await buildIdempotencyKey(chunk)
+      const response = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "User-Agent": "AgendaGama/1.0",
+          "Idempotency-Key": idempotencyKey
+        },
+        body: JSON.stringify(chunk.map((job) => ({
+          from,
+          to: [job.to],
+          subject: job.subject,
+          html: job.html,
+          text: job.text,
+          ...(replyTo ? { reply_to: replyTo } : {}),
+          tags: [{ name: "message_id", value: job.messageId.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 256) }]
+        })))
+      })
+
+      if (!response.ok) {
+        const detail = await response.text()
+        errors.push(`Resend ${response.status}: ${previewText(detail, 180)}`)
+        continue
+      }
+
+      const result = await response.json()
+      sent += Array.isArray(result?.data) ? result.data.length : chunk.length
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "Nao foi possivel enviar o lote de e-mails.")
+    }
+  }
+
+  return { configured: true, queued: uniqueJobs.length, sent, errors }
 }
 
 async function dispatchDiaryPushes(
@@ -275,6 +454,7 @@ async function dispatchCommunicationPushes(
 
   const directory = await loadDirectory(adminClient)
   const deliveries = []
+  const emailJobs: CommunicationEmailJob[] = []
   const callerEmail = normalizeEmail(String(callerProfile?.email || callerUser.email || ""))
   const callerCanApprove = Boolean(callerProfile?.can_approve || callerProfile?.role === "administrador")
 
@@ -304,14 +484,23 @@ async function dispatchCommunicationPushes(
       continue
     }
 
-    if (!recipientUserIds.length) continue
+    const recipientEmails = resolveRecipientEmails(directory, recipientUserIds, message, thread, String(message.sender_email || callerEmail))
+    if (!recipientUserIds.length && !recipientEmails.length) continue
 
-    deliveries.push(await sendPushToUserIds(adminClient, recipientUserIds, buildCommunicationPayload(message, thread, text)))
+    if (recipientUserIds.length) {
+      deliveries.push(await sendPushToUserIds(adminClient, recipientUserIds, buildCommunicationPayload(message, thread, text)))
+    }
+    recipientEmails.forEach((email) => {
+      emailJobs.push(buildCommunicationEmail(message, thread, text, email))
+    })
   }
+
+  const emailDelivery = await sendCommunicationEmails(emailJobs)
 
   return {
     notifications: deliveries.length,
-    deliveries
+    deliveries,
+    email: emailDelivery
   }
 }
 

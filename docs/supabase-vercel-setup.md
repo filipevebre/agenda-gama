@@ -73,12 +73,21 @@ Arquivos:
 Defina no projeto Supabase:
 
 - `SITE_URL`
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- `EMAIL_REPLY_TO` (opcional)
 
 `SITE_URL` deve apontar para a URL publica da Vercel, por exemplo:
 
 - `https://agenda-gama.vercel.app`
 
 A Edge Function do convite usa a `siteUrl` enviada pelo frontend e, se ela nao vier preenchida, usa `SITE_URL` como fallback.
+
+As notificacoes por e-mail das novas mensagens usam o Resend. `EMAIL_FROM` deve conter um remetente de dominio validado, por exemplo:
+
+- `Agenda Gama <notificacoes@seudominio.com.br>`
+
+`EMAIL_REPLY_TO` pode apontar para o e-mail da secretaria. A chave `RESEND_API_KEY` deve ter permissao de envio.
 
 Nas Edge Functions hospedadas do Supabase, `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` ja ficam disponiveis por padrao.
 
