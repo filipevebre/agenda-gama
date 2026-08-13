@@ -38,6 +38,24 @@
       .replace(/>/g, "&gt;");
   }
 
+  function canResendAccessInvite(item) {
+    const status = String(item?.access_status || "").trim().toLowerCase();
+    return Boolean(item?.email) && (status.includes("convite") || status.includes("pendente"));
+  }
+
+  async function resendAccessInvite(item, role) {
+    if (!(await window.AgendaGamaAuth.isSupabaseEnabled())) {
+      throw new Error("O reenvio de e-mail esta disponivel apenas no sistema publicado.");
+    }
+
+    const siteUrl = await window.AgendaGamaSupabase.getSiteUrl();
+    return await window.AgendaGamaSupabase.invokeFunction("resend-access-invite", {
+      record: item,
+      role,
+      siteUrl
+    });
+  }
+
   async function mountCrud(config) {
     const form = config.formId ? document.getElementById(config.formId) : null;
     const tableBody = config.tableBodyId ? document.getElementById(config.tableBodyId) : null;
@@ -168,6 +186,11 @@
           <td data-label="${escapeAttribute(headerLabels[config.columns.length] || "Acoes")}">
             <div class="table-actions">
               ${config.viewPageUrl ? '<button type="button" class="btn btn-primary btn-sm crud-view">Ver perfil</button>' : ""}
+              ${(config.rowActions || []).filter(function (action) {
+                return typeof action.show !== "function" || action.show(item);
+              }).map(function (action) {
+                return `<button type="button" class="btn btn-secondary btn-sm crud-row-action ${escapeAttribute(action.className || "")}" data-crud-action="${escapeAttribute(action.key)}">${action.label}</button>`;
+              }).join("")}
               <button type="button" class="btn btn-secondary btn-sm crud-edit">Editar</button>
               <button type="button" class="btn btn-secondary btn-sm crud-delete">Excluir</button>
             </div>
@@ -334,6 +357,30 @@
         return;
       }
 
+      const rowActionButton = event.target.closest(".crud-row-action");
+      if (rowActionButton) {
+        const action = (config.rowActions || []).find((candidate) => candidate.key === rowActionButton.dataset.crudAction);
+        if (!action?.onClick) return;
+
+        setFeedback(feedbackEl, "", "");
+        const idleLabel = rowActionButton.textContent;
+        rowActionButton.disabled = true;
+        rowActionButton.textContent = action.loadingLabel || "Aguarde...";
+
+        try {
+          const result = await action.onClick({ item, items: [...items], button: rowActionButton });
+          if (result?.message) {
+            setFeedback(feedbackEl, result.message, "success");
+          }
+        } catch (error) {
+          setFeedback(feedbackEl, getErrorMessage(error, "Nao foi possivel concluir esta acao agora."), "error");
+        } finally {
+          rowActionButton.disabled = false;
+          rowActionButton.textContent = idleLabel;
+        }
+        return;
+      }
+
       if (event.target.closest(".crud-delete")) {
         setFeedback(feedbackEl, "", "");
 
@@ -406,5 +453,9 @@
     });
   }
 
-  window.AgendaGamaForms = { mountCrud };
+  window.AgendaGamaForms = {
+    mountCrud,
+    canResendAccessInvite,
+    resendAccessInvite
+  };
 })();

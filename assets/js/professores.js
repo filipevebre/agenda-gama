@@ -306,10 +306,20 @@
         tableBodyId: "professores-table-body",
         emptyStateId: "professores-empty",
         totalId: "total-professores",
+        feedbackId: "professores-access-banner",
         editPageUrl: "cadastro-professores.html",
         emptyMessage: "Nenhum professor cadastrado ainda.",
         columns: buildColumns(),
         seedData: PROFESSORES_SEED,
+        rowActions: [{
+          key: "resend-invite",
+          label: "Reenviar convite",
+          loadingLabel: "Enviando...",
+          show: window.AgendaGamaForms.canResendAccessInvite,
+          onClick: async function ({ item }) {
+            return await window.AgendaGamaForms.resendAccessInvite(item, "professores");
+          }
+        }],
         customDelete: async function ({ item }) {
           if (await window.AgendaGamaAuth.isSupabaseEnabled()) {
             await buildSupabaseDelete(item);

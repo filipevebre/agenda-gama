@@ -215,10 +215,20 @@
         tableBodyId: "equipe-table-body",
         emptyStateId: "equipe-empty",
         totalId: "total-equipe",
+        feedbackId: "equipe-access-banner",
         editPageUrl: "cadastro-equipe.html",
         emptyMessage: "Nenhum funcionario cadastrado ainda.",
         columns: buildColumns(),
         seedData: EQUIPE_SEED,
+        rowActions: [{
+          key: "resend-invite",
+          label: "Reenviar convite",
+          loadingLabel: "Enviando...",
+          show: window.AgendaGamaForms.canResendAccessInvite,
+          onClick: async function ({ item }) {
+            return await window.AgendaGamaForms.resendAccessInvite(item, "funcionarios");
+          }
+        }],
         customDelete: async function ({ item }) {
           if (await window.AgendaGamaAuth.isSupabaseEnabled()) {
             await buildSupabaseDelete(item);

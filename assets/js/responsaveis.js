@@ -368,10 +368,20 @@
         tableBodyId: "responsaveis-table-body",
         emptyStateId: "responsaveis-empty",
         totalId: "total-responsaveis",
+        feedbackId: "responsaveis-access-banner",
         editPageUrl: "cadastro-responsaveis.html",
         emptyMessage: "Nenhum responsavel cadastrado ainda.",
         columns: buildColumns(),
         seedData: RESPONSAVEIS_SEED,
+        rowActions: [{
+          key: "resend-invite",
+          label: "Reenviar convite",
+          loadingLabel: "Enviando...",
+          show: window.AgendaGamaForms.canResendAccessInvite,
+          onClick: async function ({ item }) {
+            return await window.AgendaGamaForms.resendAccessInvite(item, "responsaveis");
+          }
+        }],
         customDelete: async function ({ item }) {
           if (await window.AgendaGamaAuth.isSupabaseEnabled()) {
             await buildSupabaseDelete(item);
