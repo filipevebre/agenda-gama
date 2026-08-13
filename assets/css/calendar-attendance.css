@@ -148,6 +148,25 @@
 .attendance-status.is-active span { background: currentColor; }
 .attendance-manager > #attendance-call > .field { padding: 16px 20px 20px; }
 .attendance-history-head > .field { width: min(320px, 100%); }
+
+#attendance-content-modal .app-modal-dialog {
+  scrollbar-gutter: stable;
+}
+
+#attendance-content-modal .app-modal-header {
+  position: relative;
+}
+
+#attendance-content-modal .app-modal-header .section-heading {
+  min-width: 0;
+  padding-right: 48px;
+}
+
+#attendance-content-modal .app-modal-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
 .attendance-history-row { display: grid; grid-template-columns: minmax(170px, 0.8fr) minmax(220px, 1fr) auto; gap: 18px; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border); }
 .attendance-history-date,
 .attendance-history-student { display: grid; gap: 3px; }
@@ -268,6 +287,7 @@
   .attendance-call-head,
   .attendance-history-head { align-items: stretch; flex-direction: column; padding: 15px; }
   .attendance-call-head .action-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .attendance-call-head #attendance-open-content { grid-column: 1 / -1; }
   .attendance-call-head .action-row .btn { width: 100%; }
   .attendance-history-head > .field { width: 100%; }
   .attendance-student-row { grid-template-columns: 38px minmax(0, 1fr); padding: 13px 15px; }
@@ -318,10 +338,18 @@
 }
 
 @media (max-width: 600px) {
+  #attendance-content-modal .app-modal-close {
+    position: fixed;
+    top: calc(18px + env(safe-area-inset-top, 0px));
+    right: 18px;
+    z-index: 3;
+  }
+
   .attendance-toolbar { grid-template-columns: 1fr; }
   .attendance-toolbar > * { grid-column: 1; }
   .attendance-report-filters { grid-template-columns: 1fr; }
   .attendance-status-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .attendance-call-head .action-row { grid-template-columns: 1fr; }
+  .attendance-call-head #attendance-open-content { grid-column: 1; }
   .attendance-view-switch { display: grid; width: 100%; }
 }

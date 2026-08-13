@@ -12,6 +12,8 @@
     turmas: [],
     sessions: [],
     records: [],
+    disciplinas: [],
+    professores: [],
     currentSession: null,
     currentStudents: [],
     draft: new Map()
@@ -64,6 +66,29 @@
 
   function isManager() {
     return ["administrador", "funcionarios", "professores"].includes(state.session?.role);
+  }
+
+  function parseList(value) {
+    return String(value || "").split(",").map(function (item) { return item.trim(); }).filter(Boolean);
+  }
+
+  function currentProfessor() {
+    return state.professores.find(function (professor) {
+      return (state.session?.userId && String(professor.auth_user_id || "") === String(state.session.userId))
+        || normalize(professor.email) === normalize(state.session?.email)
+        || normalize(professor.nome) === normalize(state.session?.name);
+    }) || null;
+  }
+
+  function availableContentSubjects() {
+    const names = new Set();
+    if (state.session?.role === "professores") {
+      parseList(currentProfessor()?.disciplinas).forEach(function (name) { names.add(name); });
+    } else {
+      state.disciplinas.forEach(function (item) { if (item.nome) names.add(item.nome); });
+      state.professores.forEach(function (professor) { parseList(professor.disciplinas).forEach(function (name) { names.add(name); }); });
+    }
+    return [...names].sort(function (left, right) { return left.localeCompare(right, "pt-BR"); });
   }
 
   function setFeedback(message, type) {
@@ -409,8 +434,97 @@
     }
   }
 
+  function setContentFeedback(message, type) {
+    const feedback = document.getElementById("attendance-content-feedback");
+    feedback.textContent = message || "";
+    feedback.className = `feedback${type ? ` ${type}` : ""}`;
+  }
+
+  function setContentModalOpen(open) {
+    document.getElementById("attendance-content-modal").hidden = !open;
+    document.body.classList.toggle("app-modal-open", open);
+  }
+
+  function populateContentControls(selectedTurma) {
+    const turmaNames = uniqueTurmaNames();
+    const turmaSelect = document.getElementById("attendance-content-class");
+    turmaSelect.innerHTML = turmaNames.length
+      ? turmaNames.map(function (name) { return `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`; }).join("")
+      : `<option value="">Nenhuma turma disponível</option>`;
+    if (turmaNames.some(function (name) { return normalize(name) === normalize(selectedTurma); })) turmaSelect.value = selectedTurma;
+
+    const subjects = availableContentSubjects();
+    const subjectSelect = document.getElementById("attendance-content-subject");
+    subjectSelect.innerHTML = subjects.length
+      ? subjects.map(function (name) { return `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`; }).join("")
+      : `<option value="">Nenhuma matéria vinculada</option>`;
+    document.getElementById("attendance-content-save").disabled = !turmaNames.length || !subjects.length;
+    return subjects.length > 0;
+  }
+
+  function openContentModal() {
+    const values = currentCallValues();
+    if (!values.date || !values.turma) {
+      setFeedback("Abra uma chamada com data e turma antes de registrar o conteúdo.", "error");
+      return;
+    }
+    document.getElementById("attendance-content-form").reset();
+    document.getElementById("attendance-content-date").value = values.date;
+    const hasSubjects = populateContentControls(values.turma);
+    setContentFeedback(hasSubjects ? "" : "Confirme as matérias vinculadas ao cadastro da professora.", hasSubjects ? "" : "error");
+    setContentModalOpen(true);
+    window.setTimeout(function () { document.getElementById("attendance-content-topic").focus(); }, 80);
+  }
+
+  function closeContentModal() {
+    setContentModalOpen(false);
+    document.getElementById("attendance-content-form").reset();
+    setContentFeedback("");
+  }
+
+  async function saveContentFromAttendance(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      id: createId("class-journal"),
+      lessonDate: String(form.get("lessonDate") || ""),
+      turma: String(form.get("turma") || "").trim(),
+      subject: String(form.get("subject") || "").trim(),
+      topic: String(form.get("topic") || "").trim(),
+      summary: String(form.get("summary") || "").trim(),
+      homework: String(form.get("homework") || "").trim(),
+      teacherUserId: state.session?.userId || null,
+      teacherName: state.session?.name || "",
+      createdAt: new Date().toISOString()
+    };
+    if (!payload.lessonDate || !payload.turma || !payload.subject || !payload.topic || !payload.summary) {
+      setContentFeedback("Preencha a matéria, o conteúdo e o resumo da aula.", "error");
+      return;
+    }
+    const button = document.getElementById("attendance-content-save");
+    button.disabled = true;
+    button.textContent = "Salvando...";
+    try {
+      await window.AgendaGamaDataStore.save("classJournal", payload, []);
+      closeContentModal();
+      setFeedback("Conteúdo da aula registrado. Você pode continuar ou salvar a chamada.", "success");
+    } catch (error) {
+      setContentFeedback(error?.message || "Não foi possível registrar o conteúdo da aula.", "error");
+    } finally {
+      button.disabled = !availableContentSubjects().length;
+      button.textContent = "Salvar conteúdo";
+    }
+  }
+
   function bindEvents() {
     document.getElementById("attendance-load").addEventListener("click", openCall);
+    document.getElementById("attendance-open-content").addEventListener("click", openContentModal);
+    document.getElementById("attendance-content-close").addEventListener("click", closeContentModal);
+    document.getElementById("attendance-content-cancel").addEventListener("click", closeContentModal);
+    document.getElementById("attendance-content-form").addEventListener("submit", saveContentFromAttendance);
+    document.getElementById("attendance-content-modal").addEventListener("click", function (event) {
+      if (event.target.closest("[data-attendance-content-close]")) closeContentModal();
+    });
     document.getElementById("attendance-all-present").addEventListener("click", function () {
       state.currentStudents.forEach(function (student) { state.draft.set(String(student.id), "present"); });
       renderStudentList();
@@ -437,6 +551,9 @@
       const button = event.target.closest("[data-attendance-view]");
       if (button) setView(button.dataset.attendanceView);
     });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && !document.getElementById("attendance-content-modal").hidden) closeContentModal();
+    });
   }
 
   async function init(session) {
@@ -453,12 +570,16 @@
         window.AgendaGamaDataStore.list("alunos", []),
         window.AgendaGamaDataStore.list("turmas", []),
         window.AgendaGamaDataStore.list("attendanceSessions", []),
-        window.AgendaGamaDataStore.list("attendanceRecords", [])
+        window.AgendaGamaDataStore.list("attendanceRecords", []),
+        manager ? window.AgendaGamaDataStore.list("disciplinas", []) : Promise.resolve([]),
+        manager ? window.AgendaGamaDataStore.list("professores", []) : Promise.resolve([])
       ]);
       state.students = results[0] || [];
       state.turmas = results[1] || [];
       state.sessions = results[2] || [];
       state.records = results[3] || [];
+      state.disciplinas = results[4] || [];
+      state.professores = results[5] || [];
       populateSelectors();
       updatePeriodFields();
       bindEvents();
