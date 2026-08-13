@@ -5570,6 +5570,44 @@ body.app-shell-body {
   align-items: center;
 }
 
+.profile-role-switcher {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 4px 5px 4px 10px;
+  border: 1px solid #b9ded5;
+  border-radius: 11px;
+  background: #eef9f6;
+  color: var(--primary-dark);
+}
+
+.profile-role-switcher span {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-role-switcher select {
+  min-width: 112px;
+  height: 30px;
+  padding: 0 28px 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: var(--title);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-role-switcher select:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .notification-toggle {
   width: 40px;
   height: 40px;
@@ -6194,6 +6232,25 @@ body[data-page="comunicacao"] .message-central-layout {
     gap: 5px;
   }
 
+  .profile-role-switcher {
+    grid-template-columns: 1fr;
+    gap: 0;
+    min-height: 38px;
+    padding: 3px;
+  }
+
+  .profile-role-switcher span {
+    display: none;
+  }
+
+  .profile-role-switcher select {
+    min-width: 104px;
+    max-width: 118px;
+    height: 32px;
+    padding-left: 8px;
+    font-size: 0.7rem;
+  }
+
   .topbar-user {
     min-height: 38px;
     padding: 3px;
@@ -6496,6 +6553,11 @@ body[data-page="comunicacao"] .message-central-layout {
 
   .topbar-user {
     display: none;
+  }
+
+  .profile-role-switcher select {
+    min-width: 94px;
+    max-width: 102px;
   }
 
   .page-content {

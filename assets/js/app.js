@@ -79,6 +79,15 @@
       .toUpperCase();
   }
 
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function normalizeEmail(value) {
     return String(value || "").trim().toLowerCase();
   }
@@ -1397,6 +1406,17 @@
     appShell.className = "app-shell";
     const collapsed = getCollapsedState();
     const pageContext = getPageContext();
+    const roleOptions = Array.isArray(session.roleOptions) ? session.roleOptions : [];
+    const roleSwitcher = roleOptions.length > 1 ? `
+      <label class="profile-role-switcher" title="Alternar perfil de acesso">
+        <span>Perfil</span>
+        <select id="profile-role-select" aria-label="Perfil de acesso ativo">
+          ${roleOptions.map(function (item) {
+            return `<option value="${escapeHtml(item.role)}" ${item.role === session.role ? "selected" : ""}>${escapeHtml(item.roleLabel)}</option>`;
+          }).join("")}
+        </select>
+      </label>
+    ` : "";
 
     const sidebarSections = getNavItems().map((section) => {
       const items = section.items
@@ -1485,6 +1505,7 @@
               <strong>${pageContext.label}</strong>
             </div>
             <div class="action-row topbar-actions" style="margin-top: 0;">
+              ${roleSwitcher}
               <div class="notification-center" id="notification-center">
                 <button id="notification-toggle" class="btn btn-secondary notification-toggle" aria-label="Abrir notificações" aria-expanded="false">
                   <span class="notification-toggle-icon" aria-hidden="true">${getNavIcon("NO")}</span>
@@ -1571,6 +1592,7 @@
     const toggle = document.getElementById("menu-toggle");
     const collapseButton = document.getElementById("sidebar-collapse");
     const notificationCenter = document.getElementById("notification-center");
+    const profileRoleSelect = document.getElementById("profile-role-select");
     const notificationToggle = document.getElementById("notification-toggle");
     const notificationPanel = document.getElementById("notification-panel");
     const notificationList = document.getElementById("notification-list");
@@ -1613,6 +1635,22 @@
       await window.AgendaGamaAuth.clearSession();
       window.location.href = isOrganizationPage() ? "../../index.html" : "../index.html";
     }
+
+    profileRoleSelect?.addEventListener("change", async function () {
+      const previousRole = session.role;
+      const nextRole = String(profileRoleSelect.value || "");
+      if (!nextRole || nextRole === previousRole) return;
+
+      profileRoleSelect.disabled = true;
+      try {
+        await window.AgendaGamaAuth.switchProfileRole(nextRole);
+        window.location.href = isOrganizationPage() ? "../dashboard.html" : "dashboard.html";
+      } catch (error) {
+        profileRoleSelect.value = previousRole;
+        profileRoleSelect.disabled = false;
+        window.alert(error?.message || "Nao foi possivel trocar o perfil agora.");
+      }
+    });
 
     async function syncDevicePushSubscription() {
       const pwa = window.AgendaGamaPWA;

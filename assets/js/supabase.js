@@ -122,14 +122,27 @@
     const client = await getClient();
     if (!client || !userId) return null;
 
-    const { data, error } = await client
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    const [profileResult, rolesResult] = await Promise.all([
+      client
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle(),
+      client
+        .from("profile_roles")
+        .select("role, role_label")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })
+    ]);
 
-    if (error) throw error;
-    return data;
+    if (profileResult.error) throw profileResult.error;
+    if (rolesResult.error) throw rolesResult.error;
+    if (!profileResult.data) return null;
+
+    return {
+      ...profileResult.data,
+      roles: rolesResult.data || []
+    };
   }
 
   async function listProfiles() {
@@ -156,6 +169,27 @@
       .select("*")
       .single();
 
+    if (error) throw error;
+    return data;
+  }
+
+  async function setActiveProfileRole(role) {
+    const client = await getClient();
+    if (!client) throw new Error("Supabase nao configurado.");
+
+    const { data, error } = await client.rpc("set_active_profile_role", {
+      target_role: role
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async function completeFirstAccess() {
+    const client = await getClient();
+    if (!client) throw new Error("Supabase nao configurado.");
+
+    const { data, error } = await client.rpc("complete_first_access");
     if (error) throw error;
     return data;
   }
@@ -266,6 +300,8 @@
     getProfile,
     listProfiles,
     updateProfile,
+    setActiveProfileRole,
+    completeFirstAccess,
     fetchTable,
     fetchById,
     saveRow,

@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { corsHeaders } from "../_shared/cors.ts"
+import { canManageSchool, removeProfileRoleOrAccount } from "../_shared/profile-roles.ts"
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -42,7 +43,7 @@ Deno.serve(async (req) => {
       .eq("id", authData.user.id)
       .single()
 
-    if (!callerProfile || !["administrador", "funcionarios"].includes(callerProfile.role)) {
+    if (!callerProfile || !canManageSchool(callerProfile.role)) {
       return new Response(JSON.stringify({ error: "Forbidden." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -75,10 +76,11 @@ Deno.serve(async (req) => {
         .select("id")
         .eq("auth_user_id", record.auth_user_id)
 
-      if (!remainingRecords || !remainingRecords.length) {
-        await adminClient.from("profiles").delete().eq("id", record.auth_user_id)
-        await adminClient.auth.admin.deleteUser(record.auth_user_id)
-      }
+      await removeProfileRoleOrAccount(adminClient, {
+        userId: record.auth_user_id,
+        role: "funcionarios",
+        keepRole: Boolean(remainingRecords?.length)
+      })
     }
 
     return new Response(JSON.stringify({ ok: true }), {

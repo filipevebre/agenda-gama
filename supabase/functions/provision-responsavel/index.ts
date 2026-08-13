@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { corsHeaders } from "../_shared/cors.ts"
+import { canManageSchool, saveProfileRole } from "../_shared/profile-roles.ts"
 
 function normalizeEmail(email: string) {
   return String(email || "").trim().toLowerCase()
@@ -46,7 +47,7 @@ Deno.serve(async (req) => {
       .eq("id", authData.user.id)
       .single()
 
-    if (!callerProfile || !["administrador", "funcionarios"].includes(callerProfile.role)) {
+    if (!callerProfile || !canManageSchool(callerProfile.role)) {
       return new Response(JSON.stringify({ error: "Forbidden." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -92,13 +93,6 @@ Deno.serve(async (req) => {
       .eq("email", normalizedEmail)
       .maybeSingle()
 
-    if (existingProfile && existingProfile.role !== "responsaveis") {
-      return new Response(JSON.stringify({ error: "Este e-mail ja esta em uso em outro perfil do sistema." }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      })
-    }
-
     const { data: alunoRecord, error: alunoError } = await adminClient
       .from("alunos")
       .select("id, nome")
@@ -121,7 +115,11 @@ Deno.serve(async (req) => {
 
     let authUserId = previousRecord?.auth_user_id || existingProfile?.id || null
     let accessStatus = existingProfile?.first_access_pending ? "Convite enviado" : "Acesso ativo"
-    let notice = null
+    let notice = existingProfile ? {
+      email: normalizedEmail,
+      status: "Perfil vinculado",
+      mailActionText: "O perfil de responsavel foi adicionado a conta existente. A pessoa usara o mesmo e-mail e a mesma senha e podera alternar entre seus perfis no aplicativo."
+    } : null
 
     if (!authUserId) {
       const inviteResponse = await adminClient.auth.admin.inviteUserByEmail(normalizedEmail, {
@@ -157,18 +155,17 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { error: profileError } = await adminClient.from("profiles").upsert({
-      id: authUserId,
-      email: normalizedEmail,
-      full_name: record.nome,
-      role: "responsaveis",
-      role_label: "Responsavel",
-      can_approve: false,
-      first_access_pending: accessStatus === "Convite enviado"
-    })
-
-    if (profileError) {
-      return new Response(JSON.stringify({ error: profileError.message }), {
+    try {
+      await saveProfileRole(adminClient, {
+        userId: authUserId,
+        email: normalizedEmail,
+        fullName: record.nome,
+        role: "responsaveis",
+        existingProfile,
+        firstAccessPending: accessStatus === "Convite enviado"
+      })
+    } catch (error) {
+      return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Nao foi possivel vincular o perfil de responsavel." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       })

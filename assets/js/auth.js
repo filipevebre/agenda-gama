@@ -8,11 +8,38 @@
 
   const LOCAL_USERS_KEY = "agenda-gama-users";
   const LOCAL_SESSION_KEY = "agenda-gama-session";
+  const ROLE_LABELS = {
+    administrador: "Administrador",
+    funcionarios: "Funcionário",
+    professores: "Professor",
+    responsaveis: "Responsável"
+  };
   let cachedSession = null;
   let cachedUsers = [];
 
   function normalizeEmail(email) {
     return String(email || "").trim().toLowerCase();
+  }
+
+  function roleLabel(role) {
+    return ROLE_LABELS[role] || role;
+  }
+
+  function normalizeRoleOptions(profile, activeRole) {
+    const source = Array.isArray(profile?.roles) ? profile.roles : [];
+    const options = source.map(function (item) {
+      const role = typeof item === "string" ? item : item?.role;
+      return role ? {
+        role,
+        roleLabel: (typeof item === "object" && item?.role_label) || roleLabel(role)
+      } : null;
+    }).filter(Boolean);
+
+    if (activeRole && !options.some((item) => item.role === activeRole)) {
+      options.unshift({ role: activeRole, roleLabel: roleLabel(activeRole) });
+    }
+
+    return options;
   }
 
   function readJson(key, fallback) {
@@ -103,12 +130,15 @@
 
   function mapProfileToSession(user, profile) {
     const role = profile?.role || user.user_metadata?.role || "responsaveis";
+    const roleOptions = normalizeRoleOptions(profile, role);
     return {
       userId: user.id,
       name: profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email,
       email: normalizeEmail(profile?.email || user.email),
       role: role,
       roleLabel: profile?.role_label || user.user_metadata?.role_label || "Responsavel",
+      roles: roleOptions.map((item) => item.role),
+      roleOptions,
       canApprove: role !== "responsaveis" && Boolean(profile?.can_approve ?? user.user_metadata?.can_approve ?? false),
       firstAccessPending: Boolean(profile?.first_access_pending ?? user.user_metadata?.first_access_pending ?? false),
       authProvider: "supabase"
@@ -117,18 +147,30 @@
 
   function mapProfileToUser(profile) {
     const role = profile.role || "responsaveis";
+    const roleOptions = normalizeRoleOptions(profile, role);
     return {
       userId: profile.id,
       name: profile.full_name,
       email: normalizeEmail(profile.email),
       role: role,
       roleLabel: profile.role_label,
+      roles: roleOptions.map((item) => item.role),
+      roleOptions,
       canApprove: role !== "responsaveis" && Boolean(profile.can_approve),
       firstAccessPending: Boolean(profile.first_access_pending)
     };
   }
 
   function enforceSessionPermissions(session) {
+    if (session && !Array.isArray(session.roles)) {
+      const roleOptions = normalizeRoleOptions(session, session.role);
+      session = {
+        ...session,
+        roles: roleOptions.map((item) => item.role),
+        roleOptions
+      };
+    }
+
     if (!session || session.role !== "responsaveis" || !session.canApprove) {
       return session;
     }
@@ -202,6 +244,38 @@
 
   function getUsers() {
     return cachedUsers.length ? cachedUsers : getLocalUsers();
+  }
+
+  async function switchProfileRole(nextRole) {
+    const session = getSession();
+    if (!session || !session.roles?.includes(nextRole)) {
+      throw new Error("Este perfil nao esta vinculado a sua conta.");
+    }
+
+    if (session.role === nextRole) return session;
+
+    if (await isSupabaseEnabled()) {
+      await window.AgendaGamaSupabase.setActiveProfileRole(nextRole);
+      const authSession = await window.AgendaGamaSupabase.waitForSession(4000);
+      if (!authSession?.user) throw new Error("Nao foi possivel atualizar o perfil ativo.");
+      const profile = await window.AgendaGamaSupabase.getProfile(authSession.user.id);
+      cachedSession = mapProfileToSession(authSession.user, profile);
+      saveLocalSession(cachedSession);
+      return cachedSession;
+    }
+
+    const users = getLocalUsers();
+    const userIndex = users.findIndex((item) => normalizeEmail(item.email) === normalizeEmail(session.email));
+    if (userIndex === -1) throw new Error("Nao foi possivel localizar esta conta.");
+
+    users[userIndex] = {
+      ...users[userIndex],
+      role: nextRole,
+      roleLabel: roleLabel(nextRole)
+    };
+    writeJson(LOCAL_USERS_KEY, users);
+    saveLocalSession(users[userIndex]);
+    return getSession();
   }
 
   async function redirectAfterLogin(session) {
@@ -427,7 +501,7 @@
             return;
           }
 
-          await window.AgendaGamaSupabase.updateProfile(cachedSession.userId, { first_access_pending: false });
+          await window.AgendaGamaSupabase.completeFirstAccess();
 
           try {
             const [responsaveis, professores, equipe] = await Promise.all([
@@ -536,28 +610,31 @@
     const roleLabel = options?.roleLabel || "Responsavel";
     const accessTitle = options?.accessTitle || "Acesso preparado em modo local";
     const users = getLocalUsers();
-    const duplicateUser = users.find((user) => normalizeEmail(user.email) === normalizedEmail && user.role !== role);
-    if (duplicateUser) {
-      return { ok: false, error: "Este e-mail ja esta em uso em outro perfil do sistema." };
-    }
-
-    const existingRoleUser = users.find((user) => normalizeEmail(user.email) === normalizedEmail && user.role === role);
+    const existingUser = users.find((user) => normalizeEmail(user.email) === normalizedEmail);
     const temporaryPassword = `gama${Math.floor(100000 + Math.random() * 900000)}!`;
-    const nextUser = existingRoleUser || {
+    const nextUser = existingUser || {
       name: record.nome,
       email: normalizedEmail,
       role,
       roleLabel,
+      roles: [role],
+      roleOptions: [{ role, roleLabel }],
       canApprove: false,
       password: temporaryPassword,
       firstAccessPending: true
     };
+    const roleOptions = normalizeRoleOptions(nextUser, nextUser.role);
+    if (!roleOptions.some((item) => item.role === role)) {
+      roleOptions.push({ role, roleLabel });
+    }
 
     const nextUsers = users.filter((user) => normalizeEmail(user.email) !== normalizedEmail);
     nextUsers.unshift({
       ...nextUser,
       name: record.nome,
-      email: normalizedEmail
+      email: normalizedEmail,
+      roles: roleOptions.map((item) => item.role),
+      roleOptions
     });
     writeJson(LOCAL_USERS_KEY, nextUsers);
 
@@ -568,8 +645,10 @@
       notice: {
         to: normalizedEmail,
         deliveryStatus: "registrada-no-sistema",
-        title: accessTitle,
-        body: `Conta local criada para ${record.nome}. Senha temporaria: ${temporaryPassword}`
+        title: existingUser ? "Perfil vinculado a conta existente" : accessTitle,
+        body: existingUser
+          ? `O novo perfil foi vinculado a conta de ${record.nome}. O mesmo e-mail e a mesma senha continuam validos.`
+          : `Conta local criada para ${record.nome}. Senha temporaria: ${temporaryPassword}`
       }
     };
   }
@@ -606,11 +685,28 @@
     const stillInUse = (remainingRecords || []).some((item) => normalizeEmail(item.email) === normalizedEmail);
     if (stillInUse) return;
 
-    const nextUsers = getLocalUsers().filter((user) => !(user.role === role && normalizeEmail(user.email) === normalizedEmail));
+    const users = getLocalUsers();
+    const account = users.find((user) => normalizeEmail(user.email) === normalizedEmail);
+    if (!account) return;
+
+    const remainingRoles = normalizeRoleOptions(account, account.role).filter((item) => item.role !== role);
+    const nextUsers = users.filter((user) => normalizeEmail(user.email) !== normalizedEmail);
+    if (remainingRoles.length) {
+      const activeRole = account.role === role ? remainingRoles[0].role : account.role;
+      nextUsers.unshift({
+        ...account,
+        role: activeRole,
+        roleLabel: roleLabel(activeRole),
+        roles: remainingRoles.map((item) => item.role),
+        roleOptions: remainingRoles
+      });
+    }
     writeJson(LOCAL_USERS_KEY, nextUsers);
 
     if (cachedSession && normalizeEmail(cachedSession.email) === normalizedEmail) {
-      clearLocalSession();
+      const updatedAccount = nextUsers.find((user) => normalizeEmail(user.email) === normalizedEmail);
+      if (updatedAccount) saveLocalSession(updatedAccount);
+      else clearLocalSession();
     }
   }
 
@@ -633,6 +729,7 @@
     getSession,
     clearSession,
     getUsers,
+    switchProfileRole,
     provisionResponsibleAccess,
     removeResponsibleAccess,
     provisionProfessorAccess,
