@@ -93,10 +93,24 @@
       ? subjects.map(function (name) { return `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`; }).join("")
       : `<option value="">Nenhuma disciplina disponível</option>`;
 
-    const reportStudents = [...state.students].sort(function (a, b) { return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"); });
-    document.getElementById("report-student").innerHTML = reportStudents.length
+    const reportTurmas = [...new Set(state.students.map(function (student) { return student.turma; }).filter(Boolean))].sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    document.getElementById("report-turma").innerHTML = reportTurmas.length
+      ? reportTurmas.map(function (name) { return `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`; }).join("")
+      : `<option value="">Nenhuma turma disponível</option>`;
+    populateReportStudents();
+  }
+
+  function populateReportStudents() {
+    const studentSelect = document.getElementById("report-student");
+    const selectedStudent = studentSelect.value;
+    const selectedTurma = document.getElementById("report-turma").value;
+    const reportStudents = state.students.filter(function (student) {
+      return !isManager() || !selectedTurma || normalize(student.turma) === normalize(selectedTurma);
+    }).sort(function (a, b) { return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"); });
+    studentSelect.innerHTML = reportStudents.length
       ? reportStudents.map(function (student) { return `<option value="${escapeHtml(student.id)}">${escapeHtml(student.nome)}${student.turma ? ` · ${escapeHtml(student.turma)}` : ""}</option>`; }).join("")
       : `<option value="">Nenhum aluno disponível</option>`;
+    if (reportStudents.some(function (student) { return String(student.id) === String(selectedStudent); })) studentSelect.value = selectedStudent;
   }
 
   function contextValues() {
@@ -254,6 +268,37 @@
     return value === null || value === undefined ? "--" : Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
   }
 
+  function studentReportData(student, year) {
+    const records = state.grades.filter(function (grade) {
+      return String(grade.studentId) === String(student.id) && Number(grade.academicYear) === year && grade.status === "published";
+    });
+    const subjects = [...new Set(records.map(function (grade) { return grade.subject; }).filter(Boolean))].sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    const rows = subjects.map(function (subject) {
+      const subjectRecords = records.filter(function (grade) { return normalize(grade.subject) === normalize(subject); });
+      const periodValues = [1, 2, 3, 4].map(function (period) {
+        return effectiveGrade(subjectRecords.find(function (grade) { return Number(grade.period) === period; }));
+      });
+      const available = periodValues.filter(function (value) { return value !== null; });
+      const average = available.length ? available.reduce(function (sum, value) { return sum + value; }, 0) / available.length : null;
+      const absences = subjectRecords.reduce(function (sum, grade) { return sum + Number(grade.absences || 0); }, 0);
+      const situation = available.length < 4 ? "Em andamento" : average >= PASSING_GRADE ? "Aprovado" : "Recuperação";
+      return { subject: subject, periodValues: periodValues, average: average, absences: absences, situation: situation };
+    });
+    const notes = records.filter(function (grade) { return grade.note; }).sort(function (a, b) { return Number(a.period) - Number(b.period); });
+    return { student: student, year: year, subjects: subjects, rows: rows, notes: notes };
+  }
+
+  function reportRowsHtml(rows) {
+    return rows.map(function (row) {
+      const situationClass = row.situation === "Aprovado" ? "is-approved" : row.situation === "Recuperação" ? "is-recovery" : "";
+      return `<tr><th>${escapeHtml(row.subject)}</th>${row.periodValues.map(function (value) { return `<td>${escapeHtml(formatGrade(value))}</td>`; }).join("")}<td><strong>${escapeHtml(formatGrade(row.average))}</strong></td><td>${row.absences}</td><td><span class="report-situation ${situationClass}">${escapeHtml(row.situation)}</span></td></tr>`;
+    }).join("");
+  }
+
+  function issuedAtText() {
+    return `Emitido em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date())}`;
+  }
+
   function renderReport() {
     const studentId = document.getElementById("report-student").value;
     const year = Number(document.getElementById("report-year").value);
@@ -264,38 +309,78 @@
       return false;
     }
 
-    const records = state.grades.filter(function (grade) {
-      return String(grade.studentId) === String(student.id) && Number(grade.academicYear) === year && grade.status === "published";
-    });
-    const subjects = [...new Set(records.map(function (grade) { return grade.subject; }).filter(Boolean))].sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    const report = studentReportData(student, year);
     document.getElementById("report-year-label").textContent = year;
     document.getElementById("report-student-name").textContent = student.nome || "";
     document.getElementById("report-student-turma").textContent = student.turma || "--";
     document.getElementById("report-student-registration").textContent = student.matricula || "--";
-    document.getElementById("report-issued-at").textContent = `Emitido em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date())}`;
+    document.getElementById("report-issued-at").textContent = issuedAtText();
 
     const tableBody = document.getElementById("report-table-body");
-    tableBody.innerHTML = subjects.map(function (subject) {
-      const subjectRecords = records.filter(function (grade) { return normalize(grade.subject) === normalize(subject); });
-      const periodValues = [1, 2, 3, 4].map(function (period) {
-        return effectiveGrade(subjectRecords.find(function (grade) { return Number(grade.period) === period; }));
-      });
-      const available = periodValues.filter(function (value) { return value !== null; });
-      const average = available.length ? available.reduce(function (sum, value) { return sum + value; }, 0) / available.length : null;
-      const absences = subjectRecords.reduce(function (sum, grade) { return sum + Number(grade.absences || 0); }, 0);
-      const situation = available.length < 4 ? "Em andamento" : average >= PASSING_GRADE ? "Aprovado" : "Recuperação";
-      const situationClass = situation === "Aprovado" ? "is-approved" : situation === "Recuperação" ? "is-recovery" : "";
-      return `<tr><th>${escapeHtml(subject)}</th>${periodValues.map(function (value) { return `<td>${escapeHtml(formatGrade(value))}</td>`; }).join("")}<td><strong>${escapeHtml(formatGrade(average))}</strong></td><td>${absences}</td><td><span class="report-situation ${situationClass}">${escapeHtml(situation)}</span></td></tr>`;
-    }).join("");
+    tableBody.innerHTML = reportRowsHtml(report.rows);
 
-    const notes = records.filter(function (grade) { return grade.note; }).sort(function (a, b) { return Number(a.period) - Number(b.period); });
-    document.getElementById("report-notes").innerHTML = notes.length
-      ? `<h2>Observações</h2>${notes.map(function (grade) { return `<p><strong>${escapeHtml(grade.subject)} · ${grade.period}º bimestre:</strong> ${escapeHtml(grade.note)}</p>`; }).join("")}`
+    document.getElementById("report-notes").innerHTML = report.notes.length
+      ? `<h2>Observações</h2>${report.notes.map(function (grade) { return `<p><strong>${escapeHtml(grade.subject)} · ${grade.period}º bimestre:</strong> ${escapeHtml(grade.note)}</p>`; }).join("")}`
       : "";
-    document.getElementById("report-empty").hidden = subjects.length > 0;
+    document.getElementById("report-empty").hidden = report.subjects.length > 0;
     document.getElementById("report-sheet").hidden = false;
-    setFeedback("report-feedback", subjects.length ? "" : "Ainda não há notas publicadas neste ano.");
-    return subjects.length > 0;
+    setFeedback("report-feedback", report.subjects.length ? "" : "Ainda não há notas publicadas neste ano.");
+    return report.subjects.length > 0;
+  }
+
+  function compactReportHtml(student, year) {
+    const report = studentReportData(student, year);
+    const rows = report.rows.length ? reportRowsHtml(report.rows) : `<tr class="compact-report-empty"><td colspan="8">Nenhuma nota publicada neste ano.</td></tr>`;
+    return `
+      <article class="compact-report-card">
+        <header class="compact-report-header">
+          <img src="../assets/images/logo-gama.png" alt="Agenda Gama">
+          <div><strong>Agenda Gama</strong><span>Boletim escolar</span></div>
+          <b>${year}</b>
+        </header>
+        <div class="compact-report-student">
+          <span><small>Aluno</small><strong>${escapeHtml(student.nome || "")}</strong></span>
+          <span><small>Turma</small><strong>${escapeHtml(student.turma || "--")}</strong></span>
+          <span><small>Matrícula</small><strong>${escapeHtml(student.matricula || "--")}</strong></span>
+        </div>
+        <table class="compact-report-table">
+          <thead><tr><th>Disciplina</th><th>1º</th><th>2º</th><th>3º</th><th>4º</th><th>Média</th><th>Faltas</th><th>Situação</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <footer class="compact-report-footer">
+          <p><strong>Critério:</strong> média anual igual ou superior a 6,0.</p>
+          <div><span>Responsável</span><span>Professor(a)</span><span>Direção</span></div>
+          <small>${escapeHtml(issuedAtText())}</small>
+        </footer>
+      </article>`;
+  }
+
+  function preparePrint(mode) {
+    document.body.classList.remove("grades-printing-single", "grades-printing-batch");
+    document.body.classList.add(mode === "batch" ? "grades-printing-batch" : "grades-printing-single");
+    const cleanup = function () {
+      document.body.classList.remove("grades-printing-single", "grades-printing-batch");
+      document.getElementById("report-print-batch").hidden = true;
+    };
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.print();
+  }
+
+  function printClassReports() {
+    const turma = document.getElementById("report-turma").value;
+    const year = Number(document.getElementById("report-year").value);
+    const students = state.students.filter(function (student) { return normalize(student.turma) === normalize(turma); }).sort(function (a, b) {
+      return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR");
+    });
+    if (!students.length) {
+      setFeedback("report-feedback", "Nenhum aluno encontrado nesta turma.", "error");
+      return;
+    }
+    const batch = document.getElementById("report-print-batch");
+    batch.innerHTML = students.map(function (student) { return compactReportHtml(student, year); }).join("");
+    batch.hidden = false;
+    setFeedback("report-feedback", `${students.length} boletim(ns) preparado(s). A impressão será organizada com três por folha.`, "success");
+    preparePrint("batch");
   }
 
   function showView(view) {
@@ -314,9 +399,11 @@
     document.getElementById("report-open").addEventListener("click", renderReport);
     document.getElementById("report-student").addEventListener("change", renderReport);
     document.getElementById("report-year").addEventListener("change", renderReport);
+    document.getElementById("report-turma").addEventListener("change", function () { populateReportStudents(); renderReport(); });
     document.getElementById("report-print").addEventListener("click", function () {
-      if (renderReport()) window.print();
+      if (renderReport()) preparePrint("single");
     });
+    document.getElementById("report-print-class").addEventListener("click", printClassReports);
     document.querySelectorAll("[data-grades-view]").forEach(function (button) { button.addEventListener("click", function () { showView(button.dataset.gradesView); }); });
   }
 
@@ -331,6 +418,8 @@
     document.getElementById("grades-description").textContent = manager ? "Lance notas por turma e gere boletins prontos para impressão." : "Consulte e imprima os boletins dos seus filhos.";
     document.getElementById("grades-tabs").hidden = !manager;
     document.getElementById("grades-new-subject").hidden = !canManageSubjects();
+    document.getElementById("report-turma-field").hidden = !manager;
+    document.getElementById("report-print-class").hidden = !manager;
     try {
       const results = await Promise.all([safeList("alunos"), safeList("turmas"), safeList("disciplinas"), safeList("professores"), safeList("grades")]);
       state.students = results[0] || [];

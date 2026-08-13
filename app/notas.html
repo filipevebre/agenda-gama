@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260720-3">
-  <link rel="stylesheet" href="../assets/css/grades.css?v=20260727-1">
+  <link rel="stylesheet" href="../assets/css/grades.css?v=20260813-2">
 </head>
 <body data-page="notas" data-roles="all">
   <div id="app-shell"></div>
@@ -57,10 +57,12 @@
     <section id="grades-report-view" class="grades-view" hidden>
       <article class="panel grades-report-controls no-print">
         <div class="grades-report-toolbar">
+          <label id="report-turma-field" class="field" hidden><span>Turma para impressão</span><select id="report-turma"></select></label>
           <label class="field"><span>Aluno</span><select id="report-student"></select></label>
           <label class="field"><span>Ano letivo</span><select id="report-year"></select></label>
           <button id="report-open" class="btn btn-secondary" type="button">Gerar boletim</button>
-          <button id="report-print" class="btn btn-primary" type="button">Imprimir boletim</button>
+          <button id="report-print" class="btn btn-secondary" type="button">Imprimir aluno</button>
+          <button id="report-print-class" class="btn btn-primary" type="button" hidden>Imprimir turma · 3 por folha</button>
         </div>
         <p id="report-feedback" class="feedback" role="status" aria-live="polite"></p>
       </article>
@@ -90,6 +92,7 @@
           <small id="report-issued-at"></small>
         </footer>
       </article>
+      <section id="report-print-batch" class="grades-print-batch" hidden aria-label="Boletins da turma para impressão"></section>
     </section>
   </template>
   <script src="../assets/js/config.js?v=20260415-4"></script>
@@ -97,7 +100,7 @@
   <script src="../assets/js/auth.js?v=20260813-1"></script>
   <script src="../assets/js/data-store.js?v=20260720-2"></script>
   <script src="../assets/js/app.js?v=20260813-1"></script>
-  <script src="../assets/js/gradebook.js?v=20260727-1"></script>
+  <script src="../assets/js/gradebook.js?v=20260813-2"></script>
   <script>window.AgendaGamaApp.mountShell(); window.AgendaGamaGradebook.mount();</script>
   <script src="/assets/js/pwa.js?v=20260716-1"></script>
 </body>
