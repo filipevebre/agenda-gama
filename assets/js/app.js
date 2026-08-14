@@ -1241,11 +1241,13 @@
   function openNotificationDestination(href) {
     if (!href) return;
 
+    const localHref = window.AgendaGamaPWA?.normalizeAppHref?.(href) || href;
+
     let targetUrl = null;
     try {
-      targetUrl = new URL(href, window.location.href);
+      targetUrl = new URL(localHref, window.location.href);
     } catch (error) {
-      window.location.href = href;
+      window.location.href = localHref;
       return;
     }
 
@@ -1256,7 +1258,7 @@
       return;
     }
 
-    window.location.href = href;
+    window.location.href = localHref;
   }
 
   function isOrganizationPage() {

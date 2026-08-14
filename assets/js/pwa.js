@@ -6,6 +6,7 @@
   let activeNativePushToken = "";
   let nativePushListenersPromise = null;
   let nativePushRegistrationPromise = null;
+  let nativeAppLinksPromise = null;
   let nativeRegistrationWaiter = null;
   let nativeNotificationPermission = "default";
 
@@ -19,6 +20,11 @@
   function getNativePushPlugin() {
     if (!isNativePlatform()) return null;
     return window.Capacitor?.Plugins?.PushNotifications || null;
+  }
+
+  function getNativeAppPlugin() {
+    if (!isNativePlatform()) return null;
+    return window.Capacitor?.Plugins?.App || null;
   }
 
   function isStandaloneMode() {
@@ -135,19 +141,58 @@
     return true;
   }
 
-  function openNativeNotificationDestination(href) {
+  function normalizeAppHref(href) {
     const normalizedHref = String(href || "").trim();
-    if (!normalizedHref) return;
+    if (!normalizedHref) return "";
 
     try {
       const siteUrl = String(window.AgendaGamaConfig?.siteUrl || "https://agenda-gama.vercel.app");
-      const target = new URL(normalizedHref, siteUrl);
+      const customScheme = "br.com.agendagama.app://";
+      const targetValue = normalizedHref.startsWith(customScheme)
+        ? `${siteUrl.replace(/\/$/, "")}/${normalizedHref.slice(customScheme.length).replace(/^\//, "")}`
+        : normalizedHref;
+      const target = new URL(targetValue, siteUrl);
       const expectedOrigin = new URL(siteUrl).origin;
-      if (target.origin !== expectedOrigin) return;
-      window.location.href = `${target.pathname}${target.search}${target.hash}`;
+      if (target.origin !== expectedOrigin) return "";
+      return `${target.pathname}${target.search}${target.hash}`;
     } catch (error) {
       console.warn("[Agenda Gama] Destino invalido recebido na notificacao nativa.", error);
+      return "";
     }
+  }
+
+  function openNativeNotificationDestination(href) {
+    const localHref = normalizeAppHref(href);
+    if (!localHref) return;
+    window.location.href = localHref;
+  }
+
+  async function ensureNativeAppLinks() {
+    const plugin = getNativeAppPlugin();
+    if (!plugin) return false;
+    if (nativeAppLinksPromise) return nativeAppLinksPromise;
+
+    nativeAppLinksPromise = (async function () {
+      await plugin.addListener("appUrlOpen", function (event) {
+        openNativeNotificationDestination(event?.url || "");
+      });
+
+      const launch = await plugin.getLaunchUrl().catch(function () {
+        return null;
+      });
+      if (launch?.url) {
+        window.setTimeout(function () {
+          openNativeNotificationDestination(launch.url);
+        }, 0);
+      }
+      return true;
+    })().catch(function (error) {
+      nativeAppLinksPromise = null;
+      console.warn("[Agenda Gama] Nao foi possivel preparar os links internos do app.", error);
+      return false;
+    });
+
+    return nativeAppLinksPromise;
   }
 
   async function ensureNativePushListeners() {
@@ -183,11 +228,13 @@
       });
 
       await plugin.addListener("pushNotificationActionPerformed", function (action) {
-        const data = action?.notification?.data || {};
+        const notification = action?.notification || {};
+        const data = notification.data || {};
+        const href = data.href || data.url || notification.link || "";
         window.dispatchEvent(new CustomEvent("agenda-native-push-opened", {
           detail: data
         }));
-        openNativeNotificationDestination(data.href || data.url || "");
+        openNativeNotificationDestination(href);
       });
 
       return true;
@@ -576,12 +623,16 @@
     syncPushSubscription: syncPushSubscription,
     removePushSubscription: removePushSubscription,
     hasPushSubscription: hasPushSubscription,
-    supportsPushNotifications: supportsPushNotifications
+    supportsPushNotifications: supportsPushNotifications,
+    normalizeAppHref: normalizeAppHref
   };
 
   if (getNativePushPlugin()) {
     void ensureNativePushListeners();
     void refreshNativeNotificationPermission();
+  }
+  if (getNativeAppPlugin()) {
+    void ensureNativeAppLinks();
   }
 
   window.dispatchEvent(new CustomEvent("agenda-pwa-ready"));

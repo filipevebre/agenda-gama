@@ -172,6 +172,18 @@ export function buildAppUrl(pathOrHref: string) {
   return new URL(String(pathOrHref || "/app/dashboard.html"), `${baseUrl.replace(/\/$/, "")}/`).toString()
 }
 
+export function buildNativeAppPath(pathOrHref: string) {
+  try {
+    const target = new URL(buildAppUrl(pathOrHref), "https://agenda-gama.vercel.app")
+    if (!target.pathname.startsWith("/app/")) {
+      return "/app/dashboard.html"
+    }
+    return `${target.pathname}${target.search}${target.hash}`
+  } catch {
+    return "/app/dashboard.html"
+  }
+}
+
 async function sendWebPushToUserIds(
   adminClient: ReturnType<typeof createAdminClient>,
   userIds: string[],
@@ -385,7 +397,7 @@ async function sendNativePushToUserIds(
               id: String(payload.id || ""),
               kind: String(payload.kind || ""),
               tag: String(payload.tag || payload.id || `agenda-gama-${Date.now()}`),
-              href: String(payload.href || "/app/dashboard.html")
+              href: buildNativeAppPath(payload.href)
             },
             android: {
               priority: "HIGH",

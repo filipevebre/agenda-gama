@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.com.agendagama.app",
+      "sha256_cert_fingerprints": [
+        "18:CD:6F:37:92:9D:FF:4C:AB:BF:A5:FD:73:64:6C:12:54:C4:0A:7B:C6:2D:48:D1:08:8A:C0:BA:6D:01:B6:AB"
+      ]
+    }
+  }
+]
