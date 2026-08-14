@@ -19,4 +19,4 @@ for (const directory of directoriesToCopy) {
   });
 }
 
-console.log("Arquivos do Agenda Gama preparados para o aplicativo Android.");
+console.log("Arquivos do Agenda Gama preparados para os aplicativos Android e iOS.");
