@@ -1,0 +1,57 @@
+workflows:
+  agenda-gama-ios-testflight:
+    name: Agenda Gama iOS - TestFlight
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    integrations:
+      app_store_connect: agenda-gama-apple
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: br.com.agendagama.app
+      vars:
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+      node: 22
+      xcode: latest
+
+    cache:
+      cache_paths:
+        - ~/.npm
+        - ~/Library/Caches/org.swift.swiftpm
+        - $CM_BUILD_DIR/SourcePackages
+
+    scripts:
+      - name: Instalar dependencias
+        script: npm ci
+
+      - name: Sincronizar o Agenda Gama com o iOS
+        script: npm run ios:sync
+
+      - name: Aplicar assinatura da Apple
+        script: xcode-project use-profiles --project "$CM_BUILD_DIR/$XCODE_PROJECT"
+
+      - name: Atualizar numero da compilacao
+        script: |
+          cd "$CM_BUILD_DIR/ios/App"
+          agvtool new-version -all "$BUILD_NUMBER"
+
+      - name: Gerar o IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --archive-flags "-clonedSourcePackagesDirPath $CM_BUILD_DIR/SourcePackages"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
