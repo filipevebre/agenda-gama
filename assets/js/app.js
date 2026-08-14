@@ -1971,6 +1971,10 @@
       refreshShellNotifications();
       refreshShellNoticeMarquee();
     });
+    window.addEventListener("agenda-native-push-received", function () {
+      refreshShellNotifications();
+      refreshShellNoticeMarquee();
+    });
 
     if (activeNotificationTimer) {
       window.clearInterval(activeNotificationTimer);

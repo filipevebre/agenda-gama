@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "786929631795",
+    "project_id": "agenda-gama-android",
+    "storage_bucket": "agenda-gama-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:786929631795:android:3ab5d415991067d2809946",
+        "android_client_info": {
+          "package_name": "br.com.agendagama.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhAnFWqlftbB5-fbTGwA56iXzYGCiVrl0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

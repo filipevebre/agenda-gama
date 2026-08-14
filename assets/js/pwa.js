@@ -3,9 +3,28 @@
   let serviceWorkerRegistrationPromise = null;
   let pushConfigPromise = null;
   let activePushEndpoint = "";
+  let activeNativePushToken = "";
+  let nativePushListenersPromise = null;
+  let nativePushRegistrationPromise = null;
+  let nativeRegistrationWaiter = null;
+  let nativeNotificationPermission = "default";
+
+  const NATIVE_TOKEN_KEY = "agenda-gama-native-push-token";
+  const NATIVE_CHANNEL_ID = "agenda_gama_alerts";
+
+  function isNativePlatform() {
+    return Boolean(window.Capacitor?.isNativePlatform?.());
+  }
+
+  function getNativePushPlugin() {
+    if (!isNativePlatform()) return null;
+    return window.Capacitor?.Plugins?.PushNotifications || null;
+  }
 
   function isStandaloneMode() {
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    return isNativePlatform()
+      || window.matchMedia("(display-mode: standalone)").matches
+      || window.navigator.standalone === true;
   }
 
   function updateStandaloneClass() {
@@ -16,6 +35,7 @@
   let deferredPrompt = null;
 
   function supportsPushNotifications() {
+    if (getNativePushPlugin()) return true;
     return window.isSecureContext
       && "serviceWorker" in navigator
       && "PushManager" in window
@@ -51,6 +71,11 @@
   }
 
   function buildDeviceLabel() {
+    if (isNativePlatform()) {
+      const platform = String(window.Capacitor?.getPlatform?.() || "app");
+      return `Agenda Gama - ${platform}`;
+    }
+
     const platform = String(window.navigator.platform || "");
     const standalone = isStandaloneMode() ? "App instalado" : "Navegador";
     return [platform, standalone].filter(Boolean).join(" - ") || standalone;
@@ -65,11 +90,183 @@
   }
 
   function getNotificationPermission() {
+    if (getNativePushPlugin()) {
+      return nativeNotificationPermission;
+    }
+
     if (typeof window.Notification === "undefined") {
       return "unsupported";
     }
 
     return window.Notification.permission || "default";
+  }
+
+  function normalizeNativePermission(permission) {
+    if (permission === "granted" || permission === "denied") return permission;
+    return "default";
+  }
+
+  async function refreshNativeNotificationPermission() {
+    const plugin = getNativePushPlugin();
+    if (!plugin) return getNotificationPermission();
+
+    try {
+      const status = await plugin.checkPermissions();
+      nativeNotificationPermission = normalizeNativePermission(status?.receive);
+    } catch (error) {
+      console.warn("[Agenda Gama] Nao foi possivel consultar a permissao nativa de push.", error);
+      nativeNotificationPermission = "default";
+    }
+
+    dispatchNotificationPermissionChanged();
+    return nativeNotificationPermission;
+  }
+
+  async function syncNativeTokenToServer(token) {
+    const normalizedToken = String(token || "").trim();
+    if (!normalizedToken || !window.AgendaGamaSupabase?.invokeFunction) return false;
+
+    await window.AgendaGamaSupabase.invokeFunction("upsert-native-push-token", {
+      token: normalizedToken,
+      platform: String(window.Capacitor?.getPlatform?.() || "android"),
+      deviceLabel: buildDeviceLabel(),
+      userAgent: window.navigator.userAgent || ""
+    });
+    return true;
+  }
+
+  function openNativeNotificationDestination(href) {
+    const normalizedHref = String(href || "").trim();
+    if (!normalizedHref) return;
+
+    try {
+      const siteUrl = String(window.AgendaGamaConfig?.siteUrl || "https://agenda-gama.vercel.app");
+      const target = new URL(normalizedHref, siteUrl);
+      const expectedOrigin = new URL(siteUrl).origin;
+      if (target.origin !== expectedOrigin) return;
+      window.location.href = `${target.pathname}${target.search}${target.hash}`;
+    } catch (error) {
+      console.warn("[Agenda Gama] Destino invalido recebido na notificacao nativa.", error);
+    }
+  }
+
+  async function ensureNativePushListeners() {
+    const plugin = getNativePushPlugin();
+    if (!plugin) return false;
+    if (nativePushListenersPromise) return nativePushListenersPromise;
+
+    nativePushListenersPromise = (async function () {
+      activeNativePushToken = String(window.localStorage.getItem(NATIVE_TOKEN_KEY) || "");
+
+      await plugin.addListener("registration", function (token) {
+        activeNativePushToken = String(token?.value || "").trim();
+        if (activeNativePushToken) {
+          window.localStorage.setItem(NATIVE_TOKEN_KEY, activeNativePushToken);
+          void syncNativeTokenToServer(activeNativePushToken).catch(function (error) {
+            console.warn("[Agenda Gama] Nao foi possivel salvar o aparelho para push nativo.", error);
+          });
+        }
+        nativeRegistrationWaiter?.resolve?.(activeNativePushToken);
+        nativeRegistrationWaiter = null;
+      });
+
+      await plugin.addListener("registrationError", function (error) {
+        console.error("[Agenda Gama] O Firebase nao registrou este aparelho.", error);
+        nativeRegistrationWaiter?.reject?.(new Error(String(error?.error || "Falha no registro do Firebase.")));
+        nativeRegistrationWaiter = null;
+      });
+
+      await plugin.addListener("pushNotificationReceived", function (notification) {
+        window.dispatchEvent(new CustomEvent("agenda-native-push-received", {
+          detail: notification
+        }));
+      });
+
+      await plugin.addListener("pushNotificationActionPerformed", function (action) {
+        const data = action?.notification?.data || {};
+        window.dispatchEvent(new CustomEvent("agenda-native-push-opened", {
+          detail: data
+        }));
+        openNativeNotificationDestination(data.href || data.url || "");
+      });
+
+      return true;
+    })().catch(function (error) {
+      nativePushListenersPromise = null;
+      console.error("[Agenda Gama] Nao foi possivel iniciar as notificacoes nativas.", error);
+      return false;
+    });
+
+    return nativePushListenersPromise;
+  }
+
+  async function createNativeNotificationChannel() {
+    const plugin = getNativePushPlugin();
+    if (!plugin || String(window.Capacitor?.getPlatform?.() || "") !== "android") return;
+
+    await plugin.createChannel({
+      id: NATIVE_CHANNEL_ID,
+      name: "Avisos do Agenda Gama",
+      description: "Mensagens, diario, comunicados e outros avisos da escola.",
+      importance: 5,
+      visibility: 1,
+      sound: "default",
+      vibration: true,
+      lights: true,
+      lightColor: "#0B967A"
+    });
+  }
+
+  async function syncNativePushRegistration() {
+    const plugin = getNativePushPlugin();
+    if (!plugin) return null;
+    if (nativePushRegistrationPromise) return nativePushRegistrationPromise;
+
+    nativePushRegistrationPromise = (async function () {
+      await ensureNativePushListeners();
+
+      const permission = await refreshNativeNotificationPermission();
+      if (permission !== "granted") return null;
+
+      try {
+        await createNativeNotificationChannel();
+      } catch (error) {
+        console.warn("[Agenda Gama] Nao foi possivel criar o canal nativo de alertas.", error);
+      }
+
+      const tokenPromise = new Promise(function (resolve, reject) {
+        const timer = window.setTimeout(function () {
+          nativeRegistrationWaiter = null;
+          if (activeNativePushToken) {
+            resolve(activeNativePushToken);
+            return;
+          }
+          reject(new Error("O Firebase nao devolveu o token deste aparelho."));
+        }, 15000);
+
+        nativeRegistrationWaiter = {
+          resolve: function (token) {
+            window.clearTimeout(timer);
+            resolve(token);
+          },
+          reject: function (error) {
+            window.clearTimeout(timer);
+            reject(error);
+          }
+        };
+      });
+
+      await plugin.register();
+      const token = await tokenPromise;
+      await syncNativeTokenToServer(token);
+      return { token };
+    })();
+
+    try {
+      return await nativePushRegistrationPromise;
+    } finally {
+      nativePushRegistrationPromise = null;
+    }
   }
 
   async function ensureServiceWorkerRegistration() {
@@ -134,6 +331,18 @@
   }
 
   async function requestNotificationPermission() {
+    const nativePlugin = getNativePushPlugin();
+    if (nativePlugin) {
+      await ensureNativePushListeners();
+      let status = await nativePlugin.checkPermissions();
+      if (status?.receive === "prompt" || status?.receive === "prompt-with-rationale") {
+        status = await nativePlugin.requestPermissions();
+      }
+      nativeNotificationPermission = normalizeNativePermission(status?.receive);
+      dispatchNotificationPermissionChanged();
+      return nativeNotificationPermission;
+    }
+
     if (!supportsPushNotifications()) {
       return "unsupported";
     }
@@ -155,6 +364,10 @@
   }
 
   async function syncPushSubscription() {
+    if (getNativePushPlugin()) {
+      return syncNativePushRegistration();
+    }
+
     if (!supportsPushNotifications() || getNotificationPermission() !== "granted") {
       return null;
     }
@@ -214,6 +427,27 @@
   }
 
   async function removePushSubscription(options) {
+    const nativePlugin = getNativePushPlugin();
+    if (nativePlugin) {
+      await ensureNativePushListeners();
+      const token = String(options?.token || activeNativePushToken || window.localStorage.getItem(NATIVE_TOKEN_KEY) || "").trim();
+      if (window.AgendaGamaSupabase?.invokeFunction && token) {
+        try {
+          await window.AgendaGamaSupabase.invokeFunction("remove-native-push-token", { token });
+        } catch (error) {
+          console.warn("[Agenda Gama] Nao foi possivel remover o aparelho do push nativo.", error);
+        }
+      }
+      if (options?.unsubscribe !== false) {
+        await nativePlugin.unregister().catch(function (error) {
+          console.warn("[Agenda Gama] Nao foi possivel cancelar o registro nativo.", error);
+        });
+        activeNativePushToken = "";
+        window.localStorage.removeItem(NATIVE_TOKEN_KEY);
+      }
+      return true;
+    }
+
     const registration = await ensureServiceWorkerRegistration();
     const subscription = registration?.pushManager
       ? await registration.pushManager.getSubscription()
@@ -243,6 +477,12 @@
   }
 
   async function hasPushSubscription() {
+    if (getNativePushPlugin()) {
+      await ensureNativePushListeners();
+      const permission = await refreshNativeNotificationPermission();
+      return permission === "granted" && Boolean(activeNativePushToken || window.localStorage.getItem(NATIVE_TOKEN_KEY));
+    }
+
     const registration = await ensureServiceWorkerRegistration();
     if (!registration?.pushManager) {
       return false;
@@ -254,6 +494,10 @@
   }
 
   async function showNotification(options) {
+    if (getNativePushPlugin()) {
+      return true;
+    }
+
     if (getNotificationPermission() !== "granted") {
       return false;
     }
@@ -300,6 +544,7 @@
   }
 
   function isIosBrowser() {
+    if (isNativePlatform()) return false;
     const ua = window.navigator.userAgent || "";
     return /iphone|ipad|ipod/i.test(ua);
   }
@@ -333,6 +578,11 @@
     hasPushSubscription: hasPushSubscription,
     supportsPushNotifications: supportsPushNotifications
   };
+
+  if (getNativePushPlugin()) {
+    void ensureNativePushListeners();
+    void refreshNativeNotificationPermission();
+  }
 
   window.dispatchEvent(new CustomEvent("agenda-pwa-ready"));
   dispatchNotificationPermissionChanged();

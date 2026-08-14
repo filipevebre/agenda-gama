@@ -10,5 +10,10 @@
   "android": {
     "backgroundColor": "#f4f7fb",
     "allowMixedContent": false
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["sound", "alert"]
+    }
   }
 }
