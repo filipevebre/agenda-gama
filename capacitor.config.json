@@ -1,0 +1,14 @@
+{
+  "appId": "br.com.agendagama.app",
+  "appName": "Agenda Gama",
+  "webDir": "www",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": {
+    "backgroundColor": "#f4f7fb",
+    "allowMixedContent": false
+  }
+}

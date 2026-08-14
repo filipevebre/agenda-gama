@@ -1,0 +1,23 @@
+{
+  "name": "agenda-gama",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agenda Gama - aplicativo escolar para web e Android",
+  "scripts": {
+    "validate": "node tools/validate-project.mjs",
+    "android:prepare": "node tools/prepare-android.mjs",
+    "android:sync": "npm run android:prepare && cap sync android",
+    "android:open": "npm run android:sync && cap open android",
+    "android:apk": "npm run android:sync && cd android && gradlew.bat assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.0",
+    "@capacitor/core": "8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

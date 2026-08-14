@@ -1,11 +1,13 @@
 .agents/
 .git/
+android/
 arquivo-gama/
 arquivo-gama-hosted/
 chaveamento-campeonato/
 docs/
 fluent-minds-independent/
 output/
+resources/
 supabase/
 tmp/
 tools/
