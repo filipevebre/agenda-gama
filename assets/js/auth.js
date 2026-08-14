@@ -1,10 +1,7 @@
 (function () {
-  const LOCAL_SYSTEM_USERS = [
-    { name: "Amanda Gama", email: "admin@gama.edu.br", password: "123456", role: "administrador", roleLabel: "Administrador", canApprove: true, firstAccessPending: false },
-    { name: "Carlos Secretaria", email: "funcionario@gama.edu.br", password: "123456", role: "funcionarios", roleLabel: "Funcionario", canApprove: false, firstAccessPending: false },
-    { name: "Prof. Helena Souza", email: "professor@gama.edu.br", password: "123456", role: "professores", roleLabel: "Professor", canApprove: false, firstAccessPending: false },
-    { name: "Mariana Alves", email: "responsavel@gama.edu.br", password: "123456", role: "responsaveis", roleLabel: "Responsavel", canApprove: false, firstAccessPending: false }
-  ];
+  const LOCAL_SYSTEM_USERS = Array.isArray(window.AgendaGamaConfig?.demoUsers)
+    ? window.AgendaGamaConfig.demoUsers
+    : [];
 
   const LOCAL_USERS_KEY = "agenda-gama-users";
   const LOCAL_SESSION_KEY = "agenda-gama-session";
@@ -182,6 +179,10 @@
     return Boolean(window.AgendaGamaSupabase) && await window.AgendaGamaSupabase.isConfigured();
   }
 
+  function isDemoModeEnabled() {
+    return window.AgendaGamaConfig?.demoMode === true && LOCAL_SYSTEM_USERS.length > 0;
+  }
+
   async function refreshSupabaseUsers() {
     if (!(await isSupabaseEnabled())) {
       cachedUsers = getLocalUsers();
@@ -288,12 +289,14 @@
 
     if (helperText) {
       helperText.textContent = useSupabase
-        ? "Entre com a conta criada no Supabase. Responsaveis, professores e funcionarios cadastrados recebem convite por e-mail e definem a senha no primeiro acesso."
-        : "Use um dos perfis demonstrativos ou entre com o e-mail do responsavel, professor ou funcionario cadastrado pela secretaria.";
+        ? "Entre com a conta criada pela escola. No primeiro acesso, use o convite recebido por e-mail para definir sua senha."
+        : isDemoModeEnabled()
+          ? "Ambiente demonstrativo local."
+          : "O serviço de acesso está temporariamente indisponível. Tente novamente em alguns instantes.";
     }
 
     if (demoUsers) {
-      demoUsers.hidden = useSupabase;
+      demoUsers.hidden = useSupabase || !isDemoModeEnabled();
     }
   }
 
@@ -410,6 +413,15 @@
 
     if (supabaseEnabled) {
       await mountSupabaseLogin(form, feedback);
+      return;
+    }
+
+    if (!isDemoModeEnabled()) {
+      feedback.textContent = "Não foi possível conectar ao serviço de acesso. Atualize a página e tente novamente.";
+      feedback.className = "feedback error";
+      Array.from(form.elements).forEach(function (element) {
+        element.disabled = true;
+      });
       return;
     }
 

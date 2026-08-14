@@ -10,7 +10,7 @@ export function profileRoleLabel(role: ProfileRole) {
 }
 
 export function canManageSchool(role: string) {
-  return role === "administrador" || role === "funcionarios"
+  return role === "administrador"
 }
 
 export async function saveProfileRole(

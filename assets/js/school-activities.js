@@ -83,8 +83,8 @@
   }
 
   async function buildAttachment(file) {
-    if (file.size > 2 * 1024 * 1024) {
-      throw new Error(`${file.name} ultrapassa o limite de 2 MB.`);
+    if (file.size > 1024 * 1024) {
+      throw new Error(`${file.name} ultrapassa o limite de 1 MB.`);
     }
     return {
       id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `file-${Date.now()}`,

@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-gama-pwa-v41";
+const CACHE_NAME = "agenda-gama-pwa-v42";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -65,7 +65,9 @@ const PRECACHE_URLS = [
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(PRECACHE_URLS);
+      return Promise.allSettled(PRECACHE_URLS.map(function (url) {
+        return cache.add(url);
+      }));
     }).then(function () {
       return self.skipWaiting();
     })

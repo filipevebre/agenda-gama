@@ -242,6 +242,22 @@
     return response.data;
   }
 
+  async function saveRows(tableName, rows) {
+    const client = await getClient();
+    if (!client) throw new Error("Supabase nao configurado.");
+
+    const payload = (rows || []).map(cleanRow);
+    if (!payload.length) return [];
+
+    const { data, error } = await client
+      .from(tableName)
+      .upsert(payload, { onConflict: "id" })
+      .select("*");
+
+    if (error) throw error;
+    return data || [];
+  }
+
   async function deleteRow(tableName, id) {
     const client = await getClient();
     if (!client) throw new Error("Supabase nao configurado.");
@@ -305,6 +321,7 @@
     fetchTable,
     fetchById,
     saveRow,
+    saveRows,
     deleteRow,
     invokeFunction,
     getSiteUrl

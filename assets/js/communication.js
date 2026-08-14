@@ -1177,8 +1177,8 @@
   function buildAttachmentList(files) {
     return Promise.all((files || []).map(function (file) {
       return new Promise(function (resolve, reject) {
-        if (file.size > 1024 * 1024 * 2) {
-          reject(new Error(`O arquivo ${file.name} excede o limite de 2 MB.`));
+        if (file.size > 1024 * 1024) {
+          reject(new Error(`O arquivo ${file.name} excede o limite de 1 MB.`));
           return;
         }
 
@@ -2351,12 +2351,22 @@
         const message = {
           canal_id: getPersistedChannelId(thread.channelId),
           canal_nome: thread.channelName,
+          sender_user_id: session.userId || null,
           sender_name: session.name,
           sender_email: session.email,
           sender_role: session.role,
           recipient_type: options.internalOnly ? "interno" : options.recipientType,
           recipients: options.recipients,
+          recipient_emails: (options.recipients || []).filter(function (recipient) {
+            return String(recipient || "").includes("@");
+          }).map(normalizeEmail),
           subject: thread.subject || thread.channelName,
+          thread_key: thread.key,
+          responsible_email: normalizeEmail(thread.responsibleEmail || (session.role === "responsaveis" ? session.email : "")) || null,
+          student_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(thread.studentId || "")) ? thread.studentId : null,
+          turma: thread.turma || "",
+          sector: thread.sector || "",
+          internal_only: Boolean(options.internalOnly),
           content: encodeEnvelope({
             text: options.text,
             internalOnly: Boolean(options.internalOnly),

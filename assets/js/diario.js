@@ -378,7 +378,7 @@
     return new Promise(function (resolve, reject) {
       const image = new Image();
       image.onload = function () {
-        const maxSide = 1280;
+        const maxSide = 960;
         const scale = Math.min(1, maxSide / Math.max(image.width || 1, image.height || 1));
         const canvas = document.createElement("canvas");
         canvas.width = Math.max(1, Math.round((image.width || 1) * scale));
@@ -390,7 +390,7 @@
         }
 
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        resolve(canvas.toDataURL("image/jpeg", 0.72));
       };
       image.onerror = function () {
         reject(new Error("A imagem enviada nao pode ser processada."));
@@ -402,6 +402,10 @@
   async function buildPhotoRecord(file) {
     if (!file.type.startsWith("image/")) {
       throw new Error("Envie apenas arquivos de imagem.");
+    }
+
+    if (file.size > 6 * 1024 * 1024) {
+      throw new Error("Cada foto deve ter no maximo 6 MB antes da compactacao.");
     }
 
     const dataUrl = await readFileAsDataUrl(file);
@@ -1124,63 +1128,72 @@
           return;
         }
 
-        const timestamp = new Date().toISOString();
-        const selectedTurmas = refs.targetMode.value === "turmas"
-          ? getSelectedValues(refs.turmaTargets)
-          : Array.from(new Set(targetStudents.map(function (student) { return student.turma; }).filter(Boolean)));
-        const editingEntry = state.editingId
-          ? state.entries.find(function (item) { return item.id === state.editingId; }) || null
-          : null;
-        const batchId = state.editingId
-          ? (editingEntry?.batchId || null)
-          : (targetStudents.length > 1 ? generateId() : null);
+        const submitButton = refs.form.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
 
-        const payloadEntries = targetStudents.map(function (student, index) {
-          return {
-            id: index === 0 && editingEntry ? editingEntry.id : generateId(),
-            batchId: batchId,
-            studentId: student.id,
-            studentName: student.nome,
-            turma: student.turma || "",
-            turno: student.turno || "",
-            category: refs.category.value || "rotina",
-            title: title,
-            body: body,
-            photos: state.pendingPhotos.map(function (photo) { return ({ ...photo }); }),
-            authorName: session.name,
-            authorEmail: normalizeEmail(session.email),
-            authorRole: session.role,
-            targetMode: state.editingId ? "students" : refs.targetMode.value,
-            recipientCount: targetStudents.length,
-            targetTurmas: selectedTurmas,
-            entryDate: refs.entryDate.value || getTodayKey(),
-            createdAt: index === 0 && editingEntry
-              ? (editingEntry.createdAt || timestamp)
-              : timestamp,
-            updatedAt: timestamp
-          };
-        });
+        try {
+          const timestamp = new Date().toISOString();
+          const selectedTurmas = refs.targetMode.value === "turmas"
+            ? getSelectedValues(refs.turmaTargets)
+            : Array.from(new Set(targetStudents.map(function (student) { return student.turma; }).filter(Boolean)));
+          const editingEntry = state.editingId
+            ? state.entries.find(function (item) { return item.id === state.editingId; }) || null
+            : null;
+          const batchId = state.editingId
+            ? (editingEntry?.batchId || null)
+            : (targetStudents.length > 1 ? generateId() : null);
 
-        const savedEntries = [];
-        for (const entry of payloadEntries) {
-          savedEntries.push(await window.AgendaGamaDataStore.save("diario", entry, DIARIO_SEED));
+          const payloadEntries = targetStudents.map(function (student, index) {
+            return {
+              id: index === 0 && editingEntry ? editingEntry.id : generateId(),
+              batchId: batchId,
+              studentId: student.id,
+              studentName: student.nome,
+              turma: student.turma || "",
+              turno: student.turno || "",
+              category: refs.category.value || "rotina",
+              title: title,
+              body: body,
+              photos: state.pendingPhotos.map(function (photo) { return ({ ...photo }); }),
+              authorName: session.name,
+              authorEmail: normalizeEmail(session.email),
+              authorRole: session.role,
+              targetMode: state.editingId ? "students" : refs.targetMode.value,
+              recipientCount: targetStudents.length,
+              targetTurmas: selectedTurmas,
+              entryDate: refs.entryDate.value || getTodayKey(),
+              createdAt: index === 0 && editingEntry
+                ? (editingEntry.createdAt || timestamp)
+                : timestamp,
+              updatedAt: timestamp
+            };
+          });
+
+          const savedEntries = await window.AgendaGamaDataStore.saveMany("diario", payloadEntries, DIARIO_SEED);
+
+          const savedIds = new Set(savedEntries.map(function (entry) { return entry.id; }));
+          state.entries = sortEntries(savedEntries.concat(state.entries.filter(function (entry) {
+            return !savedIds.has(entry.id);
+          })));
+          await notifyDiaryRecipients(savedEntries);
+
+          const successMessage = state.editingId
+            ? "Registro atualizado com sucesso."
+            : refs.targetMode.value === "turmas"
+              ? `Registro enviado para ${targetStudents.length} aluno(s) das turmas selecionadas.`
+              : `Registro enviado para ${targetStudents.length} aluno(s) com sucesso.`;
+
+          closeEditor();
+          setBoardFeedback(successMessage, "success");
+          render();
+        } catch (error) {
+          setFeedback(
+            error?.message || "Nao foi possivel sincronizar o registro. Verifique sua conexao e tente novamente.",
+            "error"
+          );
+        } finally {
+          if (submitButton) submitButton.disabled = false;
         }
-
-        const savedIds = new Set(savedEntries.map(function (entry) { return entry.id; }));
-        state.entries = sortEntries(savedEntries.concat(state.entries.filter(function (entry) {
-          return !savedIds.has(entry.id);
-        })));
-        await notifyDiaryRecipients(savedEntries);
-
-        const successMessage = state.editingId
-          ? "Registro atualizado com sucesso."
-          : refs.targetMode.value === "turmas"
-            ? `Registro enviado para ${targetStudents.length} aluno(s) das turmas selecionadas.`
-            : `Registro enviado para ${targetStudents.length} aluno(s) com sucesso.`;
-
-        closeEditor();
-        setBoardFeedback(successMessage, "success");
-        render();
       });
 
       refs.cancel.addEventListener("click", function () {

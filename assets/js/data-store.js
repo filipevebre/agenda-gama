@@ -23,7 +23,7 @@
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
-  const REMOTE_REQUIRED_KEYS = new Set(["notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords", "grades", "classJournal"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["diario", "notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords", "grades", "classJournal"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
@@ -79,6 +79,15 @@
       target_turmas: normalizeArray(item.targetTurmas || item.target_turmas).filter(Boolean),
       entry_date: item.entryDate || item.entry_date || null
     };
+  }
+
+  function mapMessageToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    const nextItem = { ...item };
+    delete nextItem.parsed;
+    delete nextItem.workflowStatus;
+    return nextItem;
   }
 
   function mapNoticeFromRemote(item) {
@@ -552,6 +561,10 @@
       return mapDiaryToRemote(item);
     }
 
+    if (key === "messages") {
+      return mapMessageToRemote(item);
+    }
+
     if (key === "notices") {
       return mapNoticeToRemote(item);
     }
@@ -682,9 +695,14 @@
     const remoteItems = await window.AgendaGamaSupabase.fetchTable(getTableName(key));
     const remoteIds = new Set((remoteItems || []).map((item) => item.id));
 
-    for (const item of migratableItems) {
-      if (remoteIds.has(item.id)) continue;
-      await window.AgendaGamaSupabase.saveRow(getTableName(key), mapToRemote(key, item));
+    const missingItems = migratableItems.filter(function (item) {
+      return !remoteIds.has(item.id);
+    });
+    if (missingItems.length) {
+      await window.AgendaGamaSupabase.saveRows(
+        getTableName(key),
+        missingItems.map(function (item) { return mapToRemote(key, item); })
+      );
     }
 
     localStorage.setItem(getMigrationFlagKey(key), "done");
@@ -762,6 +780,32 @@
     return nextItem;
   }
 
+  async function saveMany(key, incomingItems, seedData) {
+    const itemsToSave = normalizeLocalItems(incomingItems || []);
+    if (!itemsToSave.length) return [];
+
+    if (!LOCAL_ONLY_KEYS.has(key) && await useRemote()) {
+      try {
+        const savedRows = await window.AgendaGamaSupabase.saveRows(
+          getTableName(key),
+          itemsToSave.map(function (item) { return mapToRemote(key, item); })
+        );
+        return savedRows.map(function (item) { return mapFromRemote(key, item); });
+      } catch (error) {
+        if (REMOTE_REQUIRED_KEYS.has(key) || !MIGRATABLE_KEYS.has(key)) throw error;
+        console.warn(`[Agenda Gama] Salvando lote de ${key} localmente por fallback.`, error);
+      }
+    }
+
+    const currentItems = readLocal(key, seedData);
+    const incomingIds = new Set(itemsToSave.map(function (item) { return item.id; }));
+    const nextItems = itemsToSave.concat(currentItems.filter(function (item) {
+      return !incomingIds.has(item.id);
+    }));
+    writeLocal(key, nextItems);
+    return itemsToSave;
+  }
+
   async function remove(key, id, seedData) {
     if (!LOCAL_ONLY_KEYS.has(key) && await useRemote()) {
       try {
@@ -786,6 +830,7 @@
     list,
     getById,
     save,
+    saveMany,
     remove
   };
 })();
