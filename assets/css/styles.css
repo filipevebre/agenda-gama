@@ -8595,3 +8595,99 @@ body[data-page="cardapio"] .page-content {
     flex: 1 1 100%;
   }
 }
+
+/* Mobile communication: prioritize the message history and composer. */
+@media (max-width: 720px) {
+  body[data-page="comunicacao"] .thread-header-panel {
+    padding: 7px 10px;
+  }
+
+  body[data-page="comunicacao"] .thread-header-main {
+    display: block;
+  }
+
+  body[data-page="comunicacao"] .thread-header-copy {
+    gap: 5px;
+  }
+
+  body[data-page="comunicacao"] .thread-title-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  body[data-page="comunicacao"] .thread-title-row .message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    font-size: 0.64rem;
+  }
+
+  body[data-page="comunicacao"] .thread-header-copy h2 {
+    overflow: hidden;
+    font-size: 0.84rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="comunicacao"] .thread-title-row p {
+    overflow: hidden;
+    font-size: 0.67rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="comunicacao"] .thread-header-tags {
+    display: flex;
+    gap: 4px;
+    margin-left: 40px;
+    overflow: hidden;
+    flex-wrap: nowrap;
+  }
+
+  body[data-page="comunicacao"] .thread-header-tags .tag,
+  body[data-page="comunicacao"] .thread-header-tags .status-badge {
+    flex: 0 0 auto;
+    padding: 3px 6px;
+    font-size: 0.61rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  body[data-page="comunicacao"] .thread-assignee-tag,
+  body[data-page="comunicacao"] .thread-header-side {
+    display: none;
+  }
+
+  body[data-page="comunicacao"] .thread-date-divider span {
+    padding: 4px 9px;
+    font-size: 0.66rem;
+  }
+
+  body[data-page="comunicacao"] .thread-body {
+    padding: 8px;
+  }
+
+  body[data-page="comunicacao"] .thread-message-stack,
+  body[data-page="comunicacao"] .thread-date-group {
+    gap: 8px;
+  }
+
+  body[data-page="comunicacao"] .thread-view:focus-within .thread-header-panel,
+  body[data-page="comunicacao"] .thread-view:focus-within .thread-alerts {
+    display: none;
+  }
+
+  body[data-page="comunicacao"]:has(#thread-message-input:focus) .mobile-tabbar {
+    display: none;
+  }
+
+  body[data-page="comunicacao"]:has(#thread-message-input:focus) .message-central-layout.is-thread-view .message-thread-column {
+    height: calc(100dvh - 64px - env(safe-area-inset-bottom, 0px));
+  }
+
+  body[data-page="comunicacao"]:has(#thread-message-input:focus) .thread-view {
+    height: calc(100dvh - 114px - env(safe-area-inset-bottom, 0px));
+  }
+}

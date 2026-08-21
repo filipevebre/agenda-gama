@@ -2124,14 +2124,14 @@
               </div>
               <div class="thread-header-tags">
                 ${buildStatusBadge(thread.cardStatus)}
-                ${thread.sector ? `<span class="tag">${escapeHtml(thread.sector)}</span>` : ""}
-                <span class="tag">Atendendo: ${escapeHtml(thread.local.assignedTo || "Nao assumido")}</span>
-                ${thread.local.urgent ? '<span class="tag">Urgente</span>' : ""}
+                ${thread.sector ? `<span class="tag thread-sector-tag">${escapeHtml(thread.sector)}</span>` : ""}
+                <span class="tag thread-assignee-tag">Atendendo: ${escapeHtml(thread.local.assignedTo || "Nao assumido")}</span>
+                ${thread.local.urgent ? '<span class="tag thread-urgent-tag">Urgente</span>' : ""}
               </div>
             </div>
             <div class="thread-header-side">
-              <span class="tag">${escapeHtml(thread.subject || "Atendimento escolar")}</span>
-              <small>Atualizado em ${escapeHtml(formatShortTime(thread.lastMessage?.created_at))}</small>
+              <span class="tag thread-subject-tag">${escapeHtml(thread.subject || "Atendimento escolar")}</span>
+              <small class="thread-updated-at">Atualizado em ${escapeHtml(formatShortTime(thread.lastMessage?.created_at))}</small>
             </div>
           </div>
         `;
