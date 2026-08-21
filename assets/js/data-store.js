@@ -5,6 +5,7 @@
     equipe: "equipe",
     professores: "professores",
     alunos: "alunos",
+    studentHealth: "student_health_records",
     responsaveis: "responsaveis",
     notices: "school_notices",
     diario: "student_diary_entries",
@@ -23,12 +24,48 @@
   };
   const LOCAL_ONLY_KEYS = new Set();
   const MIGRATABLE_KEYS = new Set(["diario", "notices"]);
-  const REMOTE_REQUIRED_KEYS = new Set(["diario", "notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords", "grades", "classJournal"]);
+  const REMOTE_REQUIRED_KEYS = new Set(["diario", "notices", "forms", "formResponses", "activities", "activityCompletions", "menus", "calendarEvents", "attendanceSessions", "attendanceRecords", "grades", "classJournal", "studentHealth"]);
 
   function normalizeArray(value) {
     if (Array.isArray(value)) return value;
     if (!value) return [];
     return [value];
+  }
+
+  function mapStudentHealthFromRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      studentId: item.student_id || item.studentId || null,
+      category: item.category || "other",
+      observation: item.observation || "",
+      documentPath: item.document_path || item.documentPath || "",
+      documentName: item.document_name || item.documentName || "",
+      documentMimeType: item.document_mime_type || item.documentMimeType || "",
+      createdByUserId: item.created_by_user_id || item.createdByUserId || null,
+      createdByName: item.created_by_name || item.createdByName || "",
+      active: item.active !== false,
+      createdAt: item.created_at || item.createdAt || null,
+      updatedAt: item.updated_at || item.updatedAt || null
+    };
+  }
+
+  function mapStudentHealthToRemote(item) {
+    if (!item || typeof item !== "object") return item;
+
+    return {
+      id: item.id || null,
+      student_id: item.studentId || item.student_id || null,
+      category: item.category || "other",
+      observation: item.observation || "",
+      document_path: item.documentPath || item.document_path || "",
+      document_name: item.documentName || item.document_name || "",
+      document_mime_type: item.documentMimeType || item.document_mime_type || "",
+      created_by_user_id: item.createdByUserId || item.created_by_user_id || null,
+      created_by_name: item.createdByName || item.created_by_name || "",
+      active: item.active !== false
+    };
   }
 
   function mapDiaryFromRemote(item) {
@@ -505,6 +542,10 @@
   }
 
   function mapFromRemote(key, item) {
+    if (key === "studentHealth") {
+      return mapStudentHealthFromRemote(item);
+    }
+
     if (key === "diario") {
       return mapDiaryFromRemote(item);
     }
@@ -557,6 +598,10 @@
   }
 
   function mapToRemote(key, item) {
+    if (key === "studentHealth") {
+      return mapStudentHealthToRemote(item);
+    }
+
     if (key === "diario") {
       return mapDiaryToRemote(item);
     }

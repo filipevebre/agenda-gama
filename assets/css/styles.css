@@ -8596,6 +8596,254 @@ body[data-page="cardapio"] .page-content {
   }
 }
 
+/* Private student health alerts. */
+.student-health-form-card {
+  min-width: 0;
+  margin: 4px 0;
+  padding: 16px;
+  border: 1px solid #d8e2ec;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.student-health-form-card legend {
+  padding: 0 7px;
+  color: var(--title);
+  font-family: "Outfit", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.student-health-form-card > p {
+  margin: 0 0 13px;
+}
+
+.student-health-form-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.student-health-form-card textarea {
+  min-height: 104px;
+}
+
+.student-health-form-card .field small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.student-health-document {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #c9d8e5;
+  border-radius: 11px;
+  background: #ffffff;
+}
+
+.student-health-document > div {
+  display: grid;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.student-health-document strong,
+.student-health-document small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-health-document small {
+  color: var(--text-muted);
+}
+
+.student-health-remove-document {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #8a3d3d;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.student-health-table-badge {
+  white-space: nowrap;
+}
+
+.dashboard-health-section {
+  padding: 16px;
+  border: 1px solid #e6d5a9;
+  border-radius: 16px;
+  background: #fffdf7;
+}
+
+.dashboard-health-section .dashboard-section-heading {
+  margin-bottom: 12px;
+}
+
+.dashboard-health-count {
+  display: inline-grid;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  place-items: center;
+  border-radius: 10px;
+  background: #f3e5bb;
+  color: #70551a;
+  font-size: 0.78rem;
+}
+
+.dashboard-health-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.dashboard-health-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #eadfbf;
+  border-radius: 13px;
+  background: #ffffff;
+}
+
+.dashboard-health-card.is-health {
+  border-color: #cdddea;
+}
+
+.dashboard-health-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  background: #fff0c7;
+  color: #7a5b12;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.dashboard-health-card.is-health .dashboard-health-icon {
+  background: #e5f0f8;
+  color: #285f7d;
+}
+
+.dashboard-health-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.dashboard-health-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.dashboard-health-title-row strong {
+  overflow: hidden;
+  color: var(--title);
+  font-size: 0.88rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-health-title-row span {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #fff4d8;
+  color: #735817;
+  font-size: 0.59rem;
+  font-weight: 800;
+}
+
+.dashboard-health-copy small {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.dashboard-health-copy p {
+  display: -webkit-box;
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: #40546a;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.dashboard-health-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.dashboard-health-actions .btn {
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 0.64rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-health-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .student-health-form-card {
+    padding: 12px;
+  }
+
+  .student-health-document {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-health-document .btn {
+    width: 100%;
+  }
+
+  .dashboard-health-section {
+    padding: 12px;
+  }
+
+  .dashboard-health-card {
+    grid-template-columns: 34px minmax(0, 1fr);
+    padding: 10px;
+  }
+
+  .dashboard-health-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .dashboard-health-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .dashboard-health-actions {
+    grid-column: 2;
+    width: 100%;
+  }
+
+  .dashboard-health-actions .btn {
+    flex: 1;
+  }
+}
+
 /* Mobile communication: prioritize the message history and composer. */
 @media (max-width: 720px) {
   body[data-page="comunicacao"] .thread-header-panel {

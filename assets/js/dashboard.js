@@ -120,6 +120,56 @@
     `;
   }
 
+  async function renderHealthAlerts(records, students, session) {
+    const section = document.getElementById("dashboard-health-section");
+    const list = document.getElementById("dashboard-health-list");
+    const count = document.getElementById("dashboard-health-count");
+    const allowed = window.AgendaGamaStudentHealth?.canAccess?.(session);
+    const activeRecords = allowed
+      ? (records || []).filter(function (record) { return record.active !== false; })
+      : [];
+
+    section.hidden = !activeRecords.length;
+    list.innerHTML = "";
+    count.textContent = String(activeRecords.length);
+    if (!activeRecords.length) return;
+
+    const studentsById = new Map((students || []).map(function (student) {
+      return [String(student.id), student];
+    }));
+    const cards = await Promise.all(activeRecords.map(async function (record) {
+      const student = studentsById.get(String(record.studentId)) || {};
+      const category = window.AgendaGamaStudentHealth.categoryLabel(record.category);
+      let documentUrl = "";
+      if (record.documentPath) {
+        try {
+          documentUrl = await window.AgendaGamaStudentHealth.createSignedDocumentUrl(record.documentPath);
+        } catch (error) {
+          console.warn("[Agenda Gama] Não foi possível preparar um laudo no painel.", error);
+        }
+      }
+
+      return `
+        <article class="dashboard-health-card ${record.category === "food_restriction" ? "is-food" : "is-health"}">
+          <span class="dashboard-health-icon">${record.category === "food_restriction" ? "RA" : "SA"}</span>
+          <div class="dashboard-health-copy">
+            <div class="dashboard-health-title-row">
+              <strong>${escapeHtml(student.nome || "Aluno")}</strong>
+              <span>${escapeHtml(category)}</span>
+            </div>
+            <small>${escapeHtml(student.turma || "Sem turma informada")}</small>
+            <p>${escapeHtml(record.observation)}</p>
+          </div>
+          <div class="dashboard-health-actions">
+            ${documentUrl ? `<a class="btn btn-secondary btn-sm" href="${escapeHtml(documentUrl)}" target="_blank" rel="noopener">Ver laudo</a>` : ""}
+            <a class="btn btn-secondary btn-sm" href="organizacao/cadastro-alunos.html?id=${encodeURIComponent(record.studentId)}">Editar</a>
+          </div>
+        </article>
+      `;
+    }));
+    list.innerHTML = cards.join("");
+  }
+
   function buildPriorities(data, session) {
     const now = new Date();
     const today = dateKey(now);
@@ -276,7 +326,10 @@
 
   async function renderDashboard(session) {
     if (!session || !window.AgendaGamaDataStore) return;
-    const [students, diary, notices, activities, forms, formResponses, menus, calendarEvents] = await Promise.all([
+    const healthRecordsPromise = window.AgendaGamaStudentHealth?.canAccess?.(session)
+      ? safeList("studentHealth")
+      : Promise.resolve([]);
+    const [students, diary, notices, activities, forms, formResponses, menus, calendarEvents, healthRecords] = await Promise.all([
       safeList("alunos"),
       safeList("diario"),
       safeList("notices"),
@@ -284,7 +337,8 @@
       safeList("forms"),
       safeList("formResponses"),
       safeList("menus"),
-      safeList("calendarEvents")
+      safeList("calendarEvents"),
+      healthRecordsPromise
     ]);
     const data = { diary, notices, activities, forms, formResponses, menus, calendarEvents };
     const copy = roleCopy(session);
@@ -314,6 +368,7 @@
     const priorities = buildPriorities(data, session);
     document.getElementById("dashboard-priority-list").innerHTML = priorities.map(priorityCard).join("");
     document.getElementById("dashboard-priority-empty").hidden = Boolean(priorities.length);
+    await renderHealthAlerts(healthRecords, students, session);
     renderMenu(menus, students);
 
     document.querySelectorAll(".dashboard-staff-shortcut").forEach(function (item) {

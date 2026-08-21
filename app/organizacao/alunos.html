@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260720-1">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260821-1">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -49,6 +49,7 @@
                 <th>Matricula</th>
                 <th>Turma</th>
                 <th>Turno</th>
+                <th>Atenção</th>
                 <th>Responsaveis</th>
               </tr>
             </thead>
@@ -63,13 +64,15 @@
   <script src="../../assets/js/supabase.js?v=20260813-1"></script>
   <script src="../../assets/js/auth.js?v=20260813-1"></script>
   <script src="../../assets/js/app.js?v=20260813-1"></script>
-  <script src="../../assets/js/data-store.js?v=20260716-5"></script>
+  <script src="../../assets/js/data-store.js?v=20260821-1"></script>
+  <script src="../../assets/js/student-health.js?v=20260821-1"></script>
   <script src="../../assets/js/forms.js?v=20260720-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
 
     const RESPONSAVEIS_SEED = [];
     let responsaveisCache = [];
+    let healthRecordsCache = [];
 
     function normalizeAlunoText(value) {
       return String(value || "")
@@ -105,8 +108,21 @@
       `;
     }
 
+    function renderHealthAlert(aluno) {
+      const record = healthRecordsCache.find(function (item) {
+        return String(item.studentId) === String(aluno.id) && item.active !== false;
+      });
+      if (!record) return '<span class="muted">Sem observação</span>';
+      return `<span class="status-badge status-pendente student-health-table-badge">${window.AgendaGamaStudentHealth.categoryLabel(record.category)}</span>`;
+    }
+
     async function iniciarPaginaAlunos() {
-      responsaveisCache = await window.AgendaGamaDataStore.list("responsaveis", RESPONSAVEIS_SEED);
+      const results = await Promise.all([
+        window.AgendaGamaDataStore.list("responsaveis", RESPONSAVEIS_SEED),
+        window.AgendaGamaStudentHealth.listRecords()
+      ]);
+      responsaveisCache = results[0] || [];
+      healthRecordsCache = results[1] || [];
 
       window.AgendaGamaForms.mountCrud({
         storageKey: "alunos",
@@ -124,12 +140,26 @@
           { key: "turma" },
           { key: "turno", type: "tag" },
           {
+            key: "health",
+            render: function (_, item) {
+              return renderHealthAlert(item);
+            }
+          },
+          {
             key: "responsaveis",
             render: function (_, item) {
               return renderResponsaveisVinculados(item);
             }
           }
         ],
+        afterDelete: async function ({ item }) {
+          const healthRecord = healthRecordsCache.find(function (record) {
+            return String(record.studentId) === String(item.id);
+          });
+          if (healthRecord) {
+            await window.AgendaGamaStudentHealth.removeRecord(healthRecord);
+          }
+        },
         seedData: [
           { nome: "Ana Clara Silva", matricula: "20260045", turma: "5o Ano B", turno: "Tarde" },
           { nome: "Pedro Henrique", matricula: "20260051", turma: "1o Ano A", turno: "Manha" }

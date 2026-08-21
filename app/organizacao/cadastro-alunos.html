@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260716-10">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260821-1">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -52,6 +52,41 @@
             <input id="aluno-turno-display" placeholder="Selecione uma turma" readonly>
             <input type="hidden" name="turno">
           </label>
+          <fieldset class="student-health-form-card full">
+            <legend>Atenção à saúde do aluno</legend>
+            <p class="muted">Informação privada, visível somente para Administradores e Funcionários.</p>
+            <label class="field">
+              <span>Tipo de atenção</span>
+              <select id="aluno-health-category">
+                <option value="">Nenhuma observação</option>
+                <option value="food_restriction">Restrição alimentar</option>
+                <option value="health_condition">Problema ou condição de saúde</option>
+                <option value="other">Outra atenção importante</option>
+              </select>
+            </label>
+            <div id="aluno-health-details" class="student-health-form-details" hidden>
+              <label class="field full">
+                <span>Observação importante</span>
+                <textarea id="aluno-health-observation" rows="4" placeholder="Ex.: alergia grave a amendoim; não oferecer alimentos com traços."></textarea>
+              </label>
+              <label class="field full">
+                <span>Laudo ou documento</span>
+                <input id="aluno-health-document" type="file" accept="application/pdf,image/jpeg,image/png,image/webp">
+                <small>PDF, JPG, PNG ou WEBP, com até 10 MB.</small>
+              </label>
+              <div id="aluno-health-existing-document" class="student-health-document" hidden>
+                <div>
+                  <strong>Laudo cadastrado</strong>
+                  <small id="aluno-health-document-name"></small>
+                </div>
+                <a id="aluno-health-document-link" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Visualizar</a>
+                <label class="student-health-remove-document">
+                  <input id="aluno-health-remove-document" type="checkbox">
+                  <span>Remover este laudo</span>
+                </label>
+              </div>
+            </div>
+          </fieldset>
           <button type="submit" class="btn btn-primary full">Salvar aluno</button>
           <div id="aluno-feedback" class="feedback full" aria-live="polite"></div>
         </form>
@@ -62,7 +97,8 @@
   <script src="../../assets/js/supabase.js?v=20260813-1"></script>
   <script src="../../assets/js/auth.js?v=20260813-1"></script>
   <script src="../../assets/js/app.js?v=20260813-1"></script>
-  <script src="../../assets/js/data-store.js?v=20260619-4"></script>
+  <script src="../../assets/js/data-store.js?v=20260821-1"></script>
+  <script src="../../assets/js/student-health.js?v=20260821-1"></script>
   <script src="../../assets/js/forms.js?v=20260716-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
@@ -73,6 +109,8 @@
     ];
 
     let turmasCache = [];
+    let healthRecordsCache = [];
+    let currentHealthRecord = null;
 
     function normalizeText(value) {
       return String(value || "")
@@ -140,6 +178,86 @@
       }
     }
 
+    function toggleHealthDetails() {
+      const category = document.getElementById("aluno-health-category")?.value || "";
+      const details = document.getElementById("aluno-health-details");
+      if (details) details.hidden = !category;
+    }
+
+    function resetHealthFields() {
+      currentHealthRecord = null;
+      const category = document.getElementById("aluno-health-category");
+      const observation = document.getElementById("aluno-health-observation");
+      const file = document.getElementById("aluno-health-document");
+      const removeDocument = document.getElementById("aluno-health-remove-document");
+      const existingDocument = document.getElementById("aluno-health-existing-document");
+      const documentLink = document.getElementById("aluno-health-document-link");
+      if (category) category.value = "";
+      if (observation) observation.value = "";
+      if (file) file.value = "";
+      if (removeDocument) removeDocument.checked = false;
+      if (existingDocument) existingDocument.hidden = true;
+      if (documentLink) documentLink.removeAttribute("href");
+      toggleHealthDetails();
+    }
+
+    async function populateHealthFields(studentId) {
+      resetHealthFields();
+      currentHealthRecord = healthRecordsCache.find(function (record) {
+        return String(record.studentId) === String(studentId) && record.active !== false;
+      }) || null;
+      if (!currentHealthRecord) return;
+
+      const recordId = currentHealthRecord.id;
+      document.getElementById("aluno-health-category").value = currentHealthRecord.category || "other";
+      document.getElementById("aluno-health-observation").value = currentHealthRecord.observation || "";
+      toggleHealthDetails();
+
+      if (!currentHealthRecord.documentPath) return;
+      const documentBox = document.getElementById("aluno-health-existing-document");
+      const documentName = document.getElementById("aluno-health-document-name");
+      const documentLink = document.getElementById("aluno-health-document-link");
+      documentBox.hidden = false;
+      documentName.textContent = currentHealthRecord.documentName || "Documento anexado";
+      documentLink.removeAttribute("href");
+      documentLink.textContent = "Preparando...";
+
+      try {
+        const signedUrl = await window.AgendaGamaStudentHealth.createSignedDocumentUrl(currentHealthRecord.documentPath);
+        if (currentHealthRecord?.id !== recordId) return;
+        documentLink.href = signedUrl;
+        documentLink.textContent = "Visualizar";
+      } catch (error) {
+        documentLink.textContent = "Indisponível";
+        documentLink.removeAttribute("href");
+      }
+    }
+
+    function collectHealthMeta() {
+      const category = document.getElementById("aluno-health-category")?.value || "";
+      const observation = document.getElementById("aluno-health-observation")?.value.trim() || "";
+      const file = document.getElementById("aluno-health-document")?.files?.[0] || null;
+      const removeExistingDocument = Boolean(document.getElementById("aluno-health-remove-document")?.checked);
+      return { category, observation, file, removeExistingDocument, existingRecord: currentHealthRecord };
+    }
+
+    async function carregarHealthRecords() {
+      healthRecordsCache = await window.AgendaGamaStudentHealth.listRecords();
+      document.getElementById("aluno-health-category")?.addEventListener("change", toggleHealthDetails);
+      document.getElementById("aluno-health-document")?.addEventListener("change", function (event) {
+        const file = event.target.files?.[0] || null;
+        try {
+          window.AgendaGamaStudentHealth.validateFile(file);
+          event.target.setCustomValidity("");
+        } catch (error) {
+          event.target.value = "";
+          event.target.setCustomValidity(error.message || "Arquivo inválido.");
+          event.target.reportValidity();
+          event.target.setCustomValidity("");
+        }
+      });
+    }
+
     async function carregarTurmas() {
       const turmaField = document.getElementById("aluno-turma-search");
       const datalist = document.getElementById("aluno-turmas-list");
@@ -172,57 +290,85 @@
       });
     }
 
-    carregarTurmas();
+    async function iniciarCadastroAluno() {
+      await Promise.all([carregarTurmas(), carregarHealthRecords()]);
 
-    window.AgendaGamaForms.mountCrud({
-      storageKey: "alunos",
-      formId: "alunos-form",
-      totalId: "total-alunos",
-      feedbackId: "aluno-feedback",
-      redirectAfterSubmit: "alunos.html",
-      cancelRedirect: "alunos.html",
-      columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
-      beforeSave: async function ({ data }) {
-        const turma = resolveTurma(data.turma_busca || data.turma);
-        if (!turma) {
-          return { error: "Selecione uma turma ja cadastrada para vincular o aluno." };
-        }
-
-        renderSelectedTurma(turma);
-
-        const { turma_busca, ...cleanData } = data;
-
-        return {
-          data: {
-            ...cleanData,
-            turma: turma.nome,
-            turno: turma.turno || ""
+      await window.AgendaGamaForms.mountCrud({
+        storageKey: "alunos",
+        formId: "alunos-form",
+        totalId: "total-alunos",
+        feedbackId: "aluno-feedback",
+        redirectAfterSubmit: "alunos.html",
+        cancelRedirect: "alunos.html",
+        columns: [{ key: "nome" }, { key: "matricula" }, { key: "turma" }, { key: "turno", type: "tag" }],
+        beforeSave: async function ({ data }) {
+          const turma = resolveTurma(data.turma_busca || data.turma);
+          if (!turma) {
+            return { error: "Selecione uma turma ja cadastrada para vincular o aluno." };
           }
-        };
-      },
-      populateForm: function (form, item) {
-        form.elements.namedItem("nome").value = item.nome || "";
-        form.elements.namedItem("matricula").value = item.matricula || "";
 
-        const turma = findTurmaByName(item.turma);
-        if (turma) {
+          const healthMeta = collectHealthMeta();
+          if (healthMeta.category && !healthMeta.observation) {
+            return { error: "Escreva a observação importante sobre a saúde do aluno." };
+          }
+          try {
+            window.AgendaGamaStudentHealth.validateFile(healthMeta.file);
+          } catch (error) {
+            return { error: error.message || "O laudo selecionado é inválido." };
+          }
+
           renderSelectedTurma(turma);
-          return;
-        }
+          const { turma_busca, ...cleanData } = data;
 
-        document.getElementById("aluno-turma-search").value = item.turma || "";
-        document.getElementById("aluno-turno-display").value = item.turno || "";
-        form.elements.namedItem("turma").value = item.turma || "";
-        form.elements.namedItem("turno").value = item.turno || "";
-        document.getElementById("aluno-turma-search").setCustomValidity("");
-      },
-      afterSubmit: function () {
-        renderSelectedTurma(null);
-      },
-      seedData: [
-        { nome: "Ana Clara Silva", matricula: "20260045", turma: "5o Ano B", turno: "Tarde" },
-        { nome: "Pedro Henrique", matricula: "20260051", turma: "1o Ano A", turno: "Manha" }
-      ]
+          return {
+            data: {
+              ...cleanData,
+              turma: turma.nome,
+              turno: turma.turno || ""
+            },
+            meta: { health: healthMeta }
+          };
+        },
+        afterSave: async function ({ item, meta }) {
+          await window.AgendaGamaStudentHealth.syncRecord({
+            studentId: item.id,
+            ...(meta?.health || {})
+          });
+        },
+        populateForm: function (form, item) {
+          form.elements.namedItem("nome").value = item.nome || "";
+          form.elements.namedItem("matricula").value = item.matricula || "";
+
+          const turma = findTurmaByName(item.turma);
+          if (turma) {
+            renderSelectedTurma(turma);
+          } else {
+            document.getElementById("aluno-turma-search").value = item.turma || "";
+            document.getElementById("aluno-turno-display").value = item.turno || "";
+            form.elements.namedItem("turma").value = item.turma || "";
+            form.elements.namedItem("turno").value = item.turno || "";
+            document.getElementById("aluno-turma-search").setCustomValidity("");
+          }
+
+          void populateHealthFields(item.id);
+        },
+        afterSubmit: function () {
+          renderSelectedTurma(null);
+          resetHealthFields();
+        },
+        seedData: [
+          { nome: "Ana Clara Silva", matricula: "20260045", turma: "5o Ano B", turno: "Tarde" },
+          { nome: "Pedro Henrique", matricula: "20260051", turma: "1o Ano A", turno: "Manha" }
+        ]
+      });
+    }
+
+    iniciarCadastroAluno().catch(function (error) {
+      const feedback = document.getElementById("aluno-feedback");
+      if (!feedback) return;
+      feedback.hidden = false;
+      feedback.className = "feedback error";
+      feedback.textContent = error?.message || "Não foi possível carregar as informações de saúde dos alunos.";
     });
   </script>
   <script src="/assets/js/pwa.js?v=20260716-1"></script>
