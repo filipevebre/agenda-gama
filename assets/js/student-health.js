@@ -94,6 +94,7 @@
 
     const studentId = String(options?.studentId || "").trim();
     const category = String(options?.category || "").trim();
+    const conditionName = String(options?.conditionName || "").trim();
     const observation = String(options?.observation || "").trim();
     const file = options?.file || null;
     const existingRecord = options?.existingRecord || null;
@@ -112,7 +113,9 @@
       return null;
     }
     if (!CATEGORY_LABELS[category]) throw new Error("Selecione um tipo de atenção válido.");
-    if (!observation) throw new Error("Escreva a observação importante sobre o aluno.");
+    if (!conditionName) throw new Error("Informe o que o aluno tem.");
+    if (conditionName.length > 160) throw new Error("A condição específica deve ter no máximo 160 caracteres.");
+    if (!observation) throw new Error("Escreva os cuidados e as orientações importantes sobre o aluno.");
     validateFile(file);
 
     let uploadedPath = "";
@@ -125,6 +128,7 @@
         id: existingRecord?.id || null,
         studentId,
         category,
+        conditionName,
         observation,
         documentPath: nextDocumentPath,
         documentName: nextDocumentName,

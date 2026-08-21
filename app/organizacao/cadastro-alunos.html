@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260821-1">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260821-2">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -66,8 +66,12 @@
             </label>
             <div id="aluno-health-details" class="student-health-form-details" hidden>
               <label class="field full">
-                <span>Observação importante</span>
-                <textarea id="aluno-health-observation" rows="4" placeholder="Ex.: alergia grave a amendoim; não oferecer alimentos com traços."></textarea>
+                <span id="aluno-health-condition-label">O que o aluno tem?</span>
+                <input id="aluno-health-condition" maxlength="160" placeholder="Ex.: intolerância à lactose e alergia a nozes">
+              </label>
+              <label class="field full">
+                <span>Cuidados e orientações</span>
+                <textarea id="aluno-health-observation" rows="4" placeholder="Ex.: não oferecer alimentos com traços e avisar a coordenação em caso de reação."></textarea>
               </label>
               <label class="field full">
                 <span>Laudo ou documento</span>
@@ -97,8 +101,8 @@
   <script src="../../assets/js/supabase.js?v=20260813-1"></script>
   <script src="../../assets/js/auth.js?v=20260813-1"></script>
   <script src="../../assets/js/app.js?v=20260813-1"></script>
-  <script src="../../assets/js/data-store.js?v=20260821-1"></script>
-  <script src="../../assets/js/student-health.js?v=20260821-1"></script>
+  <script src="../../assets/js/data-store.js?v=20260821-2"></script>
+  <script src="../../assets/js/student-health.js?v=20260821-2"></script>
   <script src="../../assets/js/forms.js?v=20260716-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
@@ -182,17 +186,39 @@
       const category = document.getElementById("aluno-health-category")?.value || "";
       const details = document.getElementById("aluno-health-details");
       if (details) details.hidden = !category;
+      updateHealthConditionField(category);
+    }
+
+    function updateHealthConditionField(category) {
+      const label = document.getElementById("aluno-health-condition-label");
+      const input = document.getElementById("aluno-health-condition");
+      if (!label || !input) return;
+
+      if (category === "food_restriction") {
+        label.textContent = "Qual é a restrição alimentar?";
+        input.placeholder = "Ex.: lactose, nozes, glúten ou amendoim";
+        return;
+      }
+      if (category === "health_condition") {
+        label.textContent = "Qual é o problema ou condição de saúde?";
+        input.placeholder = "Ex.: asma, diabetes tipo 1 ou epilepsia";
+        return;
+      }
+      label.textContent = "Qual é a atenção necessária?";
+      input.placeholder = "Descreva de forma curta e objetiva";
     }
 
     function resetHealthFields() {
       currentHealthRecord = null;
       const category = document.getElementById("aluno-health-category");
+      const condition = document.getElementById("aluno-health-condition");
       const observation = document.getElementById("aluno-health-observation");
       const file = document.getElementById("aluno-health-document");
       const removeDocument = document.getElementById("aluno-health-remove-document");
       const existingDocument = document.getElementById("aluno-health-existing-document");
       const documentLink = document.getElementById("aluno-health-document-link");
       if (category) category.value = "";
+      if (condition) condition.value = "";
       if (observation) observation.value = "";
       if (file) file.value = "";
       if (removeDocument) removeDocument.checked = false;
@@ -210,6 +236,7 @@
 
       const recordId = currentHealthRecord.id;
       document.getElementById("aluno-health-category").value = currentHealthRecord.category || "other";
+      document.getElementById("aluno-health-condition").value = currentHealthRecord.conditionName || "";
       document.getElementById("aluno-health-observation").value = currentHealthRecord.observation || "";
       toggleHealthDetails();
 
@@ -235,10 +262,11 @@
 
     function collectHealthMeta() {
       const category = document.getElementById("aluno-health-category")?.value || "";
+      const conditionName = document.getElementById("aluno-health-condition")?.value.trim() || "";
       const observation = document.getElementById("aluno-health-observation")?.value.trim() || "";
       const file = document.getElementById("aluno-health-document")?.files?.[0] || null;
       const removeExistingDocument = Boolean(document.getElementById("aluno-health-remove-document")?.checked);
-      return { category, observation, file, removeExistingDocument, existingRecord: currentHealthRecord };
+      return { category, conditionName, observation, file, removeExistingDocument, existingRecord: currentHealthRecord };
     }
 
     async function carregarHealthRecords() {
@@ -308,8 +336,11 @@
           }
 
           const healthMeta = collectHealthMeta();
+          if (healthMeta.category && !healthMeta.conditionName) {
+            return { error: "Informe o que o aluno tem ou qual atenção específica é necessária." };
+          }
           if (healthMeta.category && !healthMeta.observation) {
-            return { error: "Escreva a observação importante sobre a saúde do aluno." };
+            return { error: "Escreva os cuidados e as orientações importantes sobre o aluno." };
           }
           try {
             window.AgendaGamaStudentHealth.validateFile(healthMeta.file);

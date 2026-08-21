@@ -8772,6 +8772,12 @@ body[data-page="cardapio"] .page-content {
   font-size: 0.68rem;
 }
 
+.dashboard-health-condition {
+  color: #263f56;
+  font-size: 0.77rem;
+  line-height: 1.35;
+}
+
 .dashboard-health-copy p {
   display: -webkit-box;
   margin: 3px 0 0;

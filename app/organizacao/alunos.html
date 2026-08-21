@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260821-1">
+  <link rel="stylesheet" href="../../assets/css/styles.css?v=20260821-2">
 </head>
 <body data-page="alunos" data-roles="administrador,funcionarios">
   <div id="app-shell"></div>
@@ -64,8 +64,8 @@
   <script src="../../assets/js/supabase.js?v=20260813-1"></script>
   <script src="../../assets/js/auth.js?v=20260813-1"></script>
   <script src="../../assets/js/app.js?v=20260813-1"></script>
-  <script src="../../assets/js/data-store.js?v=20260821-1"></script>
-  <script src="../../assets/js/student-health.js?v=20260821-1"></script>
+  <script src="../../assets/js/data-store.js?v=20260821-2"></script>
+  <script src="../../assets/js/student-health.js?v=20260821-2"></script>
   <script src="../../assets/js/forms.js?v=20260720-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
@@ -113,7 +113,14 @@
         return String(item.studentId) === String(aluno.id) && item.active !== false;
       });
       if (!record) return '<span class="muted">Sem observação</span>';
-      return `<span class="status-badge status-pendente student-health-table-badge">${window.AgendaGamaStudentHealth.categoryLabel(record.category)}</span>`;
+      const category = window.AgendaGamaStudentHealth.categoryLabel(record.category);
+      const condition = String(record.conditionName || "Não especificado")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+      return `<span class="status-badge status-pendente student-health-table-badge"><strong>${category}:</strong> ${condition}</span>`;
     }
 
     async function iniciarPaginaAlunos() {

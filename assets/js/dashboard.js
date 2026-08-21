@@ -158,6 +158,7 @@
               <span>${escapeHtml(category)}</span>
             </div>
             <small>${escapeHtml(student.turma || "Sem turma informada")}</small>
+            <strong class="dashboard-health-condition">${escapeHtml(record.conditionName || "Condição não especificada")}</strong>
             <p>${escapeHtml(record.observation)}</p>
           </div>
           <div class="dashboard-health-actions">
