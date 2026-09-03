@@ -32,7 +32,7 @@
           auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true
+            detectSessionInUrl: false
           }
         });
 
@@ -76,6 +76,86 @@
     return data.session;
   }
 
+  function getAuthRedirectParameters() {
+    if (typeof window === "undefined") return null;
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+    const read = function (key) {
+      return url.searchParams.get(key) || hashParams.get(key) || "";
+    };
+
+    return {
+      code: read("code"),
+      tokenHash: read("token_hash"),
+      type: read("type"),
+      accessToken: read("access_token"),
+      refreshToken: read("refresh_token"),
+      error: read("error_description") || read("error")
+    };
+  }
+
+  function hasAuthRedirectParameters() {
+    const params = getAuthRedirectParameters();
+    return Boolean(params && (
+      params.code ||
+      params.tokenHash ||
+      (params.accessToken && params.refreshToken)
+    ));
+  }
+
+  function clearAuthRedirectParameters() {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    [
+      "code",
+      "token_hash",
+      "type",
+      "access_token",
+      "refresh_token",
+      "expires_at",
+      "expires_in",
+      "token_type",
+      "error",
+      "error_code",
+      "error_description"
+    ].forEach(function (key) {
+      url.searchParams.delete(key);
+    });
+    url.hash = "";
+    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  }
+
+  async function recoverSessionFromUrl() {
+    const params = getAuthRedirectParameters();
+    const client = await getClient();
+    if (!client) return null;
+    if (params?.error) {
+      throw new Error(params.error.replace(/\+/g, " "));
+    }
+    if (!hasAuthRedirectParameters()) {
+      return await getSession();
+    }
+
+    let response;
+    if (params.accessToken && params.refreshToken) {
+      response = await client.auth.setSession({
+        access_token: params.accessToken,
+        refresh_token: params.refreshToken
+      });
+    } else if (params.code) {
+      response = await client.auth.exchangeCodeForSession(params.code);
+    } else if (params.tokenHash) {
+      response = await client.auth.verifyOtp({
+        token_hash: params.tokenHash,
+        type: params.type || "invite"
+      });
+    }
+
+    if (response?.error) throw response.error;
+    clearAuthRedirectParameters();
+    return response?.data?.session || await getSession();
+  }
+
   async function waitForSession(timeoutMs) {
     const client = await getClient();
     if (!client) return null;
@@ -86,15 +166,16 @@
     }
 
     return await new Promise((resolve) => {
+      let subscription = null;
       const timer = setTimeout(function () {
-        subscription.data.subscription.unsubscribe();
+        subscription?.data?.subscription?.unsubscribe();
         resolve(null);
       }, timeoutMs || 4000);
 
-      const subscription = client.auth.onAuthStateChange(function (_event, session) {
+      subscription = client.auth.onAuthStateChange(function (_event, session) {
         if (!session) return;
         clearTimeout(timer);
-        subscription.data.subscription.unsubscribe();
+        subscription?.data?.subscription?.unsubscribe();
         resolve(session);
       });
     });
@@ -308,6 +389,8 @@
     getConfig,
     getClient,
     getSession,
+    hasAuthRedirectParameters,
+    recoverSessionFromUrl,
     waitForSession,
     isConfigured,
     signInWithPassword,

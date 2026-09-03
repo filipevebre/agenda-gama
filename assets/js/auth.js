@@ -448,11 +448,26 @@
     }
 
     let session = null;
+    const openedFromInvite = window.AgendaGamaSupabase?.hasAuthRedirectParameters?.() || false;
+    summary.innerHTML = "<p><strong>Validando convite...</strong></p>";
+    form.hidden = true;
 
     if (await isSupabaseEnabled()) {
-      session = await window.AgendaGamaSupabase.waitForSession(4000);
+      try {
+        session = await window.AgendaGamaSupabase.recoverSessionFromUrl();
+        if (!session?.user) {
+          session = await window.AgendaGamaSupabase.waitForSession(15000);
+        }
+      } catch (error) {
+        summary.innerHTML = "<p><strong>Não foi possível validar este convite.</strong></p>";
+        feedback.textContent = error?.message || "O link pode ter expirado. Solicite o reenvio do convite à escola.";
+        feedback.className = "feedback error";
+        return;
+      }
       if (!session?.user) {
-        window.location.href = "../index.html";
+        summary.innerHTML = "<p><strong>Convite ainda não confirmado.</strong></p>";
+        feedback.textContent = "Abra novamente o link recebido por e-mail. Se o problema continuar, peça à escola para reenviar o convite.";
+        feedback.className = "feedback error";
         return;
       }
 
@@ -460,7 +475,7 @@
       cachedSession = mapProfileToSession(session.user, profile);
       await refreshSupabaseUsers();
 
-      if (!cachedSession.firstAccessPending) {
+      if (!cachedSession.firstAccessPending && !openedFromInvite) {
         await clearSession();
         window.location.href = "../index.html?password-created=1";
         return;
@@ -484,6 +499,7 @@
       <p><strong>Conta:</strong> ${cachedSession.name}</p>
       <p><strong>E-mail:</strong> ${cachedSession.email}</p>
     `;
+    form.hidden = false;
 
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
