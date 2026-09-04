@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-10">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260904-2">
 </head>
 <body data-page="diario" data-roles="administrador,funcionarios,professores,responsaveis">
   <div id="app-shell"></div>
@@ -145,37 +145,59 @@
             <div id="diario-target-summary" class="diary-target-summary" aria-live="polite"></div>
 
             <label class="field">
-              <span>Categoria</span>
-              <select id="diario-category" name="category">
-                <option value="rotina">Rotina</option>
-                <option value="alimentacao">Alimentacao</option>
-                <option value="atividade">Atividade</option>
-                <option value="comportamento">Comportamento</option>
-                <option value="saude">Saude</option>
-              </select>
-            </label>
-
-            <label class="field">
               <span>Data do registro</span>
               <input id="diario-date" name="entryDate" type="date" required>
             </label>
 
-            <label class="field">
-              <span>Titulo</span>
-              <input id="diario-title" name="title" type="text" maxlength="100" placeholder="Ex.: Como foi o dia hoje" required>
-            </label>
+            <section class="diary-records-section" aria-labelledby="diario-records-title">
+              <div class="diary-records-heading">
+                <div>
+                  <h3 id="diario-records-title">Registros deste envio</h3>
+                  <p>Adicione tipos diferentes para enviar tudo de uma vez.</p>
+                </div>
+                <span id="diario-records-count" class="tag">1 registro</span>
+              </div>
 
-            <label class="field">
-              <span>Mensagem</span>
-              <textarea id="diario-body" name="body" rows="7" placeholder="Escreva aqui o resumo do dia da crianca." required></textarea>
-            </label>
+              <div id="diario-records-list" class="diary-records-list">
+                <article class="diary-record-block diary-record-primary" data-diario-record>
+                  <div class="diary-record-header">
+                    <strong>Registro principal</strong>
+                    <span class="diary-record-number">1</span>
+                  </div>
+
+                  <label class="field">
+                    <span>Categoria</span>
+                    <select id="diario-category" name="category" data-diario-record-category>
+                      <option value="rotina">Rotina</option>
+                      <option value="alimentacao">Alimentacao</option>
+                      <option value="atividade">Atividade</option>
+                      <option value="comportamento">Comportamento</option>
+                      <option value="saude">Saude</option>
+                    </select>
+                  </label>
+
+                  <label class="field">
+                    <span>Titulo</span>
+                    <input id="diario-title" name="title" type="text" maxlength="100" placeholder="Ex.: Como foi o dia hoje" data-diario-record-title required>
+                  </label>
+
+                  <label class="field">
+                    <span>Mensagem</span>
+                    <textarea id="diario-body" name="body" rows="5" placeholder="Escreva aqui o resumo do dia da crianca." data-diario-record-body required></textarea>
+                  </label>
+                </article>
+              </div>
+
+              <button id="diario-add-record" type="button" class="btn btn-secondary diary-add-record">Adicionar outro tipo de registro</button>
+              <p id="diario-records-hint" class="muted">O mesmo aluno, data e fotos serao usados em todos os registros deste envio.</p>
+            </section>
 
             <div class="stack-sm diary-upload-block">
               <label class="field">
                 <span>Fotos do dia</span>
                 <input id="diario-photos" type="file" accept="image/*" multiple>
               </label>
-              <p id="diario-upload-hint" class="muted">Voce pode anexar ate 4 fotos por registro.</p>
+              <p id="diario-upload-hint" class="muted">Voce pode anexar ate 4 fotos. Elas serao usadas em todos os registros deste envio.</p>
               <div id="diario-upload-list" class="diary-upload-list" hidden></div>
             </div>
 
@@ -219,7 +241,7 @@
   <script src="../assets/js/auth.js?v=20260813-1"></script>
   <script src="../assets/js/data-store.js?v=20260619-4"></script>
   <script src="../assets/js/app.js?v=20260813-1"></script>
-  <script src="../assets/js/diario.js?v=20260716-1"></script>
+  <script src="../assets/js/diario.js?v=20260904-2"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaDiario.mountDiario();

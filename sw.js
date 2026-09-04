@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-gama-pwa-v45";
+const CACHE_NAME = "agenda-gama-pwa-v46";
 const PRECACHE_URLS = [
   "/",
   "/index.html",

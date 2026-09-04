@@ -534,6 +534,10 @@
         studentTargets: document.getElementById("diario-students-target"),
         turmaTargets: document.getElementById("diario-turmas-target"),
         targetSummary: document.getElementById("diario-target-summary"),
+        recordsList: document.getElementById("diario-records-list"),
+        recordsCount: document.getElementById("diario-records-count"),
+        recordsHint: document.getElementById("diario-records-hint"),
+        addRecord: document.getElementById("diario-add-record"),
         category: document.getElementById("diario-category"),
         entryDate: document.getElementById("diario-date"),
         title: document.getElementById("diario-title"),
@@ -737,14 +741,114 @@
         renderTargetSummary();
       }
 
+      function getRecordBlocks() {
+        return Array.from(refs.recordsList?.querySelectorAll("[data-diario-record]") || []);
+      }
+
+      function getRecordDrafts() {
+        return getRecordBlocks().map(function (block) {
+          return {
+            category: String(block.querySelector("[data-diario-record-category]")?.value || "rotina"),
+            title: String(block.querySelector("[data-diario-record-title]")?.value || "").trim(),
+            body: String(block.querySelector("[data-diario-record-body]")?.value || "").trim()
+          };
+        });
+      }
+
+      function syncRecordComposer() {
+        const blocks = getRecordBlocks();
+        const selectedCategories = blocks.map(function (block) {
+          return block.querySelector("[data-diario-record-category]")?.value || "";
+        });
+
+        blocks.forEach(function (block, index) {
+          const select = block.querySelector("[data-diario-record-category]");
+          const number = block.querySelector(".diary-record-number");
+          if (number) number.textContent = String(index + 1);
+          Array.from(select?.options || []).forEach(function (option) {
+            option.disabled = option.value !== select.value && selectedCategories.includes(option.value);
+          });
+        });
+
+        if (refs.recordsCount) {
+          refs.recordsCount.textContent = blocks.length === 1 ? "1 registro" : `${blocks.length} registros`;
+        }
+        if (refs.recordsHint) {
+          refs.recordsHint.textContent = blocks.length === 1
+            ? "Adicione outra categoria se precisar registrar mais de um tipo de ocorrencia."
+            : `${blocks.length} tipos serao enviados juntos para os mesmos alunos, na mesma data.`;
+        }
+        if (refs.addRecord) {
+          refs.addRecord.disabled = blocks.length >= Object.keys(CATEGORY_LABELS).length;
+        }
+      }
+
+      function clearAdditionalRecords() {
+        getRecordBlocks().slice(1).forEach(function (block) {
+          block.remove();
+        });
+        syncRecordComposer();
+      }
+
+      function addRecordBlock() {
+        if (!refs.recordsList || state.editingId) return;
+
+        const usedCategories = new Set(getRecordDrafts().map(function (record) {
+          return record.category;
+        }));
+        const nextCategory = Object.keys(CATEGORY_LABELS).find(function (category) {
+          return !usedCategories.has(category);
+        });
+
+        if (!nextCategory) {
+          setFeedback("Todos os tipos de registro ja foram adicionados.", "error");
+          return;
+        }
+
+        const block = document.createElement("article");
+        block.className = "diary-record-block";
+        block.setAttribute("data-diario-record", "");
+        block.innerHTML = `
+          <div class="diary-record-header">
+            <strong>Registro adicional</strong>
+            <div class="diary-record-header-actions">
+              <span class="diary-record-number"></span>
+              <button type="button" class="btn btn-secondary btn-sm diary-record-remove" data-diario-remove-record>Remover</button>
+            </div>
+          </div>
+          <label class="field">
+            <span>Categoria</span>
+            <select data-diario-record-category>
+              ${Object.entries(CATEGORY_LABELS).map(function ([value, label]) {
+                return `<option value="${escapeHtml(value)}"${value === nextCategory ? " selected" : ""}>${escapeHtml(label)}</option>`;
+              }).join("")}
+            </select>
+          </label>
+          <label class="field">
+            <span>Titulo</span>
+            <input type="text" maxlength="100" placeholder="Ex.: Observacao sobre alimentacao" data-diario-record-title required>
+          </label>
+          <label class="field">
+            <span>Mensagem</span>
+            <textarea rows="4" placeholder="Descreva este registro." data-diario-record-body required></textarea>
+          </label>
+        `;
+        refs.recordsList.appendChild(block);
+        syncRecordComposer();
+        setFeedback("Novo tipo adicionado. Preencha o titulo e a mensagem.", "success");
+        block.querySelector("[data-diario-record-title]")?.focus();
+      }
+
       function resetForm(options) {
         const keepFeedback = Boolean(options?.keepFeedback);
         state.editingId = null;
         state.pendingPhotos = [];
         refs.form.reset();
+        clearAdditionalRecords();
         refs.entryDate.value = getTodayKey();
         refs.targetMode.value = "students";
         refs.category.value = "rotina";
+        if (refs.addRecord) refs.addRecord.hidden = false;
         state.selectedStudentTurma = "all";
         if (refs.studentTurmaFilter) {
           refs.studentTurmaFilter.value = "all";
@@ -758,6 +862,7 @@
           refs.editorDescription.textContent = "Envie um registro para um aluno especifico, varios alunos ou uma turma inteira.";
         }
         renderUploadPreview();
+        syncRecordComposer();
         syncTargetFields();
         if (!keepFeedback) {
           setFeedback("", "");
@@ -857,7 +962,7 @@
         const photos = state.pendingPhotos || [];
         refs.uploadHint.textContent = photos.length
           ? `${photos.length} foto(s) pronta(s) para envio.`
-          : "Voce pode anexar ate 4 fotos por registro.";
+          : "Voce pode anexar ate 4 fotos. Em um envio com varios tipos, elas aparecerao em todos os registros.";
         refs.uploadList.hidden = photos.length === 0;
         refs.uploadList.innerHTML = photos.map(function (photo) {
           return `
@@ -933,6 +1038,7 @@
               <ul class="feature-list">
                 <li>Selecione apenas alunos das turmas que voce pode atender.</li>
                 <li>Voce pode enviar o mesmo diario para varios alunos de uma vez.</li>
+                <li>Use "Adicionar outro tipo" para incluir alimentacao, comportamento ou outras categorias no mesmo envio.</li>
                 <li>Tambem e possivel selecionar uma ou mais turmas inteiras para distribuir o registro.</li>
               </ul>
             </div>
@@ -999,6 +1105,7 @@
         closeHelp();
         setEditorModalState(true);
         state.editingId = entry?.id || null;
+        clearAdditionalRecords();
         refs.editorTitle.textContent = entry ? "Editar registro do dia" : "Novo registro do dia";
         if (refs.editorDescription) {
           refs.editorDescription.textContent = entry
@@ -1013,12 +1120,14 @@
         renderStudentTargetOptions(entry?.studentId ? [entry.studentId] : []);
         setSelectedValues(refs.turmaTargets, []);
         refs.category.value = entry?.category || "rotina";
+        if (refs.addRecord) refs.addRecord.hidden = Boolean(entry);
         refs.entryDate.value = entry?.entryDate || getTodayKey();
         refs.title.value = entry?.title || "";
         refs.body.value = entry?.body || "";
         state.pendingPhotos = Array.isArray(entry?.photos) ? entry.photos.map(function (photo) { return ({ ...photo }); }) : [];
         refs.cancel.hidden = !entry;
         renderUploadPreview();
+        syncRecordComposer();
         syncTargetFields();
         setFeedback("", "");
         window.requestAnimationFrame(function () {
@@ -1082,6 +1191,23 @@
         renderUploadPreview();
       });
 
+      refs.addRecord?.addEventListener("click", function () {
+        addRecordBlock();
+      });
+
+      refs.recordsList?.addEventListener("click", function (event) {
+        const removeButton = event.target.closest("[data-diario-remove-record]");
+        if (!removeButton) return;
+        removeButton.closest("[data-diario-record]")?.remove();
+        syncRecordComposer();
+        setFeedback("Registro adicional removido.", "success");
+      });
+
+      refs.recordsList?.addEventListener("change", function (event) {
+        if (!event.target.closest("[data-diario-record-category]")) return;
+        syncRecordComposer();
+      });
+
       refs.photoInput.addEventListener("change", async function () {
         const files = Array.from(refs.photoInput.files || []);
         refs.photoInput.value = "";
@@ -1121,10 +1247,15 @@
           return;
         }
 
-        const title = String(refs.title.value || "").trim();
-        const body = String(refs.body.value || "").trim();
-        if (!title || !body) {
-          setFeedback("Preencha o titulo e a mensagem do diario antes de enviar.", "error");
+        const recordDrafts = getRecordDrafts();
+        if (!recordDrafts.length || recordDrafts.some(function (record) { return !record.title || !record.body; })) {
+          setFeedback("Preencha o titulo e a mensagem de todos os registros antes de enviar.", "error");
+          return;
+        }
+
+        const distinctCategories = new Set(recordDrafts.map(function (record) { return record.category; }));
+        if (distinctCategories.size !== recordDrafts.length) {
+          setFeedback("Escolha uma categoria diferente para cada registro deste envio.", "error");
           return;
         }
 
@@ -1141,32 +1272,35 @@
             : null;
           const batchId = state.editingId
             ? (editingEntry?.batchId || null)
-            : (targetStudents.length > 1 ? generateId() : null);
+            : (targetStudents.length > 1 || recordDrafts.length > 1 ? generateId() : null);
 
-          const payloadEntries = targetStudents.map(function (student, index) {
-            return {
-              id: index === 0 && editingEntry ? editingEntry.id : generateId(),
-              batchId: batchId,
-              studentId: student.id,
-              studentName: student.nome,
-              turma: student.turma || "",
-              turno: student.turno || "",
-              category: refs.category.value || "rotina",
-              title: title,
-              body: body,
-              photos: state.pendingPhotos.map(function (photo) { return ({ ...photo }); }),
-              authorName: session.name,
-              authorEmail: normalizeEmail(session.email),
-              authorRole: session.role,
-              targetMode: state.editingId ? "students" : refs.targetMode.value,
-              recipientCount: targetStudents.length,
-              targetTurmas: selectedTurmas,
-              entryDate: refs.entryDate.value || getTodayKey(),
-              createdAt: index === 0 && editingEntry
-                ? (editingEntry.createdAt || timestamp)
-                : timestamp,
-              updatedAt: timestamp
-            };
+          const payloadEntries = recordDrafts.flatMap(function (record, recordIndex) {
+            return targetStudents.map(function (student, studentIndex) {
+              const isEditingEntry = recordIndex === 0 && studentIndex === 0 && editingEntry;
+              return {
+                id: isEditingEntry ? editingEntry.id : generateId(),
+                batchId: batchId,
+                studentId: student.id,
+                studentName: student.nome,
+                turma: student.turma || "",
+                turno: student.turno || "",
+                category: record.category,
+                title: record.title,
+                body: record.body,
+                photos: state.pendingPhotos.map(function (photo) { return ({ ...photo }); }),
+                authorName: session.name,
+                authorEmail: normalizeEmail(session.email),
+                authorRole: session.role,
+                targetMode: state.editingId ? "students" : refs.targetMode.value,
+                recipientCount: targetStudents.length,
+                targetTurmas: selectedTurmas,
+                entryDate: refs.entryDate.value || getTodayKey(),
+                createdAt: isEditingEntry
+                  ? (editingEntry.createdAt || timestamp)
+                  : timestamp,
+                updatedAt: timestamp
+              };
+            });
           });
 
           const savedEntries = await window.AgendaGamaDataStore.saveMany("diario", payloadEntries, DIARIO_SEED);
@@ -1179,9 +1313,11 @@
 
           const successMessage = state.editingId
             ? "Registro atualizado com sucesso."
-            : refs.targetMode.value === "turmas"
-              ? `Registro enviado para ${targetStudents.length} aluno(s) das turmas selecionadas.`
-              : `Registro enviado para ${targetStudents.length} aluno(s) com sucesso.`;
+            : recordDrafts.length > 1
+              ? `${recordDrafts.length} tipos de registro enviados para ${targetStudents.length} aluno(s).`
+              : refs.targetMode.value === "turmas"
+                ? `Registro enviado para ${targetStudents.length} aluno(s) das turmas selecionadas.`
+                : `Registro enviado para ${targetStudents.length} aluno(s) com sucesso.`;
 
           closeEditor();
           setBoardFeedback(successMessage, "success");
@@ -1314,6 +1450,7 @@
       populateTargetOptions();
       renderAccessPanel();
       renderUploadPreview();
+      syncRecordComposer();
       refs.entryDate.value = getTodayKey();
       refs.category.value = "rotina";
       refs.studentTurmaFilter.value = "all";

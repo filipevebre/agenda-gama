@@ -5278,6 +5278,81 @@ body[data-page="comunicacao"] .thread-templates-panel {
 }
 
 /* Agenda Gama 2026: unified application layout. */
+.diary-records-section {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: #f7fafc;
+}
+.diary-records-heading,
+.diary-record-header,
+.diary-record-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.diary-records-heading h3,
+.diary-records-heading p {
+  margin: 0;
+}
+.diary-records-heading p {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.diary-records-list {
+  display: grid;
+  gap: 12px;
+}
+.diary-record-block {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(16, 42, 67, 0.12);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(16, 42, 67, 0.04);
+}
+.diary-record-primary {
+  border-color: rgba(7, 150, 122, 0.3);
+}
+.diary-record-header strong {
+  color: var(--title);
+}
+.diary-record-number {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e5f5f1;
+  color: var(--primary-dark);
+  font-weight: 800;
+}
+.diary-add-record {
+  width: 100%;
+  border-style: dashed;
+}
+
+@media (max-width: 640px) {
+  .diary-records-section,
+  .diary-record-block {
+    padding: 13px;
+  }
+  .diary-records-heading {
+    align-items: flex-start;
+  }
+  .diary-record-header-actions {
+    gap: 7px;
+  }
+  .diary-record-remove {
+    padding-inline: 10px;
+  }
+}
+
 :root {
   --bg: #eaf0f6;
   --surface: #ffffff;

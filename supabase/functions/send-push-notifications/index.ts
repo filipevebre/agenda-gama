@@ -400,6 +400,7 @@ async function dispatchDiaryPushes(
 
   const directory = await loadDirectory(adminClient)
   const deliveries = []
+  const groupedEntries = new Map<string, Record<string, unknown>[]>()
 
   for (const entry of entries || []) {
     const callerRole = String(callerProfile?.role || "")
@@ -407,6 +408,19 @@ async function dispatchDiaryPushes(
     if (!["administrador", "funcionarios"].includes(callerRole) && !(callerRole === "professores" && normalizeEmail(String(entry.author_email || "")) === callerEmail)) {
       throw new Error("Forbidden.")
     }
+
+    const groupKey = entry.batch_id
+      ? `${String(entry.batch_id)}:${String(entry.student_id || entry.student_name || "")}`
+      : String(entry.id || "")
+    if (!groupedEntries.has(groupKey)) {
+      groupedEntries.set(groupKey, [])
+    }
+    groupedEntries.get(groupKey)?.push(entry)
+  }
+
+  for (const groupedItems of groupedEntries.values()) {
+    const entry = groupedItems[0]
+    if (!entry) continue
 
     const guardianUserIds = uniqueIds((directory.responsaveis || []).filter((item) => {
       if (!item?.auth_user_id) return false
@@ -416,12 +430,33 @@ async function dispatchDiaryPushes(
 
     if (!guardianUserIds.length) continue
 
+    const categoryLabels: Record<string, string> = {
+      rotina: "Rotina",
+      alimentacao: "Alimentacao",
+      atividade: "Atividade",
+      comportamento: "Comportamento",
+      saude: "Saude"
+    }
+    const categories = Array.from(new Set(groupedItems.map((item) => (
+      categoryLabels[String(item.category || "")] || String(item.category || "Registro")
+    ))))
+    const latestUpdate = groupedItems.reduce((latest, item) => {
+      const candidate = String(item.updated_at || item.created_at || "")
+      return candidate > latest ? candidate : latest
+    }, "")
+    const isMultiple = groupedItems.length > 1
+
     deliveries.push(await sendPushToUserIds(adminClient, guardianUserIds, {
       id: String(entry.id || ""),
       kind: "diary-entry",
-      tag: `diary:${String(entry.id || "")}:${String(entry.updated_at || entry.created_at || "")}`,
-      title: `Novo registro no diario de ${String(entry.student_name || "seu aluno")}`,
-      body: [String(entry.turma || ""), String(entry.title || entry.category || "Novo registro disponivel")].filter(Boolean).join(" - "),
+      tag: `diary:${String(entry.batch_id || entry.id || "")}:${String(entry.student_id || "")}:${latestUpdate}`,
+      title: isMultiple
+        ? `${groupedItems.length} novos registros no diario de ${String(entry.student_name || "seu aluno")}`
+        : `Novo registro no diario de ${String(entry.student_name || "seu aluno")}`,
+      body: [
+        String(entry.turma || ""),
+        isMultiple ? categories.join(", ") : String(entry.title || entry.category || "Novo registro disponivel")
+      ].filter(Boolean).join(" - "),
       href: `/app/diario.html?entry=${encodeURIComponent(String(entry.id || ""))}`
     }))
   }
