@@ -27,6 +27,37 @@
     return window.Capacitor?.Plugins?.App || null;
   }
 
+  function getNativeBrowserPlugin() {
+    if (!isNativePlatform()) return null;
+    return window.Capacitor?.Plugins?.Browser || null;
+  }
+
+  async function getNativeAppInfo() {
+    const plugin = getNativeAppPlugin();
+    if (!plugin?.getInfo) return null;
+
+    try {
+      return await plugin.getInfo();
+    } catch (error) {
+      console.warn("[Agenda Gama] Nao foi possivel consultar a versao instalada.", error);
+      return null;
+    }
+  }
+
+  async function openExternalUrl(url) {
+    const normalizedUrl = String(url || "").trim();
+    if (!/^https:\/\//i.test(normalizedUrl)) return false;
+
+    const browser = getNativeBrowserPlugin();
+    if (browser?.open) {
+      await browser.open({ url: normalizedUrl });
+      return true;
+    }
+
+    window.open(normalizedUrl, "_blank", "noopener,noreferrer");
+    return true;
+  }
+
   function isStandaloneMode() {
     return isNativePlatform()
       || window.matchMedia("(display-mode: standalone)").matches
@@ -611,6 +642,7 @@
   });
 
   window.AgendaGamaPWA = {
+    isNativePlatform: isNativePlatform,
     isStandalone: isStandaloneMode,
     isIosBrowser: isIosBrowser,
     canInstall: function () {
@@ -624,7 +656,9 @@
     removePushSubscription: removePushSubscription,
     hasPushSubscription: hasPushSubscription,
     supportsPushNotifications: supportsPushNotifications,
-    normalizeAppHref: normalizeAppHref
+    normalizeAppHref: normalizeAppHref,
+    getNativeAppInfo: getNativeAppInfo,
+    openExternalUrl: openExternalUrl
   };
 
   if (getNativePushPlugin()) {

@@ -9,6 +9,7 @@
   const THREAD_STATE_KEY = "agenda-gama-message-thread-state";
   const MESSAGE_PREFIX = "AGAMA_MESSAGE::";
   const NOTIFICATION_REFRESH_MS = 12000;
+  const APP_UPDATE_MANIFEST_URL = "https://agenda-gama.vercel.app/app-version.json";
   const NOTICE_SEED = [
     {
       id: "notice-seed-1",
@@ -1764,6 +1765,14 @@
       if (!installAppButton) return;
 
       const pwa = window.AgendaGamaPWA;
+      if (pwa?.isNativePlatform?.()) {
+        installAppButton.hidden = false;
+        installAppButton.title = "Verificar atualizacao do aplicativo";
+        installAppButton.querySelector(".sidebar-footer-text").textContent = "Verificar atualizacao";
+        void refreshNativeUpdateButton();
+        return;
+      }
+
       const isStandalone = Boolean(pwa?.isStandalone?.());
       const isIosBrowser = Boolean(pwa?.isIosBrowser?.());
       const canInstall = Boolean(pwa?.canInstall?.());
@@ -1774,9 +1783,113 @@
       installAppButton.querySelector(".sidebar-footer-text").textContent = canInstall ? "Instalar app" : "Como instalar";
     }
 
+    let nativeUpdateStatusPromise = null;
+
+    function compareAppVersions(firstVersion, secondVersion) {
+      const firstParts = String(firstVersion || "0").split(".").map(function (part) {
+        return Number.parseInt(part, 10) || 0;
+      });
+      const secondParts = String(secondVersion || "0").split(".").map(function (part) {
+        return Number.parseInt(part, 10) || 0;
+      });
+      const partCount = Math.max(firstParts.length, secondParts.length);
+
+      for (let index = 0; index < partCount; index += 1) {
+        const difference = (firstParts[index] || 0) - (secondParts[index] || 0);
+        if (difference !== 0) return difference;
+      }
+      return 0;
+    }
+
+    async function loadNativeUpdateStatus(options) {
+      const forceRefresh = Boolean(options?.forceRefresh);
+      if (!forceRefresh && nativeUpdateStatusPromise) return nativeUpdateStatusPromise;
+
+      nativeUpdateStatusPromise = (async function () {
+        const pwa = window.AgendaGamaPWA;
+        const appInfo = await pwa?.getNativeAppInfo?.();
+        const response = await window.fetch(`${APP_UPDATE_MANIFEST_URL}?t=${Date.now()}`, {
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error("Nao foi possivel consultar a versao mais recente.");
+
+        const release = await response.json();
+        const installedBuild = Number.parseInt(appInfo?.build, 10) || 0;
+        const availableBuild = Number.parseInt(release?.versionCode, 10) || 0;
+        const hasNewBuild = installedBuild > 0 && availableBuild > 0
+          ? availableBuild > installedBuild
+          : compareAppVersions(release?.versionName, appInfo?.version) > 0;
+
+        return {
+          appInfo: appInfo || {},
+          release: release || {},
+          updateAvailable: hasNewBuild
+        };
+      })();
+
+      try {
+        return await nativeUpdateStatusPromise;
+      } catch (error) {
+        nativeUpdateStatusPromise = null;
+        throw error;
+      }
+    }
+
+    async function refreshNativeUpdateButton() {
+      if (!installAppButton || !window.AgendaGamaPWA?.isNativePlatform?.()) return;
+
+      try {
+        const status = await loadNativeUpdateStatus();
+        installAppButton.classList.toggle("update-available", status.updateAvailable);
+        installAppButton.querySelector(".sidebar-footer-text").textContent = status.updateAvailable
+          ? "Atualizacao disponivel"
+          : "Verificar atualizacao";
+      } catch (error) {
+        installAppButton.classList.remove("update-available");
+        installAppButton.querySelector(".sidebar-footer-text").textContent = "Verificar atualizacao";
+      }
+    }
+
     async function handleInstallApp() {
       const pwa = window.AgendaGamaPWA;
-      if (!pwa || pwa.isStandalone?.()) return;
+      if (!pwa) return;
+
+      if (pwa.isNativePlatform?.()) {
+        const label = installAppButton?.querySelector(".sidebar-footer-text");
+        if (installAppButton) installAppButton.disabled = true;
+        if (label) label.textContent = "Verificando...";
+
+        try {
+          const status = await loadNativeUpdateStatus({ forceRefresh: true });
+          const installedVersion = status.appInfo.version || "atual";
+          const availableVersion = status.release.versionName || "nova";
+          if (!status.updateAvailable) {
+            window.alert(`O Agenda Gama ja esta atualizado (versao ${installedVersion}).`);
+            return;
+          }
+
+          const releaseNotes = String(status.release.releaseNotes || "").trim();
+          const shouldDownload = window.confirm([
+            `A versao ${availableVersion} esta disponivel.`,
+            releaseNotes,
+            "Deseja baixar a atualizacao agora?"
+          ].filter(Boolean).join("\n\n"));
+          if (!shouldDownload) return;
+
+          const opened = await pwa.openExternalUrl?.(status.release.apkUrl);
+          if (!opened) throw new Error("O endereco de download da atualizacao e invalido.");
+          window.alert("Quando o download terminar, abra o arquivo e confirme a instalacao. O Android pode pedir permissao para instalar desta fonte.");
+        } catch (error) {
+          console.error("[Agenda Gama] Falha ao verificar atualizacao.", error);
+          window.alert("Nao foi possivel verificar a atualizacao agora. Confira sua conexao e tente novamente.");
+        } finally {
+          if (installAppButton) installAppButton.disabled = false;
+          void refreshNativeUpdateButton();
+        }
+        return;
+      }
+
+      if (pwa.isStandalone?.()) return;
 
       if (pwa.canInstall?.()) {
         await pwa.promptInstall();

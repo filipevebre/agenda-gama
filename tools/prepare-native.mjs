@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const outputDirectory = resolve(projectRoot, "www");
-const filesToCopy = ["index.html", "manifest.webmanifest", "sw.js"];
+const filesToCopy = ["index.html", "manifest.webmanifest", "sw.js", "app-version.json"];
 const directoriesToCopy = ["app", "assets"];
 
 await rm(outputDirectory, { recursive: true, force: true });
