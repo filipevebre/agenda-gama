@@ -10,8 +10,8 @@
   const MESSAGE_PREFIX = "AGAMA_MESSAGE::";
   const NOTIFICATION_REFRESH_MS = 12000;
   const APP_UPDATE_MANIFEST_URL = "https://agenda-gama.vercel.app/app-version.json";
-  const PACKAGED_ANDROID_VERSION_CODE = 9;
-  const PACKAGED_ANDROID_VERSION_NAME = "1.1.7";
+  const PACKAGED_ANDROID_VERSION_CODE = 10;
+  const PACKAGED_ANDROID_VERSION_NAME = "1.1.8";
   const NOTICE_SEED = [
     {
       id: "notice-seed-1",

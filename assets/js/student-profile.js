@@ -186,7 +186,13 @@
       return new Date(right.entryDate || right.createdAt || 0) - new Date(left.entryDate || left.createdAt || 0);
     });
     const studentActivities = activities.filter(function (activity) {
-      return activity.status === "published" && matchesTurma(activity.targetTurmas, student.turma);
+      const targetStudentIds = activity.targetStudentIds || [];
+      const matchesStudentTarget = !targetStudentIds.length || targetStudentIds.some(function (studentId) {
+        return String(studentId) === String(student.id);
+      });
+      return activity.status === "published"
+        && matchesTurma(activity.targetTurmas, student.turma)
+        && matchesStudentTarget;
     }).sort(function (left, right) { return new Date(right.dueAt || 0) - new Date(left.dueAt || 0); });
     const studentForms = forms.filter(function (form) {
       return form.status === "published" && matchesTurma(form.targetTurmas, student.turma);

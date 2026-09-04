@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260716-10">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260904-1">
 </head>
 <body data-page="atividades" data-roles="all">
   <div id="app-shell"></div>
@@ -90,7 +90,7 @@
           <div class="app-modal-header">
             <div>
               <h2 id="activity-editor-title">Nova atividade</h2>
-              <p>Defina a tarefa e escolha as turmas destinatárias.</p>
+              <p>Defina a tarefa e escolha se o envio será para a turma ou para alunos específicos.</p>
             </div>
             <button id="activity-editor-close" type="button" class="btn btn-secondary app-modal-close" aria-label="Fechar">x</button>
           </div>
@@ -136,6 +136,34 @@
               </div>
               <div id="activity-turma-list" class="activity-target-list"></div>
               <p id="activity-turma-empty" class="empty-state" hidden>Nenhuma turma disponível.</p>
+
+              <label class="field activity-target-mode-field">
+                <span>Enviar para</span>
+                <select id="activity-target-mode">
+                  <option value="turmas">Todos os alunos das turmas selecionadas</option>
+                  <option value="students">Alunos específicos</option>
+                </select>
+              </label>
+
+              <div id="activity-student-target-block" class="activity-student-target-block" hidden>
+                <div class="section-heading">
+                  <div>
+                    <h3>Alunos destinatários</h3>
+                    <p>A atividade ficará visível somente para as famílias dos alunos marcados.</p>
+                  </div>
+                  <div class="action-row activity-mini-actions">
+                    <button id="activity-select-all-students" type="button" class="btn btn-secondary btn-sm">Selecionar todos</button>
+                    <button id="activity-clear-students" type="button" class="btn btn-secondary btn-sm">Limpar</button>
+                  </div>
+                </div>
+                <label class="field activity-student-search-field">
+                  <span>Buscar aluno</span>
+                  <input id="activity-student-search" type="search" placeholder="Digite o nome do aluno">
+                </label>
+                <div id="activity-student-list" class="activity-target-list activity-student-list"></div>
+                <p id="activity-student-empty" class="empty-state" hidden>Selecione uma turma para visualizar os alunos.</p>
+                <p id="activity-student-summary" class="activity-target-summary">Nenhum aluno selecionado.</p>
+              </div>
             </div>
 
             <div class="action-row activity-editor-actions">
@@ -196,9 +224,9 @@
   <script src="../assets/js/config.js?v=20260415-4"></script>
   <script src="../assets/js/supabase.js?v=20260813-1"></script>
   <script src="../assets/js/auth.js?v=20260813-1"></script>
-  <script src="../assets/js/data-store.js?v=20260716-3"></script>
+  <script src="../assets/js/data-store.js?v=20260904-1"></script>
   <script src="../assets/js/app.js?v=20260813-1"></script>
-  <script src="../assets/js/school-activities.js?v=20260716-1"></script>
+  <script src="../assets/js/school-activities.js?v=20260904-1"></script>
   <script>
     window.AgendaGamaApp.mountShell();
     window.AgendaGamaSchoolActivities.mount();

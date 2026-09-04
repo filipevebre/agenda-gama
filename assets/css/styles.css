@@ -3024,6 +3024,28 @@ body[data-page="atividades"] .page-content {
   margin-bottom: 12px;
 }
 
+.activity-target-mode-field,
+.activity-student-target-block {
+  margin-top: 16px;
+}
+
+.activity-student-target-block {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.activity-student-search-field {
+  max-width: 420px;
+  margin-bottom: 12px;
+}
+
+.activity-target-summary {
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
 .activity-mini-actions {
   margin-top: 0;
 }

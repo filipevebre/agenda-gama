@@ -141,6 +141,14 @@
         turmaEmpty: document.getElementById("activity-turma-empty"),
         selectAllTurmas: document.getElementById("activity-select-all-turmas"),
         clearTurmas: document.getElementById("activity-clear-turmas"),
+        targetMode: document.getElementById("activity-target-mode"),
+        studentTargetBlock: document.getElementById("activity-student-target-block"),
+        studentSearch: document.getElementById("activity-student-search"),
+        studentList: document.getElementById("activity-student-list"),
+        studentEmpty: document.getElementById("activity-student-empty"),
+        studentSummary: document.getElementById("activity-student-summary"),
+        selectAllStudents: document.getElementById("activity-select-all-students"),
+        clearStudents: document.getElementById("activity-clear-students"),
         detailModal: document.getElementById("activity-detail-modal"),
         detailClose: document.getElementById("activity-detail-close"),
         detailSubject: document.getElementById("activity-detail-subject"),
@@ -188,6 +196,7 @@
         availableTurmas: [],
         editingId: null,
         activeId: null,
+        editorStudentIds: [],
         pendingAttachments: []
       };
 
@@ -236,8 +245,10 @@
 
       function eligibleChildren(activity) {
         const targets = activity.targetTurmas || [];
+        const targetStudentIds = new Set((activity.targetStudentIds || []).map(String));
         return state.children.filter(function (student) {
-          return targets.some(function (turma) { return turmaMatches(turma, student.turma); });
+          const turmaMatch = targets.some(function (turma) { return turmaMatches(turma, student.turma); });
+          return turmaMatch && (!targetStudentIds.size || targetStudentIds.has(String(student.id)));
         });
       }
 
@@ -318,7 +329,7 @@
       function managerCard(activity) {
         const completions = activityCompletions(activity.id);
         const manageable = canManage(activity);
-        const targets = activity.targetTurmas?.join(", ") || "Sem turma";
+        const targets = activityAudienceLabel(activity);
         return `
           <article class="activity-card">
             <button class="activity-card-main" type="button" data-activity-view="${escapeHtml(activity.id)}">
@@ -398,6 +409,73 @@
         refs.turmaEmpty.hidden = Boolean(state.availableTurmas.length);
       }
 
+      function selectedTurmaNames() {
+        return Array.from(refs.turmaList.querySelectorAll("input:checked")).map(function (input) {
+          return input.value;
+        });
+      }
+
+      function eligibleTargetStudents() {
+        const selectedTurmas = selectedTurmaNames();
+        return state.alunos.filter(function (student) {
+          return selectedTurmas.some(function (turma) { return turmaMatches(turma, student.turma); });
+        }).sort(function (left, right) {
+          const turmaOrder = String(left.turma || "").localeCompare(String(right.turma || ""), "pt-BR");
+          return turmaOrder || String(left.nome || "").localeCompare(String(right.nome || ""), "pt-BR");
+        });
+      }
+
+      function selectedStudentNames(activity) {
+        const ids = new Set((activity.targetStudentIds || []).map(String));
+        return state.alunos.filter(function (student) {
+          return ids.has(String(student.id));
+        }).map(function (student) { return student.nome; });
+      }
+
+      function activityAudienceLabel(activity, detailed) {
+        const names = selectedStudentNames(activity);
+        if (!names.length) return activity.targetTurmas?.join(", ") || "Sem turma";
+        if (detailed) return `Alunos: ${names.join(", ")}`;
+        const preview = names.slice(0, 2).join(", ");
+        return names.length > 2 ? `${names.length} alunos específicos: ${preview}...` : `Individual: ${preview}`;
+      }
+
+      function renderStudentTargets() {
+        const specificMode = refs.targetMode.value === "students";
+        refs.studentTargetBlock.hidden = !specificMode;
+        if (!specificMode) return;
+
+        const eligibleStudents = eligibleTargetStudents();
+        const eligibleIds = new Set(eligibleStudents.map(function (student) { return String(student.id); }));
+        state.editorStudentIds = state.editorStudentIds.filter(function (studentId) {
+          return eligibleIds.has(String(studentId));
+        });
+
+        const selectedIds = new Set(state.editorStudentIds.map(String));
+        const search = normalizeText(refs.studentSearch.value);
+        const visibleStudents = eligibleStudents.filter(function (student) {
+          return !search || normalizeText(`${student.nome} ${student.turma}`).includes(search);
+        });
+
+        refs.studentList.innerHTML = visibleStudents.map(function (student) {
+          const checked = selectedIds.has(String(student.id));
+          return `
+            <label class="activity-target-option">
+              <input type="checkbox" value="${escapeHtml(student.id)}" ${checked ? "checked" : ""}>
+              <span><strong>${escapeHtml(student.nome)}</strong><small>${escapeHtml(student.turma || "Sem turma")}</small></span>
+            </label>
+          `;
+        }).join("");
+
+        refs.studentEmpty.hidden = Boolean(visibleStudents.length);
+        refs.studentEmpty.textContent = eligibleStudents.length
+          ? "Nenhum aluno encontrado nesta busca."
+          : "Selecione uma turma para visualizar os alunos.";
+        refs.studentSummary.textContent = state.editorStudentIds.length
+          ? `${state.editorStudentIds.length} aluno(s) selecionado(s).`
+          : "Nenhum aluno selecionado.";
+      }
+
       function renderPendingAttachments() {
         refs.attachmentList.hidden = state.pendingAttachments.length === 0;
         refs.attachmentList.innerHTML = state.pendingAttachments.map(function (file) {
@@ -412,14 +490,18 @@
 
       function openEditor(activity) {
         state.editingId = activity?.id || null;
+        state.editorStudentIds = (activity?.targetStudentIds || []).map(String);
         state.pendingAttachments = (activity?.attachments || []).map(function (item) { return { ...item }; });
         refs.editorTitle.textContent = activity ? "Editar atividade" : "Nova atividade";
         refs.title.value = activity?.title || "";
         refs.subject.value = activity?.subject || "";
         refs.description.value = activity?.description || "";
         refs.dueAt.value = toLocalDateTime(activity?.dueAt);
+        refs.targetMode.value = state.editorStudentIds.length ? "students" : "turmas";
+        refs.studentSearch.value = "";
         refs.editorFeedback.textContent = "";
         renderTurmas(activity?.targetTurmas || []);
+        renderStudentTargets();
         renderPendingAttachments();
         setModalOpen(refs.editorModal, true);
         setTimeout(function () { refs.title.focus(); }, 50);
@@ -428,6 +510,7 @@
       function closeEditor() {
         setModalOpen(refs.editorModal, false);
         state.editingId = null;
+        state.editorStudentIds = [];
         state.pendingAttachments = [];
       }
 
@@ -462,7 +545,7 @@
         state.activeId = activity.id;
         refs.detailSubject.textContent = activity.subject || "Atividade";
         refs.detailTitle.textContent = activity.title;
-        refs.detailMeta.textContent = `${activity.authorName || "Equipe escolar"} · ${activity.targetTurmas?.join(", ") || "Sem turma"} · Prazo: ${formatDate(activity.dueAt)}`;
+        refs.detailMeta.textContent = `${activity.authorName || "Equipe escolar"} · ${activityAudienceLabel(activity, true)} · Prazo: ${formatDate(activity.dueAt)}`;
         refs.detailBody.innerHTML = `
           <div class="activity-detail-section">
             <h3>Orientações</h3>
@@ -518,9 +601,33 @@
       refs.completionsModal.querySelector("[data-activity-close-completions]").addEventListener("click", function () { setModalOpen(refs.completionsModal, false); });
       refs.selectAllTurmas.addEventListener("click", function () {
         refs.turmaList.querySelectorAll("input").forEach(function (input) { input.checked = true; });
+        renderStudentTargets();
       });
       refs.clearTurmas.addEventListener("click", function () {
         refs.turmaList.querySelectorAll("input").forEach(function (input) { input.checked = false; });
+        renderStudentTargets();
+      });
+      refs.turmaList.addEventListener("change", renderStudentTargets);
+      refs.targetMode.addEventListener("change", function () {
+        if (refs.targetMode.value !== "students") state.editorStudentIds = [];
+        renderStudentTargets();
+      });
+      refs.studentSearch.addEventListener("input", renderStudentTargets);
+      refs.studentList.addEventListener("change", function (event) {
+        if (!event.target.matches('input[type="checkbox"]')) return;
+        const selectedIds = new Set(state.editorStudentIds.map(String));
+        if (event.target.checked) selectedIds.add(String(event.target.value));
+        else selectedIds.delete(String(event.target.value));
+        state.editorStudentIds = Array.from(selectedIds);
+        renderStudentTargets();
+      });
+      refs.selectAllStudents.addEventListener("click", function () {
+        state.editorStudentIds = eligibleTargetStudents().map(function (student) { return String(student.id); });
+        renderStudentTargets();
+      });
+      refs.clearStudents.addEventListener("click", function () {
+        state.editorStudentIds = [];
+        renderStudentTargets();
       });
       refs.attachmentList.addEventListener("click", function (event) {
         const id = event.target.closest("[data-activity-remove-attachment]")?.dataset.activityRemoveAttachment;
@@ -555,6 +662,12 @@
           refs.editorFeedback.className = "feedback error";
           return;
         }
+        const targetStudentIds = refs.targetMode.value === "students" ? state.editorStudentIds.slice() : [];
+        if (refs.targetMode.value === "students" && !targetStudentIds.length) {
+          refs.editorFeedback.textContent = "Selecione pelo menos um aluno para o envio individual.";
+          refs.editorFeedback.className = "feedback error";
+          return;
+        }
         const current = state.activities.find(function (item) { return item.id === state.editingId; });
         const payload = {
           ...current,
@@ -564,6 +677,7 @@
           description: refs.description.value.trim(),
           status: submitter?.dataset.saveStatus || current?.status || "published",
           targetTurmas: selectedTurmas,
+          targetStudentIds: targetStudentIds,
           attachments: state.pendingAttachments.map(function (item) { return { ...item }; }),
           dueAt: refs.dueAt.value ? new Date(refs.dueAt.value).toISOString() : "",
           authorUserId: current?.authorUserId || session.userId,

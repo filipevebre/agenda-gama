@@ -1,6 +1,6 @@
 {
-  "versionCode": 9,
-  "versionName": "1.1.7",
-  "apkUrl": "https://agenda-gama.vercel.app/downloads/agenda-gama-v1.1.7.apk",
-  "releaseNotes": "Corrige a exibicao da opcao Verificar atualizacao no menu do aplicativo Android."
+  "versionCode": 10,
+  "versionName": "1.1.8",
+  "apkUrl": "https://agenda-gama.vercel.app/downloads/agenda-gama-v1.1.8.apk",
+  "releaseNotes": "Permite enviar atividades para a turma inteira ou somente para alunos especificos."
 }
