@@ -10,6 +10,8 @@
   const MESSAGE_PREFIX = "AGAMA_MESSAGE::";
   const NOTIFICATION_REFRESH_MS = 12000;
   const APP_UPDATE_MANIFEST_URL = "https://agenda-gama.vercel.app/app-version.json";
+  const PACKAGED_ANDROID_VERSION_CODE = 9;
+  const PACKAGED_ANDROID_VERSION_NAME = "1.1.7";
   const NOTICE_SEED = [
     {
       id: "notice-seed-1",
@@ -1490,9 +1492,9 @@
         </div>
 
         <div class="sidebar-footer">
-          <button id="install-app-button" type="button" class="btn install-app-button" title="Instalar app" hidden>
+          <button id="install-app-button" type="button" class="btn install-app-button" title="Atualizar aplicativo">
             <span class="sidebar-link-icon">${getNavIcon("AP")}</span>
-            <span class="sidebar-footer-text">Instalar app</span>
+            <span class="sidebar-footer-text">Atualizar aplicativo</span>
           </button>
           <button id="logout-button" class="btn" title="Sair e trocar conta">
             <span class="sidebar-link-icon">${getNavIcon("SA")}</span>
@@ -1765,17 +1767,26 @@
       if (!installAppButton) return;
 
       const pwa = window.AgendaGamaPWA;
-      if (pwa?.isNativePlatform?.()) {
+      if (!pwa) {
         installAppButton.hidden = false;
+        installAppButton.dataset.updateMode = "true";
+        return;
+      }
+
+      const isStandalone = Boolean(pwa.isStandalone?.());
+      const isAndroidInstalled = /android/i.test(window.navigator.userAgent || "") && isStandalone;
+      if (pwa.isNativePlatform?.() || isAndroidInstalled) {
+        installAppButton.hidden = false;
+        installAppButton.dataset.updateMode = "true";
         installAppButton.title = "Verificar atualizacao do aplicativo";
         installAppButton.querySelector(".sidebar-footer-text").textContent = "Verificar atualizacao";
         void refreshNativeUpdateButton();
         return;
       }
 
-      const isStandalone = Boolean(pwa?.isStandalone?.());
-      const isIosBrowser = Boolean(pwa?.isIosBrowser?.());
-      const canInstall = Boolean(pwa?.canInstall?.());
+      delete installAppButton.dataset.updateMode;
+      const isIosBrowser = Boolean(pwa.isIosBrowser?.());
+      const canInstall = Boolean(pwa.canInstall?.());
       const shouldShow = !isStandalone && (canInstall || isIosBrowser);
 
       installAppButton.hidden = !shouldShow;
@@ -1814,14 +1825,17 @@
         if (!response.ok) throw new Error("Nao foi possivel consultar a versao mais recente.");
 
         const release = await response.json();
-        const installedBuild = Number.parseInt(appInfo?.build, 10) || 0;
+        const installedBuild = Number.parseInt(appInfo?.build, 10) || PACKAGED_ANDROID_VERSION_CODE;
         const availableBuild = Number.parseInt(release?.versionCode, 10) || 0;
         const hasNewBuild = installedBuild > 0 && availableBuild > 0
           ? availableBuild > installedBuild
           : compareAppVersions(release?.versionName, appInfo?.version) > 0;
 
         return {
-          appInfo: appInfo || {},
+          appInfo: appInfo || {
+            build: String(PACKAGED_ANDROID_VERSION_CODE),
+            version: PACKAGED_ANDROID_VERSION_NAME
+          },
           release: release || {},
           updateAvailable: hasNewBuild
         };
@@ -1836,7 +1850,7 @@
     }
 
     async function refreshNativeUpdateButton() {
-      if (!installAppButton || !window.AgendaGamaPWA?.isNativePlatform?.()) return;
+      if (!installAppButton || installAppButton.dataset.updateMode !== "true") return;
 
       try {
         const status = await loadNativeUpdateStatus();
@@ -1854,7 +1868,7 @@
       const pwa = window.AgendaGamaPWA;
       if (!pwa) return;
 
-      if (pwa.isNativePlatform?.()) {
+      if (pwa.isNativePlatform?.() || installAppButton?.dataset.updateMode === "true") {
         const label = installAppButton?.querySelector(".sidebar-footer-text");
         if (installAppButton) installAppButton.disabled = true;
         if (label) label.textContent = "Verificando...";

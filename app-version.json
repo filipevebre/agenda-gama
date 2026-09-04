@@ -1,6 +1,6 @@
 {
-  "versionCode": 8,
-  "versionName": "1.1.6",
-  "apkUrl": "https://agenda-gama.vercel.app/downloads/agenda-gama-v1.1.6.apk",
-  "releaseNotes": "Agora o aplicativo permite verificar e baixar novas atualizacoes pelo menu."
+  "versionCode": 9,
+  "versionName": "1.1.7",
+  "apkUrl": "https://agenda-gama.vercel.app/downloads/agenda-gama-v1.1.7.apk",
+  "releaseNotes": "Corrige a exibicao da opcao Verificar atualizacao no menu do aplicativo Android."
 }
