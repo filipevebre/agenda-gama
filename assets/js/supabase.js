@@ -1,5 +1,6 @@
 (function () {
   let statePromise = null;
+  const FIRST_ACCESS_SESSION_KEY = "agenda-gama-first-access-session";
 
   function getConfig() {
     const config = Object.assign(
@@ -76,6 +77,51 @@
     return data.session;
   }
 
+  function saveFirstAccessSession(session) {
+    if (!session?.access_token || !session?.refresh_token) return;
+
+    try {
+      window.sessionStorage.setItem(FIRST_ACCESS_SESSION_KEY, JSON.stringify({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      }));
+    } catch (error) {
+      // Some private browsers can block sessionStorage. Supabase persistence remains the fallback.
+    }
+  }
+
+  function readFirstAccessSession() {
+    try {
+      const rawSession = window.sessionStorage.getItem(FIRST_ACCESS_SESSION_KEY);
+      return rawSession ? JSON.parse(rawSession) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function clearFirstAccessSession() {
+    try {
+      window.sessionStorage.removeItem(FIRST_ACCESS_SESSION_KEY);
+    } catch (error) {
+      // Nothing else is required when storage is unavailable.
+    }
+  }
+
+  async function restoreFirstAccessSession(client) {
+    const pendingSession = readFirstAccessSession();
+    if (!pendingSession?.access_token || !pendingSession?.refresh_token) return null;
+
+    const response = await client.auth.setSession(pendingSession);
+    if (response.error) {
+      clearFirstAccessSession();
+      return null;
+    }
+
+    const session = response.data?.session || null;
+    saveFirstAccessSession(session);
+    return session;
+  }
+
   function getAuthRedirectParameters() {
     if (typeof window === "undefined") return null;
     const url = new URL(window.location.href);
@@ -133,7 +179,7 @@
       throw new Error(params.error.replace(/\+/g, " "));
     }
     if (!hasAuthRedirectParameters()) {
-      return await getSession();
+      return await getSession() || await restoreFirstAccessSession(client);
     }
 
     let response;
@@ -152,8 +198,10 @@
     }
 
     if (response?.error) throw response.error;
+    const session = response?.data?.session || await getSession();
+    saveFirstAccessSession(session);
     clearAuthRedirectParameters();
-    return response?.data?.session || await getSession();
+    return session;
   }
 
   async function waitForSession(timeoutMs) {
@@ -189,14 +237,32 @@
 
   async function signOut() {
     const client = await getClient();
-    if (!client) return;
-    await client.auth.signOut();
+    if (client) await client.auth.signOut();
+    clearFirstAccessSession();
   }
 
   async function updatePassword(password, data) {
     const client = await getClient();
     if (!client) throw new Error("Supabase nao configurado.");
-    return await client.auth.updateUser(data ? { password, data } : { password });
+    let session = await getSession();
+    if (!session?.user) {
+      session = await restoreFirstAccessSession(client);
+    }
+    if (!session?.user) {
+      return {
+        data: { user: null },
+        error: new Error("Sua sessão de convite expirou. Abra novamente o link recebido por e-mail ou solicite um novo convite à escola.")
+      };
+    }
+
+    let response = await client.auth.updateUser(data ? { password, data } : { password });
+    if (response.error && /auth session missing/i.test(response.error.message || "")) {
+      const restoredSession = await restoreFirstAccessSession(client);
+      if (restoredSession?.user) {
+        response = await client.auth.updateUser(data ? { password, data } : { password });
+      }
+    }
+    return response;
   }
 
   async function getProfile(userId) {

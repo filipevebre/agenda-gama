@@ -524,7 +524,9 @@
         if (await isSupabaseEnabled()) {
           const passwordResult = await window.AgendaGamaSupabase.updatePassword(password, { first_access_pending: false });
           if (passwordResult.error) {
-            feedback.textContent = passwordResult.error.message || "Nao foi possivel salvar a nova senha.";
+            feedback.textContent = /auth session missing/i.test(passwordResult.error.message || "")
+              ? "Sua sessão de convite expirou. Abra novamente o link recebido por e-mail ou solicite um novo convite à escola."
+              : passwordResult.error.message || "Não foi possível salvar a nova senha.";
             feedback.className = "feedback error";
             return;
           }
@@ -595,7 +597,9 @@
           window.location.href = "../index.html?password-created=1&force-logout=1";
         }, 700);
       } catch (error) {
-        feedback.textContent = error?.message || "Nao foi possivel concluir a criacao da senha agora.";
+        feedback.textContent = /auth session missing/i.test(error?.message || "")
+          ? "Sua sessão de convite expirou. Abra novamente o link recebido por e-mail ou solicite um novo convite à escola."
+          : error?.message || "Não foi possível concluir a criação da senha agora.";
         feedback.className = "feedback error";
       }
     });

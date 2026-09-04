@@ -5,6 +5,7 @@
   "description": "Agenda Gama - aplicativo escolar para web e Android",
   "scripts": {
     "validate": "node tools/validate-project.mjs",
+    "test:first-access": "node tests/first-access-session.test.mjs",
     "native:prepare": "node tools/prepare-native.mjs",
     "android:prepare": "npm run native:prepare",
     "android:sync": "npm run native:prepare && cap sync android",
