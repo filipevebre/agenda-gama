@@ -108,15 +108,33 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (userResponse.user.email_confirmed_at || !profile.first_access_pending) {
-      return new Response(JSON.stringify({ error: "Esta conta ja concluiu o primeiro acesso e nao precisa de um novo convite." }), {
-        status: 409,
+    const redirectTo = `${configuredSiteUrl}/app/criar-senha.html`
+    const hasConfirmedEmail = Boolean(userResponse.user.email_confirmed_at)
+
+    if (hasConfirmedEmail || !profile.first_access_pending) {
+      const recoveryResponse = await adminClient.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo
+      })
+      if (recoveryResponse.error) {
+        return new Response(JSON.stringify({ error: recoveryResponse.error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        })
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        email: normalizedEmail,
+        deliveryType: "password-recovery",
+        message: `E-mail de acesso reenviado para ${normalizedEmail}. A pessoa podera criar uma nova senha pelo link recebido.`
+      }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       })
     }
 
     const inviteResponse = await adminClient.auth.admin.inviteUserByEmail(normalizedEmail, {
-      redirectTo: `${configuredSiteUrl}/app/criar-senha.html`,
+      redirectTo,
       data: {
         ...userResponse.user.user_metadata,
         full_name: profile.full_name || record?.nome || normalizedEmail,
@@ -135,6 +153,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       ok: true,
       email: normalizedEmail,
+      deliveryType: "invite",
       message: `Convite reenviado para ${normalizedEmail}.`
     }), {
       status: 200,

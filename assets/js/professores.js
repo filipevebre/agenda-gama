@@ -313,7 +313,7 @@
         seedData: PROFESSORES_SEED,
         rowActions: [{
           key: "resend-invite",
-          label: "Reenviar convite",
+          label: "Reenviar e-mail",
           loadingLabel: "Enviando...",
           show: window.AgendaGamaForms.canResendAccessInvite,
           onClick: async function ({ item }) {
